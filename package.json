@@ -1,0 +1,31 @@
+{
+  "name": "continuum",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "test": "tsx --test tests/*.test.ts",
+    "audit:music": "tsx scripts/audit-music.ts",
+    "examples": "tsx scripts/export-examples.ts",
+    "audit:form": "tsx scripts/audit-autonomy.ts",
+    "audit:phrasing": "tsx scripts/audit-phrasing.ts",
+    "audit:composition": "tsx scripts/audit-composition.ts",
+    "audit:layers": "tsx scripts/audit-layers.ts",
+    "audit:expression": "tsx scripts/audit-expression.ts",
+    "audit:development": "tsx scripts/audit-development.ts",
+    "audit:texture": "tsx scripts/audit-texture.ts",
+    "audit:lyrical": "tsx scripts/audit-lyrical.ts",
+    "audit:harmony": "tsx scripts/audit-harmonic-language.ts",
+    "audit:integrated": "tsx scripts/audit-integrated-composition.ts",
+    "audit:tools": "tsx scripts/audit-tool-coverage.ts",
+    "audit:range": "tsx scripts/audit-range.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0"
+  }
+}

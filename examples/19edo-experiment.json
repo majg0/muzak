@@ -1,0 +1,115 @@
+{
+  "format": "continuum-performance",
+  "engineVersion": "continuum-20.0.0",
+  "seed": "glass-garden",
+  "presetId": "fluid-fusion",
+  "initialParameters": {
+    "tension": 0.38,
+    "harmonicMobility": 0.66,
+    "harmonicSurprise": 0.36,
+    "voiceLeading": 0.91,
+    "tonalClarity": 0.52,
+    "tonalGravity": 0.56,
+    "dissonance": 0.28,
+    "brightness": 0.56,
+    "chromaticism": 0.4,
+    "intervalComplexity": 0.58,
+    "quartalTendency": 0.36,
+    "bassIndependence": 0.6,
+    "bassMobility": 0.42,
+    "melodicActivity": 0.35,
+    "ideaDensity": 0.5,
+    "ensembleSize": 0.55,
+    "melodicFamiliarity": 0.66,
+    "motifRecurrence": 0.57,
+    "motifTransformation": 0.48,
+    "rhythmicComplexity": 0.31,
+    "rhythmicPredictability": 0.73,
+    "rhythmicDensity": 0.15,
+    "metricStability": 0.8,
+    "texturalDensity": 0.58,
+    "dynamics": 0.57,
+    "tempo": 88
+  },
+  "automation": [],
+  "weights": {
+    "smoothness": 1,
+    "commonTones": 1,
+    "harmonicMotion": 1,
+    "tonalGravity": 1,
+    "dissonance": 1,
+    "tension": 1,
+    "independence": 1,
+    "novelty": 1,
+    "structure": 1
+  },
+  "bookmarks": [],
+  "sound": {
+    "tuning": "19edo",
+    "instrument": "additive",
+    "spectrum": {
+      "id": "harmonic-five",
+      "name": "Harmonic · five partials",
+      "partials": [
+        {
+          "ratio": 1,
+          "amplitude": 1
+        },
+        {
+          "ratio": 2,
+          "amplitude": 0.5
+        },
+        {
+          "ratio": 3,
+          "amplitude": 0.3
+        },
+        {
+          "ratio": 4,
+          "amplitude": 0.18
+        },
+        {
+          "ratio": 5,
+          "amplitude": 0.1
+        }
+      ]
+    },
+    "roughnessWeight": 2,
+    "roughnessTarget": 0.25
+  },
+  "conductor": {
+    "enabled": true,
+    "amount": 0,
+    "pace": 0.6,
+    "tuningTravel": false
+  },
+  "phrasing": {
+    "enabled": true,
+    "space": 0.55,
+    "syncopation": 0.6,
+    "interplay": 0.65,
+    "virtuosity": 0.6,
+    "renewal": 0.45,
+    "variation": 0.35,
+    "distribution": "balanced",
+    "arc": "arch",
+    "composition": {
+      "development": 0.68,
+      "repetition": 0.65,
+      "embellishment": 0.55,
+      "cohesion": 0.8,
+      "accent": 0.72,
+      "dynamicRange": 0.65,
+      "displacement": 0.72,
+      "polymeter": 0.58,
+      "transition": 0.55
+    },
+    "character": "lyrical",
+    "harmony": {
+      "functionalMotion": 0.68,
+      "harmonicColor": 0.32,
+      "cadenceStrength": 0.86,
+      "strategy": "balanced",
+      "treatment": "develop"
+    }
+  }
+}
