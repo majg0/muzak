@@ -191,7 +191,7 @@ def decode_coherent(frames, logits, vocabularies, *, parse, ppq=48,
                  * -math.log(max(float(f["onsetProbability"]), 1e-8))
                  if f["onsetProbability"] is not None else 0) for f in frames]
     path, objective = viterbi(base * quarters[:, None], penalties)
-    windows, tonics = [], {}
+    windows, tonics, selected_evidence = [], {}, []
     for i, state in enumerate(path):
         frame = frames[i]
         d, q, inv = (int(v) for v in choice[i, state])
@@ -206,6 +206,9 @@ def decode_coherent(frames, logits, vocabularies, *, parse, ppq=48,
             window["alternatives"] = [{"rootMillicents": decoded["root"] * 100000,
                 "coreIntervals": sorted(((p - decoded["root"]) % 12) * 100000 for p in decoded["core"]),
                 "colorIntervals": []}]
+        selected_evidence.append({"startTick": frame["startTick"], "endTick": frame["endTick"],
+            "states": [{"root": decoded["root"] * 100000,
+                        "core": sorted(p * 100000 for p in decoded["core"]), "inversion": inv}] if decoded else []})
         if (windows and windows[-1]["endTick"] == window["startTick"]
                 and all(windows[-1][k] == window[k] for k in ("modelKey", "modelRn", "selected", "alternatives"))):
             windows[-1]["endTick"] = window["endTick"]
@@ -214,7 +217,7 @@ def decode_coherent(frames, logits, vocabularies, *, parse, ppq=48,
     result = {"prediction": {"windows": windows}, "objective": objective,
               "configuration": dict(CONFIGURATION), "budgets": dict(BUDGETS),
               "search": {"frames": n, "states": count, "candidatePairs": len(pairs), "stateCells": n * count},
-              "overriddenHeads": sorted(overrides)}
+              "overriddenHeads": sorted(overrides), "selectedFactorEvidence": selected_evidence}
     if include_evidence:
         evidence = []
         for i, frame in enumerate(frames):
@@ -273,8 +276,20 @@ def self_test():
 
     result = decode_coherent(frames, logits, vocabulary, parse=unknown)
     assert result["prediction"]["windows"][0]["selected"] is None
+    assert result["selectedFactorEvidence"] == [{"startTick": 0, "endTick": 48, "states": []}]
     replay = decode_coherent(frames, logits, vocabulary, parse=unknown,
                              overrides={head: logits[head].clone() for head in ("degree", "quality")})
     assert result["prediction"] == replay["prediction"] and result["objective"] == replay["objective"]
+    known_vocabulary = {**vocabulary, "quality": ["M"]}
+    known_frames = [frames[0], {**frames[0], "startTick": 48, "endTick": 96}]
+    known_logits = {head: torch.zeros(2, len(known_vocabulary[head])) for head in HEADS}
+    known_logits["inversion"][:, 2] = 10
+    def known(rn, key):
+        return {"root": 0, "core": [0, 4, 7], "localKey": "C"}
+    compact = decode_coherent(known_frames, known_logits, known_vocabulary, parse=known)
+    detailed = decode_coherent(known_frames, known_logits, known_vocabulary, parse=known, include_evidence=True)
+    assert compact["prediction"] == detailed["prediction"] and len(compact["prediction"]["windows"]) == 1
+    assert compact["selectedFactorEvidence"] == [{"startTick": f["startTick"], "endTick": f["endTick"],
+        "states": [{"root": 0, "core": [0, 400000, 700000], "inversion": 2}]} for f in known_frames]
     return {"exhaustiveDpCases": cases, "rejections": rejected,
-            "controls": ["stable ties", "empty input", "unknown-only state", "identity head overrides"]}
+            "controls": ["stable ties", "empty input", "unknown-only state", "identity head overrides", "compact selected numeric evidence preserves atomic boundaries and predictions"]}

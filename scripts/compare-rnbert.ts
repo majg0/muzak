@@ -11,6 +11,7 @@ import type { Score } from '../src/score/score';
 import type { HarmonyWindow } from '../src/core/generated/HarmonyWindow';
 import type { HarmonyFunctionalRoot } from '../src/core/generated/HarmonyFunctionalRoot';
 import type { HarmonyContextOptions } from '../src/core/generated/HarmonyContextOptions';
+import { inferFunctionSpans, type FunctionSpanRecord } from './research/rnbert-function-span';
 
 const hash = (bytes: Uint8Array | string) => createHash('sha256').update(bytes).digest('hex');
 const pc = (pitch: number) => ((pitch % 1_200_000) + 1_200_000) % 1_200_000;
@@ -19,7 +20,8 @@ const sourceId = 'batik-mozart-harmony-9c5f700';
 type Work = HarmonyWork & { derivedScoreMidi: { path: string; sha256: string }; derivedScore: { path: string; sha256: string } };
 type MappedPrediction = { windows: Array<HarmonyPrediction['windows'][number] & { tonicPitchClass?: number | null }> };
 type PredictionIdentity = { work: string; ppq: number; sourceScoreSha256: string; targetLabelsRead: false };
-type MappingEntry = { work: string; output: string; predictionSha256: string; sourceScoreSha256: string };
+type MappingEntry = { work: string; output: string; predictionSha256: string; sourceScoreSha256: string;
+  decoderEvidence?: string; decoderEvidenceSha256?: string; captureManifestSha256?: string };
 
 /** Source identity and timebase are required before any context or reference read. */
 export function admitMappedPrediction(bytes: Uint8Array, entry: MappingEntry, identity: Omit<PredictionIdentity, 'targetLabelsRead'>) {
@@ -38,7 +40,7 @@ function mappedProfile(root: string, profile: string, works: Work[]) {
   if (manifest.profile !== profile || !Array.isArray(manifest.results) || manifest.results.length !== works.length) {
     throw Error('Mapping manifest does not cover the admitted work set exactly.');
   }
-  const inputs = new Map<string, { path: string; prediction: MappedPrediction; predictionSha256: string; score: Score; scoreSha256: string }>();
+  const inputs = new Map<string, { path: string; prediction: MappedPrediction; predictionSha256: string; score: Score; scoreSha256: string; entry: MappingEntry }>();
   for (const work of works) {
     const entries = manifest.results.filter((r: MappingEntry) => r.work === work.id);
     const output = `${work.id}${profile === 'baseline' ? '' : `-${profile}`}-predictions.json`;
@@ -46,7 +48,7 @@ function mappedProfile(root: string, profile: string, works: Work[]) {
     const scoreBytes = checkedAsset(work.derivedScore), score: Score = JSON.parse(scoreBytes.toString('utf8'));
     const sourceScoreSha256 = hash(scoreBytes), predictionPath = `${root}/${output}`, predictionBytes = readFileSync(predictionPath);
     const prediction = admitMappedPrediction(predictionBytes, entries[0], { work: work.id, ppq: score.ppq, sourceScoreSha256 });
-    inputs.set(work.id, { path: predictionPath, prediction, predictionSha256: hash(predictionBytes), score, scoreSha256: sourceScoreSha256 });
+    inputs.set(work.id, { path: predictionPath, prediction, predictionSha256: hash(predictionBytes), score, scoreSha256: sourceScoreSha256, entry: entries[0] });
   }
   return { inputs, manifest: { path, sha256: hash(bytes) } };
 }
@@ -128,8 +130,39 @@ function holdSurface(executable: string, score: Score, prediction: HarmonyPredic
     evidence: { inputSha256: hash(input), extensions: reply.silentGapHold.extensions } };
 }
 
+function functionSpanEvidence(root: string, executable: string, score: Score, prediction: MappedPrediction, entry: MappingEntry) {
+  if (!entry.decoderEvidence || !entry.decoderEvidenceSha256 || !/^[a-z0-9._-]+-decoder\.json$/.test(entry.decoderEvidence)) {
+    throw Error('Function spans require hash-admitted numeric decoder evidence.');
+  }
+  const path = `${root}/${entry.decoderEvidence}`, bytes = readFileSync(path);
+  if (hash(bytes) !== entry.decoderEvidenceSha256) throw Error('Numeric decoder evidence changed.');
+  const decoded = JSON.parse(bytes.toString('utf8'));
+  if (decoded.work !== entry.work || decoded.ppq !== score.ppq || decoded.sourceScoreSha256 !== entry.sourceScoreSha256
+    || decoded.targetLabelsRead !== false || !entry.captureManifestSha256 || decoded.captureManifestSha256 !== entry.captureManifestSha256) {
+    throw Error('Numeric decoder evidence does not belong to the admitted source/capture.');
+  }
+  if (!Array.isArray(decoded.selectedFactorEvidence) || !Array.isArray(decoded.overriddenHeads) || decoded.overriddenHeads.length) {
+    throw Error('Function spans require compact selected evidence from an unmodified original decode; regenerate the decode profile.');
+  }
+  const executableSha256 = hash(readFileSync(executable));
+  return inferFunctionSpans(score, prediction, { path, sha256: hash(bytes), ppq: score.ppq, frames: decoded.selectedFactorEvidence },
+    (seedIndex, resolutionIndex) => {
+      const seeds = [prediction.windows[seedIndex], prediction.windows[resolutionIndex]], pairWindows = nativeWindows({ windows: seeds });
+      const options = { bassPosition: 'lowestSounding', allowImpliedResolution: true, includeAlternatives: false,
+        maxGapTicks: seeds[1].startTick - seeds[0].endTick };
+      const input = JSON.stringify({ score, windows: pairWindows, options, predictedTonicPitchClasses: seeds.map(w => w.tonicPitchClass) });
+      const reply = nativeReply<ContextReply>(executable, input);
+      if (!reply.tonicFilter || reply.parameters.requireFullCore !== false) throw Error('Unexpected function-span endpoint configuration.');
+      if (!reply.proposals.length) return null;
+      if (reply.proposals.length !== 1 || reply.proposals[0].windowIndex !== 0) throw Error('Unexpected endpoint proof.');
+      return { pairWindows, nativeProposal: reply.proposals[0], parameters: reply.parameters,
+        inputSha256: hash(input), nativeExecutableSha256: executableSha256 };
+    });
+}
+
 /** Metric projection only: original proofs belong to the complete retained layers. */
-export function projectHarmonyLayers(functionLayer: HarmonyPrediction, surfaceLayer: HarmonyPrediction, duration: number) {
+export function projectHarmonyLayers(functionLayer: HarmonyPrediction, surfaceLayer: HarmonyPrediction, duration: number,
+  functionSpans?: FunctionSpanRecord[]) {
   type Window = HarmonyPrediction['windows'][number];
   const chosen = (w?: Window) => {
     if (!w || w.selected === null) return null;
@@ -154,6 +187,15 @@ export function projectHarmonyLayers(functionLayer: HarmonyPrediction, surfaceLa
       if (w.functionalRoot && (!h || w.functionalRoot.realizationAlternativeIndex !== w.selected)) throw Error('Stale functional evidence.');
     }
   }
+  const overrides = new Map<number, FunctionSpanRecord>();
+  for (const record of functionSpans ?? []) {
+    const index = record.seed.windowIndex, w = functionLayer.windows[index];
+    if (overrides.has(index) || !w || w.functionalRoot || !chosen(w) || w.selected !== record.seed.selectedAlternativeIndex
+      || w.startTick !== record.startTick || w.endTick !== record.endTick || pitchClass(record.rootMillicents) !== record.rootMillicents) {
+      throw Error('Function-span projection does not match its immutable seed.');
+    }
+    overrides.set(index, record);
+  }
   const cuts = [...new Set([0, duration, ...[functionLayer, surfaceLayer].flatMap(p => p.windows.flatMap(w => [w.startTick, w.endTick]))])].sort((a, b) => a - b);
   const windows: HarmonyPrediction['windows'] = [], cells = [];
   let fi = 0, si = 0;
@@ -165,11 +207,14 @@ export function projectHarmonyLayers(functionLayer: HarmonyPrediction, surfaceLa
     const fw = f?.startTick <= startTick && f.endTick >= endTick ? f : undefined;
     const sw = s?.startTick <= startTick && s.endTick >= endTick ? s : undefined;
     const fh = chosen(fw), sh = chosen(sw);
-    const functionRootMillicents = fh ? pitchClass(fw!.functionalRoot?.rootMillicents ?? fh.rootMillicents) : null;
+    const override = fw ? overrides.get(fi) : undefined;
+    const functionRootMillicents = fh ? pitchClass(override?.rootMillicents ?? fw!.functionalRoot?.rootMillicents ?? fh.rootMillicents) : null;
     const corePitchClasses = sh ? classes(sh, 'coreIntervals') : [], colorPitchClasses = sh ? classes(sh, 'colorIntervals') : [];
     const available = functionRootMillicents !== null && sh !== null;
     cells.push({ startTick, endTick, functionWindowIndex: fw ? fi : null, surfaceWindowIndex: sw ? si : null,
-      functionRootMillicents, corePitchClasses, colorPitchClasses, available });
+      functionRootMillicents, corePitchClasses, colorPitchClasses, available,
+      ...(functionSpans ? { functionRootSource: override ? { kind: 'model-assisted-continuation', recordId: override.id }
+        : { kind: 'original-function-layer', windowIndex: fw ? fi : null } } : {}) });
     windows.push({ startTick, endTick, selected: available ? 0 : null, alternatives: available ? [{ rootMillicents: functionRootMillicents,
       coreIntervals: corePitchClasses.map(p => pitchClass(p - functionRootMillicents)).sort((a, b) => a - b),
       colorIntervals: colorPitchClasses.map(p => pitchClass(p - functionRootMillicents)).sort((a, b) => a - b) }] : [] });
@@ -276,7 +321,8 @@ export function prepareTraining(work: Work, root: string) {
 
 function run(args: string[]) {
   const holdSilentGaps = args.includes('--hold-silent-gaps');
-  args = args.filter(a => a !== '--hold-silent-gaps');
+  const functionSpans = args.includes('--function-spans');
+  args = args.filter(a => a !== '--hold-silent-gaps' && a !== '--function-spans');
   const optionsAt = args.findIndex(a => a === '--context-options' || a.startsWith('--context-options='));
   let contextOptions: Partial<HarmonyContextOptions> | undefined;
   if (optionsAt >= 0) {
@@ -307,8 +353,9 @@ function run(args: string[]) {
   const training = args.includes('--prepare-training');
   const prepare = training || args.includes('--prepare');
   if (args.some(a => !['--prepare', '--prepare-training', '--evaluate'].includes(a)) || args.length !== 1 || (prepare && context)
-    || ((contextOptions || holdSilentGaps || surfaceProfile) && !context) || (surfaceProfile && prepare)) {
-    throw Error('Usage: npx tsx scripts/compare-rnbert.ts --prepare|--prepare-training|--evaluate [--profile name] [--surface-profile name] [--context native-example-path [--context-options JSON] [--hold-silent-gaps]]. Evaluation is development-only.');
+    || ((contextOptions || holdSilentGaps || surfaceProfile || functionSpans) && !context) || (surfaceProfile && prepare)
+    || (functionSpans && !surfaceProfile)) {
+    throw Error('Usage: npx tsx scripts/compare-rnbert.ts --prepare|--prepare-training|--evaluate [--profile name] [--surface-profile name] [--context native-example-path [--context-options JSON] [--hold-silent-gaps] [--function-spans]]. Function spans require a surface profile. Evaluation is development-only.');
   }
   const root = '.audit/contextual/rnbert'; mkdirSync(root, { recursive: true });
   const sources = JSON.parse(readFileSync('scripts/research/rnbert-sources.json', 'utf8'));
@@ -337,7 +384,7 @@ function run(args: string[]) {
   const correctedProfile = surfaceProfile ? mappedProfile(root, surfaceProfile, works) : undefined;
   // Complete and hash every optional refinement before opening reference labels.
   const prepared = works.map(work => {
-    const { path, prediction, predictionSha256, score, scoreSha256 } = originalProfile.inputs.get(work.id)!;
+    const { path, prediction, predictionSha256, score, scoreSha256, entry } = originalProfile.inputs.get(work.id)!;
     if (prediction.windows.some(w => w.functionalRoot)) throw Error('Mapped input already contains contextual refinement; use the raw model profile.');
     if (!context) return { work, path, prediction, predictionSha256 };
     const { refined, spanBaseline, evidence } = refineContext(context, score, prediction, contextOptions, holdSilentGaps);
@@ -348,14 +395,15 @@ function run(args: string[]) {
       const { path: surfacePath, prediction: surface, predictionSha256: surfaceSha256 } = correctedProfile!.inputs.get(work.id)!;
       if (surface.windows.some(w => w.functionalRoot)) throw Error('Surface input cannot contain native functional proofs.');
       const held = holdSilentGaps ? holdSurface(context, score, surface) : { prediction: surface, evidence: null };
-      const projection = projectHarmonyLayers(refined, held.prediction, score.duration);
+      const spanEvidence = functionSpans ? functionSpanEvidence(root, context, score, refined, entry) : undefined;
+      const projection = projectHarmonyLayers(refined, held.prediction, score.duration, spanEvidence?.records);
       const artifact = { work: work.id, ppq: score.ppq, duration: score.duration, sourceScoreSha256: scoreSha256,
         method: 'Immutable original functional layer and independently adapted realized core/color. The metric projection is not a native functional proof.',
         layers: {
           function: { path: refinedPath, sha256: hash(refinedBytes), prediction: refined },
           surface: { inputPath: surfacePath, inputSha256: surfaceSha256, prediction: held.prediction, hold: held.evidence },
-        }, ...projection };
-      const path = `${root}/${work.id}-${profile}-with-${surfaceProfile}-layers.json`, bytes = JSON.stringify(artifact) + '\n';
+        }, ...(spanEvidence ? { functionSpans: spanEvidence } : {}), ...projection };
+      const path = `${root}/${work.id}-${profile}-with-${surfaceProfile}${functionSpans ? '-function-spans' : ''}-layers.json`, bytes = JSON.stringify(artifact) + '\n';
       writeFileSync(path, bytes); factored = { path, sha256: hash(bytes), prediction: projection.prediction };
     }
     return { work, path, prediction, predictionSha256, refined, refinedPath, refinedSha256: hash(refinedBytes),
@@ -395,8 +443,10 @@ function run(args: string[]) {
     runtimeManifest: `${root}/runtime-manifest.json`,
     ...(existsSync(`${root}/inference-runtime-${profile}.json`) ? { inferenceRuntime: `${root}/inference-runtime-${profile}.json` } : {}),
     mappingManifest: originalProfile.manifest, ...(correctedProfile ? { surfaceMappingManifest: correctedProfile.manifest } : {}),
+    ...(functionSpans ? { functionSpans: { method: 'Separate model-assisted continuation records; native endpoint proofs remain local to explicit window pairs.',
+      sourceSha256: hash(readFileSync('scripts/research/rnbert-function-span.ts')) } } : {}),
     admission: `${root}/parser-admission.json`, evaluationSourceSha256: hash(readFileSync('scripts/evaluate-harmony.ts')), results };
-  const output = surfaceProfile ? `${root}/strict-agreement-${profile}-with-${surfaceProfile}.json`
+  const output = surfaceProfile ? `${root}/strict-agreement-${profile}-with-${surfaceProfile}${functionSpans ? '-function-spans' : ''}.json`
     : context ? `${root}/strict-agreement-${profile}${holdSilentGaps ? '-hold' : ''}-context.json`
     : profile === 'baseline' ? `${root}/strict-agreement.json` : `${root}/strict-agreement-${profile}.json`;
   writeFileSync(output, JSON.stringify(report, null, 2) + '\n');

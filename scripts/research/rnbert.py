@@ -828,7 +828,10 @@ def decode_readout(captures_path, model_path, profile, factor_evidence=False):
                 'sourceScoreSha256': item['source']['derivedScore']['sha256'], 'fitManifestSha256': digest(model_path),
                 'captureManifestSha256': item['captureManifestSha256']}
             save(output, payload)
-            evidence_path = f'{work}-{profile}-{mode}-decoder.json'; save(evidence_path, {k: v for k, v in decoded.items() if k != 'prediction'})
+            evidence_path = f'{work}-{profile}-{mode}-decoder.json'
+            save(evidence_path, {'work': work, 'ppq': b['ppq'], 'targetLabelsRead': False,
+                'sourceScoreSha256': payload['sourceScoreSha256'], 'captureManifestSha256': item['captureManifestSha256'],
+                **{k: v for k, v in decoded.items() if k != 'prediction'}})
             results[mode].append({'work': work, 'output': output, 'predictionSha256': digest(ROOT / output),
                 'sourceScoreSha256': payload['sourceScoreSha256'], 'windowCount': len(payload['windows']),
                 'captureManifestSha256': item['captureManifestSha256'], 'atomicLogits': logits_path.name,
