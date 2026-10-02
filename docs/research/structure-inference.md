@@ -1,0 +1,137 @@
+# Structural inference: research decision
+
+**Rebuild inference around executable musical relationships.** The existing Rust compiler now supports shared arbitrary pitch lattices and exact paths between event anchors. Bounded inference selects a narrow subset of passing/neighbor relationships, and source-only scene encoding passes an independent harmonic-edit control. Extend the competing explanations and evaluate contextual proposals through this same decoder; do not build a second composer.
+
+The small executable vertical is implemented. General voice recovery, functional harmony, phrase/theme inference, compression and long-form composition remain research targets; no published model inspected here supplies all of them.
+
+## Diagnosis from the current system
+
+Current strict Mozart development agreement, K330-I / K331-I:
+
+| Method | Realized core | Joint reference-root/core |
+| --- | --- | --- |
+| Shipped Rust/Wasm, witnessed resolution context | 68.57% / 60.14% | 63.04% / 55.93% |
+| RNBert, common onset threshold 0.01 | 92.49% / 90.79% | 84.56% / 82.86% |
+| Same learned predictions + Rust resolution, scoped by predicted tonic | 92.49% / 90.79% | 88.76% / 88.96% |
+
+**100% remains unmet.** The learned checkpoint trained on these Mozart works; the comparison is a development diagnostic, not independent validation or a shipped predictor. The joint metric does not evaluate key, Roman degree or spelling. Native inputs use notation time, supplied meter and source voice routing. Model admission excludes zero-duration grace notes and proves every remaining pitch/onset/release/track tuple unchanged before the model's declared quantization, salami slicing and dedoubling. Missing model tails, unsupported outputs and abstentions remain errors. Strict denominators are 416 / 819.75 quarters; the existing unsupported-reference intervals stay explicit. Reports and hashes live in ignored `.audit/score/` and `.audit/contextual/rnbert/`.
+
+Four limitations explain why a different inference target is needed:
+
+1. **Flat scoring discards relationships.** A pitch-class profile loses melodic succession, preparation/resolution, spelling and which voice supplies a note. The native dynamic program models label continuity. Its narrow resolution pass does not recover key or general voice-leading likelihood. Learned contextual predictions expose a large remaining scoring gap.
+2. **Function needs a separate coordinate and scope.** At K330 q12–13, `V(64)` has functional root G while realizing C–E–G. The Rust model now preserves that distinction without rebasing executable palettes. A same-bass IV64→I can satisfy the same local resolution pattern; native inference has no key evidence to distinguish it. Restricting the learned comparator's proposals to realizations rooted on its independently predicted tonic removes this observed false-positive class. The flat rooted vocabulary alone has an **87.86% / 89.91%** joint ceiling; that is not a ceiling for the extended representation.
+3. **The reference can imply unheard members.** A reference core member is absent locally over **16.41% / 16.90%** of supported duration. K330 q14–14.5 has `I(#2)`: explicitly spelled D♯ resolving to E over C octaves, with G implied. Our pitch-class metric would also accept C–E♭–G; 100% on that projection would not prove correct spelling or function.
+4. **Lossless copying can masquerade as abstraction.** `Encoder::own` stores neutral-pitch rhythm plus per-note bindings. Literal bindings can preserve the entire melody while the material dictionary appears compact. Selected anchor paths now replace some independent pitch bindings; other pitches still need palettes or literal residuals. Charge all bindings, domains and residuals, and test changed-anchor behavior instead of counting labels or prototypes.
+
+K330 q5.5–6 supplies a complementary failure: the B–D–F of `viio64` all occur amid a melodic run, but the interval is absorbed into C major. Vocabulary alone will not fix contextual segmentation. These cases require different remedies; one aggregate percentage cannot identify them.
+
+The learned comparison's remaining error has two distinct sources. Even a reference-label oracle on its existing windows reaches only 95.25% / 97.26%, leaving 19.25 / 21.5 quarters of unavoidable within-window disagreement plus uncovered tails. Its actual labels fall another 27 / 68 quarters below that oracle. Refining one common onset threshold helps both works; finer segmentation alone cannot recover the labels.
+
+Motion is evidence, not a role definition. In K330 q238.5–240, D–C–D neighbors include a legitimate chordal seventh while the reference alternates V2(9) and I6. Automatically demoting every stepwise seventh to color destroys correct readings. Likewise, a stronger missing-core penalty can raise corpus agreement while breaking a generic missing-third continuity control. Such controls constrain the scorer; higher development percentages alone do not justify adoption.
+
+## Reproduce the contextual comparison
+
+[The source manifest](../../scripts/research/rnbert-sources.json) pins official code, checkpoints, translation functions and known training overlap. [The Python adapter](../../scripts/research/rnbert.py) owns only this isolated research runtime; [the evaluator](../../scripts/compare-rnbert.ts) uses the same strict root/core metric as native inference. No production Python dependency is introduced. The author’s diatonic default supplies secondary-key mode missing from the model vocabulary; this is an explicit interpretation, not predicted evidence.
+
+Prepare the declared development inputs from the repository:
+
+```sh
+npx tsx scripts/compare-rnbert.ts --prepare
+```
+
+In an isolated Linux/WSL Python 3.12 environment, run setup, install Torch 2.6.0 from the manifest's CUDA wheel index, then the emitted pinned requirements and local upstream package:
+
+```sh
+python scripts/research/rnbert.py setup --device cuda
+python -m pip install -r .audit/contextual/rnbert/requirements.txt
+python -m pip install --no-deps -e .audit/contextual/rnbert/musicbert_hf
+python scripts/research/rnbert.py predict --profile onset-001 --onset-threshold 0.01
+python scripts/research/rnbert.py map --profile onset-001
+```
+
+Evaluate raw predictions with `npx tsx scripts/compare-rnbert.ts --evaluate --profile onset-001`. Build `cargo build -p muzak-core --example harmony-context`, then add `--context target/debug/examples/harmony-context.exe` to reproduce the predicted-tonic-scoped result. The optional filter is implemented in Rust; every refinement finishes before reference labels are opened. The default baseline profile retains upstream threshold 0.3. The shared 0.01 threshold maximizes pooled duration-weighted raw joint agreement over the declared development sweep; it is not selected separately for each work. Source/model hashes, parser admission, output coverage and error partitions are saved with the report. GPU forward work is under a second on the measured RTX 4090; upstream Python key decoding and process/model startup account for most of the 25–33 second cold run. A cached runtime and equivalent Rust decoding are a concrete performance path, not a measured shipped implementation.
+
+The checkpoint auxiliary outputs were captured without changing the verified main logits, but their target/index dictionaries are absent from the inspected released artifacts. Anonymous output channels are not decoded roles. Recover the exact definitions and dictionaries or train explicit targets under an audited work-lineage split; do not infer channel meanings from Mozart reference labels.
+
+## Current executable boundary
+
+The compiler stores pitch lattices once per plan: an origin, ordered native-pitch intervals and a positive period. A dependent event references two typed anchors (material events or explicit harmonic value addresses), an exact rational degree position, degree offset and residual. Resolution is self-contained, rejects cycles/off-lattice or fractional-degree results, and preserves independent timing, gain and relative native pitch curves. The algebra has no fixed major-scale or twelve-tone requirement.
+
+Inference is more restrictive. It tests zero-residual adjacent-degree passing/neighbor triples, using supplied successor edges or reciprocal nearest-pitch links between adjacent attack groups. Automatic links do not use track identity as voice truth. Endpoints require direct harmonic bindings; the scene admits selected chord-core attacks even when their harmonic contexts differ. Endpoint copies with identical timing, native curves and binding expressions share a value anchor while retaining every event. Equal pitches with different harmonic addresses are distinct hypotheses; unresolved geometric ties and equally valid domains abstain. Nonconstant pitch curves are preserved but not rewritten by this kernel. Exact source reconstruction is checked through the compiler, with explicit work/storage budgets.
+
+Whole-score scene encoding derives a declared-period vocabulary from observed attacks, without filling absent degrees or identifying a tonic. Its selected dependency components group anchors and descendants into executable materials; spatial BSP boxes are separate proposals/fallbacks, not musical parents. Remaining support/complement ownership uses recurrence evidence rather than unconditional support-first priority. This is still a bounded encoding policy, not joint optimal parsing.
+
+The [source-only scene control](../../tests/score-relations.test.ts) infers E–F–G over C and B–C–D over G without supplied domains, anchors or chord labels. An independent A is observed elsewhere. Editing the first palette to F yields **A–B–C**, whereas disabling relation inference yields **A–B♭–C**. Exact serialized reconstruction, unchanged rhythm/gain and unrelated later events are tested. This validates that specified counterfactual, not a universal reharmonization rule; unseen off-vocabulary anchors fail explicitly. Separate compiler controls cover shared/local lattice changes and native curves; a tiny exhaustive degree oracle and ambiguity/track-repartition controls challenge the inverse kernel.
+
+Executable program, identity and velocity-residual JSON costs are reported separately. Binding and lattice byte counts are included within program bytes, not additional totals. A small relation can cost more serialized bytes than literal copying; current selection is based on unique admissibility, not a proven minimum-description-length objective. The relation vertical proves a compositional capability independently of the harmonic-label comparisons above.
+
+## What the primary research supports
+
+| Evidence | Useful mechanism | Limit and decision |
+| --- | --- | --- |
+| [Semi-CRF harmony, Masada & Bunescu](https://arxiv.org/abs/1810.10002) | Joint learned segment/transition potentials with metrical, bass and figuration evidence. | Reports event accuracy / exact labelled-segment F1 of 83.2/77.5% on BaCh and 78.0/64.0% on TAVERN. These are not duration-weighted Roman-numeral accuracy. Borrow competing structured explanations, not another hand-tuned discount. |
+| [ChordGNN](https://arxiv.org/abs/2307.03544), [Cluster and Separate](https://arxiv.org/abs/2407.21030) | Note graphs preserve onset, overlap, succession and silence; learned voice-successor and simultaneous-membership links avoid fixed voice labels. | Useful proposal representations. The voice paper's simultaneous “chord” groups are engraving groups, not harmonic functions. Its quantized piano setting and omitted grace notes are not our exact observation contract. |
+| [RNBert paper](https://drive.google.com/file/d/1Gqyk2QoOrzJXOPd_LBgchAsnBDJxG6cz/view), [AnalysisGNN](https://arxiv.org/abs/2509.06654) | Contextual prediction of related harmonic labels; AnalysisGNN shares an encoder across harmony, chord membership, cadence, phrase and section tasks. | A separately AugmentedNet-v1-trained RNBert reports 57.4% versus 46.4% for AugmentedNet and 51.8% for ChordGNN+Post: 32nd-grid time agreement on key/degree/quality/inversion/root, stricter than our chord-core metric. This does not certify the default released checkpoints. AnalysisGNN's 0.742 phrase result is note-level macro F1, not boundary F1 or an executable phrase graph. |
+| [Proto-voices](https://archives.ismir.net/ismir2021/paper/000023.pdf), [author code](https://github.com/DCMLab/protovoices-haskell) | Invert generative elaboration: latent sonorities can spread into arpeggios; passing motion can depend on two anchors. | Musical dependency is a graph/hypergraph, not universal binary nesting. The paper gives 119,940 derivations for the first half-measure including upbeat of a Bach example. Use a small grammar and bounded proposals; do not transplant exhaustive parsing. |
+| [Decomposer, July 2026](https://arxiv.org/abs/2607.01849) | Learns MIDI-to-program proposals through synthetic paired data and execution feedback, explicitly addressing note-by-note copying. | Its 8B model's short-LMD single-generation mean onset F1 is .60; longer-LMD best-of-five onset F1 is .35. Readability is not independent structural correctness. Its [serializer](https://github.com/elianakim/Decomposer/blob/a6025ce19c1165bc4e8d795f8a16b812c79296bc/decomposer/midi_to_text.py) omits durations/velocities/controllers and rounds onsets, so it cannot replace our exact codec. Borrow the training idea, not the representation or runtime. |
+| [Structural temporal graphs, IJCAI 2025](https://www.ijcai.org/proceedings/2025/1128.pdf) | Combines overlapping levels into a graph and rectangle visualization. | Assembles separate existing extractors, omits rhythm, and evaluates structural distance/corpus centroids. It neither jointly infers all levels nor supplies an exact musical decoder. Useful display precedent, not a solution to our inference gap. |
+| [Program induction and rate–distortion](https://arxiv.org/abs/2405.05294), [neural jazz PCFG](https://transactions.ismir.net/articles/10.5334/tismir.217) | Learn reusable programs or probabilistic harmonic parses with less direct structural supervision. | The former simplifies monophonic material; the latter receives chord symbols. Neither establishes raw polyphonic note-to-program recovery. Compression and latent category names require independent musical evaluation. |
+
+**Available role labels need scrutiny.** [Uehara & Tojo](https://www.apsipa.org/proceedings/2025/papers/APSIPA2025_P319.pdf) derive chord/non-chord labels automatically from harmony annotations. Reported non-chord F1 drops from 87.04% on chorales to 66.13% on WTC under the full vocabulary. This is not independently annotated passing/suspension function. [Finkensiep et al.](https://doi.org/10.1177/20592043241291661) use distinct chord/figuration distributions but known or heuristic roles and no temporal order/duration. Neither validates subtracting a chord's pitch classes to manufacture “ground truth” roles.
+
+**No inspected pretrained checkpoint is verified clean on our Mozart works.** RNBert's [training manifest](https://github.com/malcolmsailor/rnbert/blob/main/data_splits/train_paths.txt) explicitly includes K330-I and K331-I. Newer AugmentedNet/ChordGNN datasets also include Mozart sonatas; renamed conversions are not independent data. [When in Rome](https://github.com/MarkGotham/When-in-Rome) and [Dilemmadata](https://github.com/johentsch/dilemmadata) expose overlapping corpus lineages. Group whole works, movements/variation families, editions and augmentations before splitting.
+
+The practical model choices are:
+
+- **Diagnostic comparator:** [RNBert's maintained MIDI inference pipeline](https://github.com/malcolmsailor/musicbert_hf), with predicted keys and pinned key/onset/RN checkpoint hashes. MIT code; the [weights repository](https://huggingface.co/msailor/rnbert_weights) declares MIT. Label any K330/K331 result as supervised-training-overlap diagnostic, never independent accuracy. Its quantization, note splitting and deduplication must stay in a model-input projection.
+- **Clean learned comparator:** a fresh compact [AugmentedNet](https://github.com/napulen/AugmentedNet) experiment, approximately 90k parameters, after work-lineage exclusion and input-parity checks. It uses spelled features; report that advantage explicitly. The published code is MIT; a release name alone does not certify checkpoint lineage or separate weight terms.
+- **Joint-model design reference:** [AnalysisGNN](https://github.com/manoskary/analysisgnn), MIT code, but repository/inference remains under construction and separate weight licensing is unverified. Pin an explicit checkpoint path/hash; its cache downloader can select an unrelated checkpoint. Do not make it a production dependency.
+- **Decomposer:** Apache-2.0 inference code/model; no complete public training/evaluation runtime was found in the inspected release. An 8B deployment is not the first experiment. Synthetic program supervision can be produced by our own compiler.
+
+## Architecture for the next inference step
+
+Keep the path **structural derivation → existing CompositionPlan → exact Score**. The following are responsibilities, not a request for a generic graph framework:
+
+- **Observations:** immutable native pitch, rational timing, expression, routing and optional observed notation. Missing voice, spelling or meter remains missing. A quantized model view never overwrites source events.
+- **Hypotheses:** revisioned relations for voice succession, simultaneous support, functional context, realized sonority, elaboration and repeated material. They can overlap, disagree and have multiple parents. Inferred edges are not immutable facts.
+- **Executable structure:** existing shared materials, placements, independent rhythm/pitch bindings and exact anchor paths. Functional root/key remains separate from realized pitches and voicing. Current paths reference material events; future silent anchors must carry stored values rather than retrieve source evidence.
+- **Inference:** extend the bounded unlearned kernel to competing operators, domains, links and contexts; validate and execute through Rust. Learned proposals must use the same contract and pass independent inverse/edit checks.
+- **Spatial organization:** BSP/bounds support indexing, candidate retrieval and UI overlays. Neither box containment, source MIDI track nor an ownership-priority rule establishes musical parenthood.
+
+A candidate objective is:
+
+```text
+minimize  library cost + program/parameter cost + exact residual cost
+          + contextual cost not already included in those code lengths
+subject to compile(program, residuals) = observed Score
+```
+
+This is a proposed coding/scoring contract. Define every cost and normalization before comparing models; a learned prior can contribute negative-log probability in consistent units, counted once. Arbitrary operator counts or a one-sided ornament discount are insufficient. Costs and beam margins are not calibrated probabilities. Compiler validity proves reconstruction and admissibility, not that the interpretation is musically right.
+
+Count every pitch binding and expressive residual. Report executable payload separately from inspection/provenance payload, while retaining total scene size. Keep a literal baseline: it is necessary for preservation and is the competing explanation that meaningful structure must beat. Canonicalize equivalent derivation orders; do not reward syntactic duplication.
+
+Classical function is an optional explanatory vocabulary. Reuse, rhythm, voice dependencies, sonority and exact native pitch must also handle Nintendo, jazz and progressive material without forcing a Roman-numeral reading.
+
+## Decisive experiments, in order
+
+1. **Challenge the relation beyond admitted triples.** Retain the working source-only counterfactual gate. Add independent changed-anchor controls for crossing voices, temporal gaps, conflicting domains and delayed resolution before extending automatic admission. Distinguish unknown vocabulary from invalid edits; never snap missing anchors or manufacture scale degrees. Require exact roundtrip, correct descendants, unchanged rhythm/unrelated voices and complete cost against literal, transpose and palette baselines.
+2. **Separate representation, proposal and ranking failures.** Extend the tiny exhaustive degree oracle to competing explanations on 8–12-note controls; compare bounded search against it. Measure candidate recall, selection conditional on the correct candidate, final selection, budget exhaustion and runtime separately. Include identical pitch bags with different voice-leading; tonic versus cadential six-four; true color versus passing tones; crossings, pedals, unisons, missing meter and native pitch. Equivalent track repartitioning must not change relations unless source voices are explicitly supplied as evidence.
+3. **Compare contextual scorers in parallel.** Run the declared training-overlap diagnostic on development material only. Build a clean compact supervised baseline only after its work lineage and input projection are auditable. Compare independent labels, learned segmental inference and joint relational proposals under the same output convention and budget. Keep predicted-key and oracle-key results separate.
+4. **Make ownership and reuse musical.** Compare competing executable explanations beyond unique-relation closure and recurrence-ranked fallback. On the Dire opening and controlled variations, recover shared rhythm and melody-to-harmony relationships without supplied period/register splits. Evaluate total melody bindings and exceptions, not just rhythm-dictionary reuse. This branch need not wait for 100% Mozart agreement.
+5. **Test transfer and usability.** Freeze model/representation choices before touching designated holdouts. Evaluate phrase/pattern relationships with independent annotations, then useful local/shared edits and listening. A model agreeing with itself after reanalysis is a consistency check, not independent quality evidence.
+
+Learned proposals are justified only when these experiments isolate a search/ranking gap that the exact algebra can express. A successful narrow counterfactual is a foothold, not evidence that more complex music has already been decomposed correctly.
+
+## Benchmark and annotation contract
+
+[DCML guidelines](https://dcmlab.github.io/standards/build/html/reference/reference.html) specify an analytical reading: passing/neighbor details may be omitted, missing tones implied, and alternatives retained. The [Mozart corpus](https://doi.org/10.5334/tismir.63) underwent consensus review. Recovering those conventions is a valid target; it is not proof of the composer's private intentions.
+
+Publish nested input conditions: pitch/time; add meter; add observed voice routing; add spelling. Treat raw performed MIDI and its alignment as a separate condition. Report realized chromatic content, spelled realization, functional root/key, boundaries, voice links, anchored roles and reusable structure separately. Keep selected accuracy, coverage, alternative-set size and reference-dependent oracle containment distinct. The requested 100% development agreement remains unmet.
+
+The [Batik corpus](https://github.com/huispaty/batik_plays_mozart) provides complete aligned movements. K330-I/K331-I are development; K457-I remains unopened. Exact pins, paths, hashes and CC BY-NC-SA 4.0 provenance live in [the registry](corpus-candidates.json). Do not equate public-domain compositions with unrestricted score/performance files.
+
+Keep performance ticks, unfolded score divisions and original measure positions separate. Both inspected scores use 48 divisions/quarter. K331's MusicXML measure 98 has inconsistent backup motion; five reference intervals covering 4.25 quarters remain unsupported, with no silent repair. Derived scores preserve 3,160 / 6,151 notes over 416 / 824 quarters, including grace events and final silence; uniform audition dynamics are not the recorded performance. [ms3 expanded tones](https://ms3.readthedocs.io/en/latest/manual/index.html#stacks-of-fifths-intervals) are fifth intervals from the local tonic. Replacements, added tones and pedals require distinct projections.
+
+For complementary evaluation, [TAVERN](https://github.com/jcdevaney/TAVERN) preserves two annotators and phrase functions (CC BY-SA 4.0); keep entire theme/variation families together. [MCMA](https://mcma.readthedocs.io/en/latest/docs/about.html) offers contrapuntal part structure, not ornament-function labels. [CASD](https://github.com/chordify/CASD) preserves four expert readings of 50 songs (CC BY-NC-SA 4.0), useful for disagreement methodology, not a numerical Mozart accuracy ceiling.
+
+Existing JKUPDD and MTC development/holdout splits remain in the registry. Phrase and theme work should retain [local discontinuity evidence](https://ofai.at/papers/oefai-tr-2001-11.pdf), [nonlocal repetition](https://brianmcfee.net/papers/ismir2014_spectral.pdf), [explicit pattern transformations](https://arxiv.org/abs/2201.11085) and [hierarchical evaluation](https://brianmcfee.net/papers/frontiers2017_evaluating.pdf), without treating any single cue as a phrase oracle. Keep annotators separate, tune families intact, and supplied-query retrieval distinct from discovery.

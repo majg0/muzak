@@ -1,0 +1,754 @@
+{
+  "schemaVersion": 1,
+  "preferences": [
+    "Native Construct",
+    "Allan Holdsworth",
+    "Periphery",
+    "Koji Kondo",
+    "Joe Hisaishi",
+    "Jordan Rudess",
+    "Henrik Linder",
+    "Hiromi"
+  ],
+  "scope": "Substantial symbolic inputs for the musical codec; fan arrangements are not authenticated original scores.",
+  "analysisCandidates": [
+    {
+      "id": "rudess-life-left-behind",
+      "artist": "Jordan Rudess / Dream Theater",
+      "work": "Act I: A Life Left Behind — intro",
+      "edition": "Jordan Rudess Online Conservatory Jordan’s Riffs, listed 0:00–1:23",
+      "sourceUrls": [
+        "https://www.jroc.us/jordan-s-riffs/",
+        "https://www.jroc.us/"
+      ],
+      "asset": {
+        "path": "research/corpus/jordan-rudess/life-left-behind-intro.mid",
+        "url": "https://www.jroc.us/uploads/riffs/riffs-lifeleftbehindintro.mid",
+        "bytes": 7025,
+        "sha256": "09f1533f4c65949ba2fff6f054df1db07c2eda3df01a13d730bbf66cedab64fc",
+        "retrievedDate": "2026-10-02"
+      },
+      "limits": "The homepage describes riffs as a membership feature although direct links were public. No claim of redistribution rights. MIDI is a supplied representation, not proof of album-performance timing or sound."
+    },
+    {
+      "id": "rudess-universal-mind",
+      "artist": "Jordan Rudess",
+      "work": "Universal Mind",
+      "edition": "JROC Universal Mind Solo 1, listed 2:04-2:32; recording correspondence to Spotify entry unverified",
+      "sourceUrls": [
+        "https://www.jroc.us/jordan-s-riffs/"
+      ],
+      "limits": "Recording identity and instrument/controller semantics unresolved. PPQ tempo-map duration differs from webpage excerpt interval. Pitch-wheel/controllers are counted, not interpreted as sounding pitch/timbre.",
+      "asset": {
+        "path": "research/corpus/jordan-rudess/universal-mind-solo-1.mid",
+        "url": "https://www.jroc.us/uploads/riffs/Riffs_UniversalMindSolo1.mid",
+        "bytes": 8989,
+        "sha256": "510a78b8b88736de7a38d4aaed1d8307e45226f7ebc197968899e42edb86cc10",
+        "retrievedDate": "2026-10-02"
+      }
+    },
+    {
+      "id": "smb-overworld",
+      "artist": "Koji Kondo",
+      "work": "Overworld",
+      "game": "Super Mario Bros.",
+      "edition": "Overworld",
+      "sequencer": "PJ Barnes",
+      "sourceAuthority": "Fan arrangement/transcription, not an official Nintendo score or game-data extraction.",
+      "sourceUrls": [
+        "https://www.vgmusic.com/file/b73385fb41dea37a2567fff5cf52a08c.html"
+      ],
+      "asset": {
+        "path": "research/corpus/nintendo/smb-overworld.mid",
+        "url": "https://www.vgmusic.com/music/console/nintendo/nes/Smbtheme.mid",
+        "bytes": 10498,
+        "sha256": "ac059157543099d4a04ee1655001a5596358d7dbbdef88c86ec12bc6325dc0bb",
+        "retrievedDate": "2026-10-02"
+      },
+      "coverage": {
+        "observed": "Multi-part theme sequence; 37 file-meter bars, with contrasting/repeated material.",
+        "sourceClaimsFullScore": false,
+        "recordingCompleteness": "Unverified; measured extent concerns this arrangement only."
+      }
+    },
+    {
+      "id": "smb-underwater",
+      "artist": "Koji Kondo",
+      "work": "Underwater",
+      "game": "Super Mario Bros.",
+      "edition": "Underwater",
+      "sequencer": "PJ Barnes",
+      "sourceAuthority": "Fan arrangement/transcription, not an official Nintendo score or game-data extraction.",
+      "sourceUrls": [
+        "https://www.vgmusic.com/file/3376b03847ee95ac4baba6ca60793c32.html"
+      ],
+      "asset": {
+        "path": "research/corpus/nintendo/smb-underwater.mid",
+        "url": "https://www.vgmusic.com/music/console/nintendo/nes/Smbwater.mid",
+        "bytes": 4575,
+        "sha256": "0fb623edd0fa6a6ceb74be4c0f8f5b5cdc9eb649e2cebead8a83be21f2d4e2ab",
+        "retrievedDate": "2026-10-02"
+      },
+      "coverage": {
+        "observed": "64 file-meter bars in 3/4; a substantial theme sequence with repeated material.",
+        "sourceClaimsFullScore": false,
+        "recordingCompleteness": "Unverified; measured extent concerns this arrangement only."
+      }
+    },
+    {
+      "id": "sm64-bob-omb-battlefield",
+      "artist": "Koji Kondo",
+      "work": "Bob-omb Battlefield / Main Theme",
+      "game": "Super Mario 64",
+      "edition": "Course 1 - Bob-Omb Battlefield - Super Mario 64 Main Theme (3)",
+      "sequencer": "Evan Pattison",
+      "sourceAuthority": "Fan arrangement/transcription, not an official Nintendo score or game-data extraction.",
+      "sourceUrls": [
+        "https://www.vgmusic.com/file/da97e4026ac9271ff9e4a462c4fd01bd.html"
+      ],
+      "asset": {
+        "path": "research/corpus/nintendo/sm64-bob-omb-battlefield.mid",
+        "url": "https://www.vgmusic.com/music/console/nintendo/n64/course1.mid",
+        "bytes": 14948,
+        "sha256": "a82e663acc33f2af1b79ce6f1e9bf6382fc43c5e165435e8f34e38e511fa0c86",
+        "retrievedDate": "2026-10-02"
+      },
+      "coverage": {
+        "observed": "44 file-meter bars, five note-bearing tracks.",
+        "sourceClaimsFullScore": false,
+        "recordingCompleteness": "Unverified; measured extent concerns this arrangement only."
+      }
+    },
+    {
+      "id": "sm64-dire-dire-docks",
+      "artist": "Koji Kondo",
+      "work": "Dire, Dire Docks / Water",
+      "game": "Super Mario 64",
+      "edition": "Course 3 - Water (9)",
+      "sequencer": "Paper_Luigi",
+      "sourceAuthority": "Fan arrangement/transcription, not an official Nintendo score or game-data extraction.",
+      "sourceUrls": [
+        "https://www.vgmusic.com/file/dc616ff10c4c47bc3541dc3fdcee098e.html"
+      ],
+      "asset": {
+        "path": "research/corpus/nintendo/sm64-dire-dire-docks.mid",
+        "url": "https://www.vgmusic.com/music/console/nintendo/n64/SM64Water-3.mid",
+        "bytes": 35274,
+        "sha256": "c10f89632781f41884257c579d4b9fef083b94d0125ff2bab338be4991093e71",
+        "retrievedDate": "2026-10-02"
+      },
+      "coverage": {
+        "observed": "Four source markers: Dry land, Underwater, Ocean Cave, Ending; eight note-bearing tracks across 635.5 quarters.",
+        "sourceClaimsFullScore": false,
+        "recordingCompleteness": "Unverified; measured extent concerns this arrangement only."
+      }
+    },
+    {
+      "id": "zelda-overworld",
+      "artist": "Koji Kondo",
+      "work": "Overworld",
+      "game": "The Legend of Zelda",
+      "edition": "Overworld",
+      "sequencer": "Jeffrey M Colletti",
+      "sourceAuthority": "Fan arrangement/transcription, not an official Nintendo score or game-data extraction.",
+      "sourceUrls": [
+        "https://www.vgmusic.com/file/025afd4ada334a01a042cf6eae931024.html"
+      ],
+      "asset": {
+        "path": "research/corpus/nintendo/zelda-overworld.mid",
+        "url": "https://www.vgmusic.com/music/console/nintendo/nes/z1overw.mid",
+        "bytes": 5526,
+        "sha256": "b5de859e03b715e86e63dcb0ccf71521c95c4928adc2839b4e8d24fa9f47da34",
+        "retrievedDate": "2026-10-02"
+      },
+      "coverage": {
+        "observed": "24 file-meter bars and four note-bearing tracks; short but developed loop candidate.",
+        "sourceClaimsFullScore": false,
+        "recordingCompleteness": "Unverified; measured extent concerns this arrangement only."
+      }
+    },
+    {
+      "id": "oot-gerudo-valley",
+      "artist": "Koji Kondo",
+      "work": "Gerudo Valley",
+      "game": "The Legend of Zelda: Ocarina of Time",
+      "edition": "Gerudo Valley (2)",
+      "sequencer": "SinclairC",
+      "sourceAuthority": "Fan arrangement/transcription, not an official Nintendo score or game-data extraction.",
+      "sourceUrls": [
+        "https://www.vgmusic.com/file/c45575fb8c9b5dddb1d6bf3cd3f0ff23.html"
+      ],
+      "asset": {
+        "path": "research/corpus/nintendo/oot-gerudo-valley.mid",
+        "url": "https://www.vgmusic.com/music/console/nintendo/n64/z64gerudo.mid",
+        "bytes": 63455,
+        "sha256": "9ca8c1470b91a1e6eb207c71397ad5704529c1402e1419820fb4a7a22ed0c612",
+        "retrievedDate": "2026-10-02"
+      },
+      "coverage": {
+        "observed": "924 quarter units, five note-bearing tracks; accompaniment enters before trumpet; extended sequence includes repetition.",
+        "sourceClaimsFullScore": false,
+        "recordingCompleteness": "Unverified; measured extent concerns this arrangement only."
+      }
+    },
+    {
+      "id": "oot-lost-woods",
+      "artist": "Koji Kondo",
+      "work": "Lost Woods / Saria's Song",
+      "game": "The Legend of Zelda: Ocarina of Time",
+      "edition": "Lost Woods",
+      "sequencer": "John Kuzma",
+      "sourceAuthority": "Fan arrangement/transcription, not an official Nintendo score or game-data extraction.",
+      "sourceUrls": [
+        "https://www.vgmusic.com/file/3db33d1e17d4d92b46a2ac4b84a49fdf.html"
+      ],
+      "asset": {
+        "path": "research/corpus/nintendo/oot-lost-woods.mid",
+        "url": "https://www.vgmusic.com/music/console/nintendo/n64/Z64lstwd.mid",
+        "bytes": 10777,
+        "sha256": "f3405583a9659839b6ca991b5902dffa928fdb06c96b3a3a4db16b766db3f808",
+        "retrievedDate": "2026-10-02"
+      },
+      "coverage": {
+        "observed": "37 file-meter bars and five note-bearing tracks, with an additional pitched part entering at quarter 36.",
+        "sourceClaimsFullScore": false,
+        "recordingCompleteness": "Unverified; measured extent concerns this arrangement only."
+      }
+    },
+    {
+      "id": "oot-windmill-hut",
+      "artist": "Koji Kondo",
+      "work": "Windmill Hut / Song of Storms",
+      "game": "The Legend of Zelda: Ocarina of Time",
+      "edition": "Windmill Hut",
+      "sequencer": "John Kuzma",
+      "sourceAuthority": "Fan arrangement/transcription, not an official Nintendo score or game-data extraction.",
+      "sourceUrls": [
+        "https://www.vgmusic.com/file/b4d49e959de1d0526faa7b5d125962f5.html"
+      ],
+      "asset": {
+        "path": "research/corpus/nintendo/oot-windmill-hut.mid",
+        "url": "https://www.vgmusic.com/music/console/nintendo/n64/z64inwml.mid",
+        "bytes": 35866,
+        "sha256": "01a9fe00dab571650eba97a909903e5b97d4d440f0d7aa45b280d4ef6668c7bc",
+        "retrievedDate": "2026-10-02"
+      },
+      "coverage": {
+        "observed": "48 file-meter bars in encoded 6/4; five note-bearing tracks, staged melodic entries.",
+        "sourceClaimsFullScore": false,
+        "recordingCompleteness": "Unverified; measured extent concerns this arrangement only."
+      }
+    },
+    {
+      "id": "batik-kv330_1",
+      "artist": "Wolfgang Amadeus Mozart",
+      "work": "Piano Sonata no. 10 in C major — I. Allegro moderato (score timing)",
+      "edition": "Batik-plays-Mozart performed-repeat score, linked by its authors to the New Mozart Edition / Annotated Mozart Sonatas. Original encoding source and individual corrections remain in the pinned files.",
+      "sourceAuthority": "Local exact score-event MIDI derived from author-provided note arrays; paired expressive Roland Batik performance and independent scholarly harmony remain separate artifacts.",
+      "sourceUrls": [
+        "https://github.com/huispaty/batik_plays_mozart",
+        "https://archives.ismir.net/ismir2023/paper/000034.pdf"
+      ],
+      "asset": {
+        "path": "research/corpus/classical/batik-mozart-9c5f700/derived/kv330_1.score.mid",
+        "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/score_parts_annotated/kv330_1_spart_harmony.csv",
+        "bytes": 25482,
+        "sha256": "2e0935f237fbafb72eadbe145a9d1ebf2b1129b21e79218fbd0ca4b6c3db64a4",
+        "retrievedDate": "2026-10-02",
+        "derivation": "scripts/evaluate-harmony.ts: exact onset_div/duration_div/pitch/voice and Notated voice track-name metadata; valid MusicXML meter and ending silence; uniform velocity80/release64,120-quarter/minute audition tempo. No harmony/key labels enter notes or inference; voice identifiers are source notation, not inferred roles."
+      },
+      "evaluationSource": "batik-mozart-harmony-9c5f700",
+      "limits": "CC BY-NC-SA4.0. Uniform audition dynamics and nominal zero-duration grace notes are not performance fidelity. Performed MIDI retained separately with explicit match alignment; its ticks must not be compared directly to harmonic score beats. K331 has five unsupported reference intervals in malformed edited XML measure98.",
+      "performanceAsset": {
+        "path": "research/corpus/classical/batik-mozart-9c5f700/midi/kv330_1.mid",
+        "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/midi/kv330_1.mid",
+        "bytes": 65736,
+        "sha256": "33a54aba571e90dd5ab0e2b7a75fdb67508766f27d07c9c606789d94e0a22814",
+        "retrievedDate": "2026-10-02"
+      },
+      "coverage": {
+        "observed": "Complete performed-repeat movement, 3160 score-note events across 416 quarters; exact exported/imported note geometry checked.",
+        "sourceClaimsFullScore": true,
+        "recordingCompleteness": "Derived score MIDI, not a recording. Raw expressive performance retained as paired artifact."
+      }
+    },
+    {
+      "id": "batik-kv331_1",
+      "artist": "Wolfgang Amadeus Mozart",
+      "work": "Piano Sonata no. 11 in A major — I. Andante grazioso (score timing)",
+      "edition": "Batik-plays-Mozart performed-repeat score, linked by its authors to the New Mozart Edition / Annotated Mozart Sonatas. Original encoding source and individual corrections remain in the pinned files.",
+      "sourceAuthority": "Local exact score-event MIDI derived from author-provided note arrays; paired expressive Roland Batik performance and independent scholarly harmony remain separate artifacts.",
+      "sourceUrls": [
+        "https://github.com/huispaty/batik_plays_mozart",
+        "https://archives.ismir.net/ismir2023/paper/000034.pdf"
+      ],
+      "asset": {
+        "path": "research/corpus/classical/batik-mozart-9c5f700/derived/kv331_1.score.mid",
+        "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/score_parts_annotated/kv331_1_spart_harmony.csv",
+        "bytes": 49463,
+        "sha256": "32dc13119c26a6c528a15b17fa8f4400a3c598e4077443a77add8e9ae8be88e1",
+        "retrievedDate": "2026-10-02",
+        "derivation": "scripts/evaluate-harmony.ts: exact onset_div/duration_div/pitch/voice and Notated voice track-name metadata; valid MusicXML meter and ending silence; uniform velocity80/release64,120-quarter/minute audition tempo. No harmony/key labels enter notes or inference; voice identifiers are source notation, not inferred roles."
+      },
+      "evaluationSource": "batik-mozart-harmony-9c5f700",
+      "limits": "CC BY-NC-SA4.0. Uniform audition dynamics and nominal zero-duration grace notes are not performance fidelity. Performed MIDI retained separately with explicit match alignment; its ticks must not be compared directly to harmonic score beats. K331 has five unsupported reference intervals in malformed edited XML measure98.",
+      "performanceAsset": {
+        "path": "research/corpus/classical/batik-mozart-9c5f700/midi/kv331_1.mid",
+        "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/midi/kv331_1.mid",
+        "bytes": 135954,
+        "sha256": "1efcef55407a19a4295170053b9e84c3bff07bbf170dff052911b73cf24c0c77",
+        "retrievedDate": "2026-10-02"
+      },
+      "coverage": {
+        "observed": "Complete performed-repeat movement, 6151 score-note events across 824 quarters; exact exported/imported note geometry checked.",
+        "sourceClaimsFullScore": true,
+        "recordingCompleteness": "Derived score MIDI, not a recording. Raw expressive performance retained as paired artifact."
+      }
+    }
+  ],
+  "evaluationSources": [
+    {
+      "id": "jkupdd-aug2013",
+      "root": "research/corpus/benchmarks/jkupdd-aug2013",
+      "sourceUrl": "https://tomcollinsresearch.net/research/data/mirex/JKUPDD-Aug2013.zip",
+      "archiveSha256": "6492b5745fae117589d0b1b945cf0dcb0c4aee7f7a26f41808727585a2fed7f5",
+      "retrievedDate": "2026-10-02",
+      "retainedFiles": {
+        "count": 305,
+        "sha256": "e26c8ab358f33511284c2b3238daf1295ef76a0ad6aebf2f661852331d6433e6",
+        "encoding": "SHA256 of concatenated sorted relative POSIX path + ':' + lowercase file SHA256 + newline, UTF-8."
+      },
+      "readme": {
+        "path": "research/corpus/benchmarks/jkupdd-aug2013/readme.txt",
+        "sha256": "544a3253839a5569a677ab5792e7af04f259988e4d57a2961ba067dc9b7f3c2f"
+      },
+      "splitRule": "Before semantic inspection, sort five published work IDs by SHA256('continuum-codec-v1:'+workID); first three development, last two holdout. All arrangements/occurrences of a work stay together. Holdout bytes hashed only; no notes or annotation contents inspected.",
+      "license": "No explicit redistribution license found in source readme/archive; retained locally in ignored research storage, not distributed.",
+      "scope": "Independently annotated polyphonic patterns from five classical works. Canonical CSV checked against rational Lisp; MIDI excluded per author warning. Query retrieval and autonomous discovery are separate experiments; these annotations do not establish preferred-style or expressive-performance accuracy.",
+      "annotationDirectories": [
+        "barlowAndMorgensternRevised",
+        "bruhn",
+        "schoenberg",
+        "sectionalRepetitions",
+        "tomCollins"
+      ],
+      "works": [
+        {
+          "id": "bachBWV889Fg",
+          "split": "holdout",
+          "asset": {
+            "path": "research/corpus/benchmarks/jkupdd-aug2013/groundTruth/bachBWV889Fg/polyphonic/csv/wtc2f20.csv",
+            "sha256": "a88db14460f5711d77ef4643c7a63d2f666f8b769b25fe9fca2749d7c1ccec50"
+          },
+          "exactSourcePath": "research/corpus/benchmarks/jkupdd-aug2013/groundTruth/bachBWV889Fg/polyphonic/lisp/wtc2f20.txt",
+          "annotationPath": "research/corpus/benchmarks/jkupdd-aug2013/groundTruth/bachBWV889Fg/polyphonic/repeatedPatterns"
+        },
+        {
+          "id": "beethovenOp2No1Mvt3",
+          "split": "development",
+          "asset": {
+            "path": "research/corpus/benchmarks/jkupdd-aug2013/groundTruth/beethovenOp2No1Mvt3/polyphonic/csv/sonata01-3.csv",
+            "sha256": "dac0fe4f40617e726a213dbdce0b5075013e65b4815a1273705c45aad0fa6763"
+          },
+          "exactSourcePath": "research/corpus/benchmarks/jkupdd-aug2013/groundTruth/beethovenOp2No1Mvt3/polyphonic/lisp/sonata01-3.txt",
+          "annotationPath": "research/corpus/benchmarks/jkupdd-aug2013/groundTruth/beethovenOp2No1Mvt3/polyphonic/repeatedPatterns"
+        },
+        {
+          "id": "chopinOp24No4",
+          "split": "holdout",
+          "asset": {
+            "path": "research/corpus/benchmarks/jkupdd-aug2013/groundTruth/chopinOp24No4/polyphonic/csv/mazurka24-4.csv",
+            "sha256": "1e5adc5286545a61a2f035f78869c8ccd2b676fc6c1b02d6ade3744423259f27"
+          },
+          "exactSourcePath": "research/corpus/benchmarks/jkupdd-aug2013/groundTruth/chopinOp24No4/polyphonic/lisp/mazurka24-4.txt",
+          "annotationPath": "research/corpus/benchmarks/jkupdd-aug2013/groundTruth/chopinOp24No4/polyphonic/repeatedPatterns"
+        },
+        {
+          "id": "gibbonsSilverSwan1612",
+          "split": "development",
+          "asset": {
+            "path": "research/corpus/benchmarks/jkupdd-aug2013/groundTruth/gibbonsSilverSwan1612/polyphonic/csv/silverswan.csv",
+            "sha256": "840faa2d8be07ef55cd26bdb3a37e699feb97f4ce58faf9279b84eeb7fb15e0b"
+          },
+          "exactSourcePath": "research/corpus/benchmarks/jkupdd-aug2013/groundTruth/gibbonsSilverSwan1612/polyphonic/lisp/silverswan.txt",
+          "annotationPath": "research/corpus/benchmarks/jkupdd-aug2013/groundTruth/gibbonsSilverSwan1612/polyphonic/repeatedPatterns"
+        },
+        {
+          "id": "mozartK282Mvt2",
+          "split": "development",
+          "asset": {
+            "path": "research/corpus/benchmarks/jkupdd-aug2013/groundTruth/mozartK282Mvt2/polyphonic/csv/sonata04-2.csv",
+            "sha256": "9691752a19514905c4abcd33894c1fb49d39f00eada894a0425a77bced0ba3b2"
+          },
+          "exactSourcePath": "research/corpus/benchmarks/jkupdd-aug2013/groundTruth/mozartK282Mvt2/polyphonic/lisp/sonata04-2.txt",
+          "annotationPath": "research/corpus/benchmarks/jkupdd-aug2013/groundTruth/mozartK282Mvt2/polyphonic/repeatedPatterns"
+        }
+      ]
+    },
+    {
+      "id": "mtc-ann-features-1.1",
+      "kind": "annotated-melody-sequences",
+      "root": "research/corpus/benchmarks/mtc-ann-features-1.1",
+      "sourceUrl": "https://zenodo.org/records/3551003",
+      "retrievedDate": "2026-10-02",
+      "license": "CC BY-NC-SA 3.0; local research data, not bundled with the app",
+      "documentationUrl": "https://pvankranenburg.github.io/MTCFeatures/melodyrepresentation.html",
+      "asset": {
+        "path": "research/corpus/benchmarks/mtc-ann-features-1.1/MTC-ANN-2.0.1_sequences-1.1.jsonl.gz",
+        "sha256": "6316ab402994ba597d5dfff265cd32ba5d7f576cc21892facda0ccffcd0c063f",
+        "sourceUrl": "https://zenodo.org/records/3551003/files/MTC-ANN-2.0.1_sequences-1.1.jsonl.gz?download=1"
+      },
+      "readme": {
+        "path": "research/corpus/benchmarks/mtc-ann-features-1.1/LICENCE_Data",
+        "sha256": "472f937a32cdd607f52f3e5a6d694e7590a0ce0566d6fa0a0501d3c749ef3cab"
+      },
+      "retainedFiles": {
+        "count": 2,
+        "sha256": "0514a55fe0260e265a2aaf45aacbcc95c759f8a81d27fe8c52072bb90b5d8a9a",
+        "rule": "SHA256 of sorted POSIX relative path + colon + file SHA256 + newline, UTF-8"
+      },
+      "split": {
+        "unit": "tune-family",
+        "rule": "Before inspecting features or phrase labels, sort families by SHA256(continuum-boundary-v1: + family ID); first 20 development, remaining 6 holdout. Only metadata prefixes were parsed to freeze this split.",
+        "development": [
+          "Er_was_een_meisje_van_zestien_jaren_1",
+          "En_er_waren_eens_twee_zoeteliefjes",
+          "Een_lindeboom_stond_in_het_dal_1",
+          "Het_was_op_een_driekoningenavond_1",
+          "Heer_Halewijn_4",
+          "Daar_zou_er_een_maagdje_vroeg_opstaan_2",
+          "Lieve_schipper_vaar_me_over_1",
+          "Er_was_een_koopman_rijk_en_machtig",
+          "Er_reed_er_eens_een_ruiter_1",
+          "O_God_ik_leef_in_nood",
+          "Ik_kwam_laatst_eens_in_de_stad",
+          "Daar_was_laatstmaal_een_ruiter_2",
+          "Kom_laat_ons_nu_zo_stil_niet_zijn_1",
+          "Een_Soudaan_had_een_dochtertje_1",
+          "Het_vrouwtje_van_Stavoren_1",
+          "Femmes_voulez_vous_eprouver",
+          "Vaarwel_bruidje_schoon",
+          "Er_was_een_herderinnetje_1",
+          "Het_was_laatst_op_een_zomerdag",
+          "Zolang_de_boom_zal_bloeien_1"
+        ],
+        "holdout": [
+          "Daar_ging_een_heer_1",
+          "Heer_Halewijn_2",
+          "Daar_reed_een_jonkheer_1",
+          "Soldaat_kwam_uit_de_oorlog",
+          "Wat_zag_ik_daar_van_verre_1",
+          "Er_woonde_een_vrouwtje_al_over_het_bos"
+        ]
+      },
+      "counts": {
+        "melodies": 360,
+        "development": 277,
+        "holdout": 83
+      },
+      "scope": "Derived monophonic feature sequences: grace notes/rest events excluded, ties merged. Use rational IOI/duration fields, not known-buggy onsettick. Phrase-end annotations are separate evaluation labels. Lyrics, phrase indices/positions, precomputed model strengths and tonal metadata are excluded from inference. Compare cues separately and disclose possible transcription/rest leakage. No audio alignment or transfer to progressive/jazz phrasing is established."
+    },
+    {
+      "id": "batik-mozart-harmony-9c5f700",
+      "kind": "aligned-score-performance-harmony",
+      "root": "research/corpus/classical/batik-mozart-9c5f700",
+      "sourceUrl": "https://github.com/huispaty/batik_plays_mozart",
+      "publicationUrls": [
+        "https://archives.ismir.net/ismir2023/paper/000034.pdf",
+        "https://doi.org/10.5334/tismir.63"
+      ],
+      "commit": "9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e",
+      "annotationCommit": "7cfeb73968144d07589c14102822abcc7b8e6bae",
+      "retrievedDate": "2026-10-02",
+      "license": "CC BY-NC-SA 4.0 for the acquired corpus and DCML annotations. Mozart compositions are public-domain repertoire; the performance, edition and annotations are not thereby public domain. Kept locally, not bundled with the app.",
+      "licenseAssets": [
+        {
+          "path": "research/corpus/classical/batik-mozart-9c5f700/LICENSE.md",
+          "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/LICENSE.md",
+          "bytes": 19089,
+          "sha256": "af662157a4f2e47b5fefde500141853e1f7d160ba0dda95546229b5e60a93f6d",
+          "retrievedDate": "2026-10-02"
+        },
+        {
+          "path": "research/corpus/classical/batik-mozart-9c5f700/annotations/LICENSE",
+          "url": "https://raw.githubusercontent.com/DCMLab/mozart_piano_sonatas/7cfeb73968144d07589c14102822abcc7b8e6bae/LICENSE",
+          "bytes": 20849,
+          "sha256": "1349a4b6148492b44f629e64eed676612e234fe9a839e4f3b277c1482c8849f1",
+          "retrievedDate": "2026-10-02"
+        }
+      ],
+      "documentationAssets": [
+        {
+          "path": "research/corpus/classical/batik-mozart-9c5f700/annotations/README.md",
+          "url": "https://raw.githubusercontent.com/DCMLab/mozart_piano_sonatas/7cfeb73968144d07589c14102822abcc7b8e6bae/README.md",
+          "bytes": 17684,
+          "sha256": "9984f66acb4d7d29f0cdd7e23613fb27f00d5f27f93e42b9d9b509ce6e68aa8a",
+          "retrievedDate": "2026-10-02"
+        },
+        {
+          "path": "research/corpus/classical/batik-mozart-9c5f700/annotations/metadata.tsv",
+          "url": "https://raw.githubusercontent.com/DCMLab/mozart_piano_sonatas/7cfeb73968144d07589c14102822abcc7b8e6bae/metadata.tsv",
+          "bytes": 37675,
+          "sha256": "c6ff80407dd00ae9b58905316ea6c282d1da742bcf60d78b4a0d3d38daf20078",
+          "retrievedDate": "2026-10-02"
+        }
+      ],
+      "split": {
+        "unit": "sonata",
+        "rule": "Frozen before reading note or label contents: K330-1 and K331-1 development; distinct sonata K457-1 holdout. Deliberately chosen contrasting development movements, not a random statistical sample. Holdout downloaded and hashed only.",
+        "development": [
+          "kv330_1",
+          "kv331_1"
+        ],
+        "holdout": [
+          "kv457_1"
+        ]
+      },
+      "scope": "Actual Roland Batik performance MIDI, performed-repeat score MusicXML, note-level match files and score-note arrays linked by the authors to independent DCML analyses. Inference receives only score observations. Harmony labels are evaluation data, not composer intent or exhaustive per-note color-tone roles. Performance ticks must use the supplied note alignment; they are not score beats.",
+      "works": [
+        {
+          "id": "kv330_1",
+          "split": "development",
+          "composer": "Wolfgang Amadeus Mozart",
+          "work": "Piano Sonata no. 10 in C major — I. Allegro moderato",
+          "edition": "Batik-plays-Mozart performed-repeat score, linked by its authors to the New Mozart Edition / Annotated Mozart Sonatas. Original encoding source and individual corrections remain in the pinned files.",
+          "performanceMidi": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/midi/kv330_1.mid",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/midi/kv330_1.mid",
+            "bytes": 65736,
+            "sha256": "33a54aba571e90dd5ab0e2b7a75fdb67508766f27d07c9c606789d94e0a22814",
+            "retrievedDate": "2026-10-02"
+          },
+          "performanceAlignment": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/match/kv330_1.match",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/match/kv330_1.match",
+            "bytes": 586476,
+            "sha256": "f35260b67a27b32594219ca68e87e5af7dda50e86c9e17ec742c2ff6e53efb46",
+            "retrievedDate": "2026-10-02"
+          },
+          "scoreMusicXml": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/scores_edited/kv330_1.musicxml",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/scores_edited/kv330_1.musicxml",
+            "bytes": 1177896,
+            "sha256": "ea3ed3cea4e2584ac070ae94452a5bf006f036b3bbe825100e8b8cd647643630",
+            "retrievedDate": "2026-10-02"
+          },
+          "scoreNotes": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/score_parts_annotated/kv330_1_spart_harmony.csv",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/score_parts_annotated/kv330_1_spart_harmony.csv",
+            "bytes": 198528,
+            "sha256": "5f86eda3ff88dc0b458bbfc08c47fe1dfad19d6d7b62bdd157dd28186c8b45b8",
+            "retrievedDate": "2026-10-02"
+          },
+          "harmonicAnalysis": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/annotations/harmonies/K330-1.tsv",
+            "url": "https://raw.githubusercontent.com/DCMLab/mozart_piano_sonatas/7cfeb73968144d07589c14102822abcc7b8e6bae/harmonies/K330-1.tsv",
+            "bytes": 21809,
+            "sha256": "3ab9a1a23d7ef4639be480592895d80ea0f30607cf23d0ea73de3fc821aa579a",
+            "retrievedDate": "2026-10-02"
+          },
+          "measureAnalysis": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/annotations/measures/K330-1.tsv",
+            "url": "https://raw.githubusercontent.com/DCMLab/mozart_piano_sonatas/7cfeb73968144d07589c14102822abcc7b8e6bae/measures/K330-1.tsv",
+            "bytes": 5327,
+            "sha256": "c361fb825dbafe320227d47f2bb730d3d1fb1873fc6d1a1c6aa0034671be4f64",
+            "retrievedDate": "2026-10-02"
+          },
+          "inspectionStatus": "score-note-and-harmonic-label-tables-inspected; no audio listening",
+          "scorePpq": 48,
+          "analyst": "Uli Kneisel",
+          "reviewers": [
+            "Johannes Hentschel",
+            "Markus Neuwirth"
+          ],
+          "alignment": {
+            "coordinate": "Exact onset_div and duration_div at 48 ticks per quarter, verified against all MusicXML divisions. Printed quarter columns contain floating-point rounding; onset_beat follows metrical beat units and differs in compound meter.",
+            "labelJoin": "(mn,label,globalkey,localkey,chord) to pinned DCML expanded harmonies; match within-measure onset using original XML note ID and mn_onset in whole notes. Reject mismatches; repeated identical tone sets may match multiple original rows.",
+            "durationPolicy": "Sparse joined rows include phrase-only labels. Use successive chord-bearing rows for unfolded chord intervals, report inherited duration overlaps, do not blindly extend a folded duration through a repeat.",
+            "knownOnsetDiscrepancies": []
+          },
+          "derivedScoreMidi": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/derived/kv330_1.score.mid",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/score_parts_annotated/kv330_1_spart_harmony.csv",
+            "bytes": 25482,
+            "sha256": "2e0935f237fbafb72eadbe145a9d1ebf2b1129b21e79218fbd0ca4b6c3db64a4",
+            "retrievedDate": "2026-10-02",
+            "derivation": "scripts/evaluate-harmony.ts: exact onset_div/duration_div/pitch/voice and Notated voice track-name metadata; valid MusicXML meter and ending silence; uniform velocity80/release64,120-quarter/minute audition tempo. No harmony/key labels enter notes or inference; voice identifiers are source notation, not inferred roles."
+          },
+          "derivedScore": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/derived/kv330_1.score.json",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/score_parts_annotated/kv330_1_spart_harmony.csv",
+            "bytes": 692583,
+            "sha256": "eca13dbf05d140e51f2645cb020ab50053e4d98e1e5012ee32dd538c5fd813f3",
+            "retrievedDate": "2026-10-02"
+          },
+          "observed": {
+            "notes": 3160,
+            "zeroDurationGraceNotes": 60,
+            "quarters": 416,
+            "ppq": 48,
+            "independentChordRows": 392,
+            "unsupportedReferenceIntervals": 0
+          }
+        },
+        {
+          "id": "kv331_1",
+          "split": "development",
+          "composer": "Wolfgang Amadeus Mozart",
+          "work": "Piano Sonata no. 11 in A major — I. Andante grazioso",
+          "edition": "Batik-plays-Mozart performed-repeat score, linked by its authors to the New Mozart Edition / Annotated Mozart Sonatas. Original encoding source and individual corrections remain in the pinned files.",
+          "performanceMidi": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/midi/kv331_1.mid",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/midi/kv331_1.mid",
+            "bytes": 135954,
+            "sha256": "1efcef55407a19a4295170053b9e84c3bff07bbf170dff052911b73cf24c0c77",
+            "retrievedDate": "2026-10-02"
+          },
+          "performanceAlignment": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/match/kv331_1.match",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/match/kv331_1.match",
+            "bytes": 1219580,
+            "sha256": "dfe4c842c5c3262d7c28957a638c3f3414aa5045946a2c2f7ae0072ceb01ee96",
+            "retrievedDate": "2026-10-02"
+          },
+          "scoreMusicXml": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/scores_edited/kv331_1.musicxml",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/scores_edited/kv331_1.musicxml",
+            "bytes": 1535901,
+            "sha256": "595405aed70528ca5b240406fe9036a28042c72f5e554b4a20c728241a7685cb",
+            "retrievedDate": "2026-10-02"
+          },
+          "scoreNotes": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/score_parts_annotated/kv331_1_spart_harmony.csv",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/score_parts_annotated/kv331_1_spart_harmony.csv",
+            "bytes": 395709,
+            "sha256": "09c4b811021982309ca2ba15a232e7f9577333b27ca7d8316b261f4c7c8baa30",
+            "retrievedDate": "2026-10-02"
+          },
+          "harmonicAnalysis": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/annotations/harmonies/K331-1.tsv",
+            "url": "https://raw.githubusercontent.com/DCMLab/mozart_piano_sonatas/7cfeb73968144d07589c14102822abcc7b8e6bae/harmonies/K331-1.tsv",
+            "bytes": 29375,
+            "sha256": "cf6634aec66ab5f45d85bef60db7b4ac1b875ac3c403bc94ed22993e47d29f80",
+            "retrievedDate": "2026-10-02"
+          },
+          "measureAnalysis": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/annotations/measures/K331-1.tsv",
+            "url": "https://raw.githubusercontent.com/DCMLab/mozart_piano_sonatas/7cfeb73968144d07589c14102822abcc7b8e6bae/measures/K331-1.tsv",
+            "bytes": 5837,
+            "sha256": "66f4f8862cf19d9e6d7c89e8ef9f1bee0e317863ff1b5575011861085e6945bc",
+            "retrievedDate": "2026-10-02"
+          },
+          "inspectionStatus": "score-note-and-harmonic-label-tables-inspected; no audio listening",
+          "scorePpq": 48,
+          "analyst": "Uli Kneisel",
+          "reviewers": [
+            "Johannes Hentschel",
+            "Markus Neuwirth"
+          ],
+          "alignment": {
+            "coordinate": "Exact onset_div and duration_div at 48 ticks per quarter, verified against all MusicXML divisions. Printed quarter columns contain floating-point rounding; onset_beat follows metrical beat units and differs in compound meter.",
+            "labelJoin": "(mn,label,globalkey,localkey,chord) to pinned DCML expanded harmonies; match within-measure onset using original XML note ID and mn_onset in whole notes. Reject mismatches; repeated identical tone sets may match multiple original rows.",
+            "durationPolicy": "Sparse joined rows include phrase-only labels. Use successive chord-bearing rows for unfolded chord intervals, report inherited duration overlaps, do not blindly extend a folded duration through a repeat.",
+            "knownOnsetDiscrepancies": [
+              "Edited MusicXML measure98 has a negative cursor after ignoring commented-out notes: retained backup motion no longer matches its note stream. Five joined label intervals cannot be trusted against the original measure coordinate. Excluded conservatively until next verified chord anchor (204 ticks/4.25 quarters); CSV note events remain unchanged."
+            ]
+          },
+          "derivedScoreMidi": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/derived/kv331_1.score.mid",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/score_parts_annotated/kv331_1_spart_harmony.csv",
+            "bytes": 49463,
+            "sha256": "32dc13119c26a6c528a15b17fa8f4400a3c598e4077443a77add8e9ae8be88e1",
+            "retrievedDate": "2026-10-02",
+            "derivation": "scripts/evaluate-harmony.ts: exact onset_div/duration_div/pitch/voice and Notated voice track-name metadata; valid MusicXML meter and ending silence; uniform velocity80/release64,120-quarter/minute audition tempo. No harmony/key labels enter notes or inference; voice identifiers are source notation, not inferred roles."
+          },
+          "derivedScore": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/derived/kv331_1.score.json",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/score_parts_annotated/kv331_1_spart_harmony.csv",
+            "bytes": 1351219,
+            "sha256": "4c0615d227a8f61c435c12867941b8dc5212014792caeb9f7af77ee9168d33ae",
+            "retrievedDate": "2026-10-02"
+          },
+          "observed": {
+            "notes": 6151,
+            "zeroDurationGraceNotes": 120,
+            "quarters": 824,
+            "ppq": 48,
+            "independentChordRows": 720,
+            "unsupportedReferenceIntervals": 5
+          }
+        },
+        {
+          "id": "kv457_1",
+          "split": "holdout",
+          "composer": "Wolfgang Amadeus Mozart",
+          "work": "Piano Sonata no. 14 in C minor — I. Molto allegro",
+          "edition": "Batik-plays-Mozart performed-repeat score, linked by its authors to the New Mozart Edition / Annotated Mozart Sonatas. Original encoding source and individual corrections remain in the pinned files.",
+          "performanceMidi": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/midi/kv457_1.mid",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/midi/kv457_1.mid",
+            "bytes": 55324,
+            "sha256": "a45f7e80d96566f22aed2d88769ea1e729983b2321b18198a0070adb86755698",
+            "retrievedDate": "2026-10-02"
+          },
+          "performanceAlignment": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/match/kv457_1.match",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/match/kv457_1.match",
+            "bytes": 514124,
+            "sha256": "08b90d0e91e81ecb1ca75c63b161da570d2215b86734ea45f197d7765bd04b49",
+            "retrievedDate": "2026-10-02"
+          },
+          "scoreMusicXml": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/scores_edited/kv457_1.musicxml",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/scores_edited/kv457_1.musicxml",
+            "bytes": 1073279,
+            "sha256": "96989d2395cf6557b633a7a3b0291708ad44a2dfbdf14b9928b921244cc4ea53",
+            "retrievedDate": "2026-10-02"
+          },
+          "scoreNotes": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/score_parts_annotated/kv457_1_spart_harmony.csv",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/score_parts_annotated/kv457_1_spart_harmony.csv",
+            "bytes": 190554,
+            "sha256": "a540700fc935bff4b5d6678a96ec94a5a3a8b7c2ce7515552e9ab07ac2124269",
+            "retrievedDate": "2026-10-02"
+          },
+          "harmonicAnalysis": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/annotations/harmonies/K457-1.tsv",
+            "url": "https://raw.githubusercontent.com/DCMLab/mozart_piano_sonatas/7cfeb73968144d07589c14102822abcc7b8e6bae/harmonies/K457-1.tsv",
+            "bytes": 24182,
+            "sha256": "5201548950531d064d45631edbe8319e42160cf918ad861617d8ba89d1be68c2",
+            "retrievedDate": "2026-10-02"
+          },
+          "measureAnalysis": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/annotations/measures/K457-1.tsv",
+            "url": "https://raw.githubusercontent.com/DCMLab/mozart_piano_sonatas/7cfeb73968144d07589c14102822abcc7b8e6bae/measures/K457-1.tsv",
+            "bytes": 6473,
+            "sha256": "06993e85ce0ab660a3ba559cc2987c77b6fa4c6010e6078fef7f2e76bab3db3e",
+            "retrievedDate": "2026-10-02"
+          },
+          "inspectionStatus": "downloaded-and-hashed-only"
+        }
+      ],
+      "reproduction": {
+        "command": "npx tsx scripts/evaluate-harmony.ts",
+        "prepareOnly": "npx tsx scripts/evaluate-harmony.ts --prepare",
+        "method": "scripts/evaluate-harmony.ts",
+        "report": ".audit/score/harmony-benchmark.json",
+        "note": "Only development assets are parsed. Source observations exclude harmonic labels. Defaults and model choices are calibrated on these development works and generic controls; agreement is not held-out accuracy. Derived MIDI and native Score preserve supplied event geometry and valid-bar silence. Native option files and executable hashes make fast experiments explicit.",
+        "nativeCommand": "cargo build -p muzak-core --release --bin muzak-core && npx tsx scripts/evaluate-harmony.ts --native=target/release/muzak-core.exe --compact --diagnostics"
+      },
+      "readme": {
+        "path": "research/corpus/classical/batik-mozart-9c5f700/README.md",
+        "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/README.md",
+        "bytes": 7428,
+        "sha256": "1e070a9225d4bd145079009254b3a136cbd738d060621cb846897e79d031624c",
+        "retrievedDate": "2026-10-02"
+      },
+      "retainedFiles": {
+        "count": 29,
+        "sha256": "489cdac4b454f3545741e20352b2bdb4a41cb3bbab461d7f2eb1e492f6b7e71c",
+        "encoding": "SHA256 of concatenated sorted relative POSIX path + colon + lowercase file SHA256 + newline, UTF-8. Includes deterministic derived development files; holdout content only hashed."
+      }
+    }
+  ]
+}

@@ -1,4 +1,7 @@
 node_modules/
+/target/
+/src/core/wasm/
+/src/core/generated/
 dist/
 *.log
 .DS_Store
@@ -8,12 +11,8 @@ dist/
 .env.*
 !.env.example
 /.audit/
-/*-audit*.json
-/browser-*.json
-/conformance-*.json
-/conformance-*-review.txt
-/theme-clarity-*.json
-/tool-coverage-*.json
-/*-auditions.png
-/*.err
-/deployment-proof.png
+
+# Local reference music; provenance and analysis are versioned in docs/research.
+/research/corpus/**
+!/research/corpus/README.md
+__pycache__/

@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "updatedDate": "2026-10-02",
+  "objective": "Infer compact executable musical relationships through the existing exact Rust codec; preserve observations while recovering useful harmony, voice-leading, rhythm and reusable structure.",
+  "checkpoint": {
+    "summary": "The exact Rust codec separates realized palettes from witnessed functional-root proposals. Shipped Mozart K330-I/K331-I strict joint root/core agreement is 63.04% / 55.93%, core 68.57% / 60.14%, with full-source Wasm inference about 0.2 / 0.6 seconds. The pinned RNBert comparator with a shared development-selected 0.01 onset threshold and predicted-tonic-scoped Rust resolution reaches 88.76% / 88.96% joint, 94.77% / 96.31% root and 92.49% / 90.79% realized core. It has known Mozart training overlap and is not shipped inference or independent validation. The requested 100% remains unmet. Observations and denominators stay fixed; abstentions and uncovered tails remain errors; no holdout is parsed.",
+    "nextActions": [
+      "Close the remaining Mozart realization and boundary errors jointly. Existing learned windows cap joint agreement at 95.25% / 97.26% even under a retrospective best-label oracle; actual labels lose another 27 / 68 quarters. Preserve the frozen shared 0.01/key-scoped baseline and strict full-duration denominator. Do not use song-specific correction rules or annotation lookup.",
+      "Recover independently verifiable auxiliary target definitions and index dictionaries, or train explicit realized-tone and note-role targets under a clean work-lineage split. The released checkpoint auxiliary outputs have no published index mapping in the inspected artifacts; do not infer meanings from the Mozart reference labels. Missing implied members and replacement tones remain distinct.",
+      "Require continuity, independent seventh, ambiguity and track-repartition controls when changing scoring. Missing members can be implied by surrounding harmony; passing/neighbor motion can be structurally chordal. These musical distinctions constrain any learned or hand-written proposal.",
+      "Preserve an edited composition program independently of reanalysis. Keep source observations, authored parameters and inferred evidence distinct; a new inverse reading must not erase an authored dependency.",
+      "After representation/ranking choices are frozen, evaluate held-out work lineages once, alongside exact reconstruction, useful edits, runtime and explanatory cost."
+    ]
+  },
+  "tasks": [
+    {
+      "id": "executable-relations",
+      "title": "Extend and evaluate executable pitch relations",
+      "status": "in_progress",
+      "owner": null,
+      "dependsOn": [],
+      "evidence": [
+        "crates/muzak-core/src/composition.rs",
+        "crates/muzak-core/src/pitch_relations.rs",
+        "crates/muzak-core/src/scene_relations.rs",
+        "crates/muzak-core/src/scene.rs",
+        "tests/score-relations.test.ts",
+        "docs/research/structure-inference.md"
+      ],
+      "nextAction": "First retain authoritative edited programs separately from reanalysis; a correct changed-anchor realization must not lose its explicit dependency merely because a new harmonic reading differs. Then challenge crossings, temporal gaps, ambiguous/missing domains and delayed resolution with independent expected edits. Preserve exact native events and unrelated voices; distinguish compiler capacity from the narrower inferred subset."
+    },
+    {
+      "id": "contextual-comparison",
+      "title": "Establish honest contextual model comparisons",
+      "status": "in_progress",
+      "owner": "/root",
+      "dependsOn": [],
+      "evidence": [
+        "scripts/compare-rnbert.ts",
+        "scripts/research/rnbert.py",
+        "scripts/research/rnbert-sources.json",
+        "scripts/evaluate-harmony.ts",
+        "docs/research/structure-inference.md",
+        "crates/muzak-core/examples/harmony-context.rs"
+      ],
+      "nextAction": "Use the reproducible 88.76% / 88.96% joint comparator as the frozen development baseline for explicit realized-tone and joint boundary-label proposals. Root/core/key metrics remain separate. Auxiliary heads were captured but cannot be decoded without missing author dictionaries/target definitions; recover those independently or train explicit targets. Preserve training-overlap status, parser admission, unsupported predictions and whole-work holdouts."
+    },
+    {
+      "id": "bounded-inverse-search",
+      "title": "Select competing executable explanations",
+      "status": "planned",
+      "owner": null,
+      "dependsOn": [],
+      "evidence": [
+        "crates/muzak-core/src/scene.rs",
+        "crates/muzak-core/src/pitch_relations.rs",
+        "tests/score-relations.test.ts",
+        "crates/muzak-core/src/harmony.rs",
+        "crates/muzak-core/src/partition.rs"
+      ],
+      "nextAction": "Extend the existing exhaustive triple oracle to competing executable explanations, comparing exhaustive and bounded search. Separate proposal recall, ranking and final selection. Challenge unique-relation/recurrence ownership against alternatives while preserving exclusive emission and overlapping memberships. Include crossing voices, cadential versus tonic sonorities, color versus ornament, pedals, native pitch and source-track repartition controls."
+    },
+    {
+      "id": "joint-contextual-inference",
+      "title": "Learn contextual ranking only after representation works",
+      "status": "planned",
+      "owner": null,
+      "dependsOn": [
+        "bounded-inverse-search",
+        "contextual-comparison"
+      ],
+      "evidence": [
+        "crates/muzak-core/src/harmony.rs",
+        "scripts/evaluate-harmony.ts",
+        "tests/score-harmony-benchmark.test.ts"
+      ],
+      "nextAction": "Replace flat pitch-class scoring with learned contextual potentials only after separating key/function, realization and elaboration candidates in the existing exact algebra. The contextual comparator shows a large ranking gap; fixed-window and vocabulary oracles isolate remaining representation/search limits. Use one global development configuration, retain raw and refined outputs, and preserve whole-work holdouts."
+    },
+    {
+      "id": "reusable-structure",
+      "title": "Recover compositional reuse and phrase relationships",
+      "status": "planned",
+      "owner": null,
+      "dependsOn": [
+        "executable-relations",
+        "bounded-inverse-search"
+      ],
+      "evidence": [
+        "crates/muzak-core/src/scene.rs",
+        "scripts/evaluate-patterns.ts",
+        "scripts/evaluate-boundaries.ts"
+      ],
+      "nextAction": "Recover independent rhythm, melody-to-harmony relations, spread/arpeggio and transformed material in the Dire vertical plus controlled variations. Charge all melody bindings and exceptions. Build overlapping phrase candidates from harmonic, melodic and repetition evidence; compare independent membership/boundary annotations. This work need not wait for perfect Mozart labels."
+    },
+    {
+      "id": "codec-transfer",
+      "title": "Validate semantic edits and transfer",
+      "status": "planned",
+      "owner": null,
+      "dependsOn": [
+        "joint-contextual-inference",
+        "reusable-structure"
+      ],
+      "evidence": [
+        "docs/research/corpus-candidates.json",
+        "scripts/audit-output.ts",
+        "src/score/scene-inspector.ts",
+        "src/score/workbench.ts"
+      ],
+      "nextAction": "After freezing model choices, evaluate designated holdouts once under a declared protocol. Report exact reconstruction, independent interpretation, complete program/residual cost, useful edits, listening and runtime separately. Evaluate the existing anchor/dependent inspector on broader scenes; keep full-source analysis and independent navigation/playback."
+    }
+  ]
+}

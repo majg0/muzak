@@ -1,0 +1,5 @@
+[agents]
+# User requested broad delegation for the research and rebuild program.
+# This documented legacy alias also works with older Codex releases.
+# The active session's advertised tool limit remains authoritative.
+max_threads = 12

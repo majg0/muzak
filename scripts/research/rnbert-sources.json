@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "developmentWorks": [
+    "kv330_1",
+    "kv331_1"
+  ],
+  "code": {
+    "url": "https://github.com/malcolmsailor/musicbert_hf.git",
+    "license": "MIT",
+    "commit": "64a054c791c2372e146d59cb0b04a5f5eba23fc0",
+    "predictSha256": "3d881f4736818a9f44fe46d943a4d7f465f7c6b359937c2fb42e5ebaf566c8ea"
+  },
+  "translation": {
+    "sha256": "e59adfacbba5288361cc770058fcc975434bb681da28f74006ceffbc090ae578",
+    "url": "https://raw.githubusercontent.com/malcolmsailor/music_df/8c460e2e21c6a75cb318149c4b86d84205e29f53/music_df/harmony/chords.py"
+  },
+  "training": {
+    "url": "https://raw.githubusercontent.com/malcolmsailor/rnbert/21e34511462e70e61a4525ba92fca674bb78e2f9/data_splits/train_paths.txt",
+    "developmentOverlap": [
+      "MozartPSData/K330-1.csv",
+      "MozartPSData/K331-1.csv"
+    ],
+    "sha256": "dd3dfd813f08348bc1a7c9fdc28aae26f06e06d64a507bae126fe4719cdaa9d0",
+    "holdoutModelOverlap": "Training manifest also lists K457-1; this checkpoint cannot establish independent generalization on that work. No heldout notes/labels opened."
+  },
+  "models": {
+    "revision": "2239f010ad575d9a35eeb7fc9ded568176323386",
+    "declaredLicense": "MIT",
+    "files": [
+      {
+        "name": "key_checkpoint_39958320.pt",
+        "url": "https://huggingface.co/msailor/rnbert_weights/resolve/2239f010ad575d9a35eeb7fc9ded568176323386/key_checkpoint_39958320.pt",
+        "sha256": "1a384e45ed4932ca4f125838cb34f9e38cddd6165adefcb7a2e4d44baa541914",
+        "bytes": 590753807
+      },
+      {
+        "name": "onset_checkpoint_46548034.pt",
+        "url": "https://huggingface.co/msailor/rnbert_weights/resolve/2239f010ad575d9a35eeb7fc9ded568176323386/onset_checkpoint_46548034.pt",
+        "sha256": "7ccb0faa71520cff65653afd8d01a804199ceb96df117a441916086abdf2de9d",
+        "bytes": 590514255
+      },
+      {
+        "name": "rn_conditioned_checkpoint_40356401.pt",
+        "url": "https://huggingface.co/msailor/rnbert_weights/resolve/2239f010ad575d9a35eeb7fc9ded568176323386/rn_conditioned_checkpoint_40356401.pt",
+        "sha256": "9f242140843288346df48aa7c8b30ef6e0a0d135d224e414b8aa755ea6c033f1",
+        "bytes": 675143565
+      },
+      {
+        "name": "key_vocab_39958320.txt",
+        "url": "https://huggingface.co/msailor/rnbert_weights/resolve/2239f010ad575d9a35eeb7fc9ded568176323386/key_vocab_39958320.txt",
+        "sha256": "148bcadf546b8e916e9b21b9d42e9e6d49136920edd570e071c6414007a4047c",
+        "bytes": 393
+      },
+      {
+        "name": "onset_vocab_46548034.txt",
+        "url": "https://huggingface.co/msailor/rnbert_weights/resolve/2239f010ad575d9a35eeb7fc9ded568176323386/onset_vocab_46548034.txt",
+        "sha256": "949f37d08d9968c133ac0f26e719ba6d7776436f00e65e2919a21b40d4eaa4e8",
+        "bytes": 68
+      },
+      {
+        "name": "rn_conditioned_degree_vocab_40356401.txt",
+        "url": "https://huggingface.co/msailor/rnbert_weights/resolve/2239f010ad575d9a35eeb7fc9ded568176323386/rn_conditioned_degree_vocab_40356401.txt",
+        "sha256": "7998647fb78cb85622cc49615251c86c1398609f985b0cdcb50faf4eaef9ea98",
+        "bytes": 2456
+      },
+      {
+        "name": "rn_conditioned_inversion_vocab_40356401.txt",
+        "url": "https://huggingface.co/msailor/rnbert_weights/resolve/2239f010ad575d9a35eeb7fc9ded568176323386/rn_conditioned_inversion_vocab_40356401.txt",
+        "sha256": "141a4942b0aeb2bce9baa9fdef26298821901b1370de2d4e0c58e003d906f147",
+        "bytes": 59
+      },
+      {
+        "name": "rn_conditioned_quality_vocab_40356401.txt",
+        "url": "https://huggingface.co/msailor/rnbert_weights/resolve/2239f010ad575d9a35eeb7fc9ded568176323386/rn_conditioned_quality_vocab_40356401.txt",
+        "sha256": "c548823c522f9bb35bae3ad4a6db6641fdc56721164af274e96fc65052ffa38d",
+        "bytes": 142
+      }
+    ],
+    "repository": "https://huggingface.co/msailor/rnbert_weights"
+  },
+  "environment": {
+    "cudaWheelIndex": "https://download.pytorch.org/whl/cu124",
+    "python": "3.12",
+    "runtime": "Isolated Linux/WSL environment; requirements-predict.txt pinned by code commit. No production dependency.",
+    "torch": "2.6.0"
+  }
+}

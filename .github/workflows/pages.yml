@@ -25,6 +25,23 @@ jobs:
           node-version: '24.14.0'
           cache: npm
       - run: npm ci
+      - name: Cache Rust compiler artifacts and bridge tool
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin/wasm-bindgen*
+            target
+          key: rust-1.97.1-wasm-bindgen-0.2.114-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+      - name: Install pinned Rust and Wasm bridge
+        run: |
+          rustup toolchain install 1.97.1 --profile minimal --target wasm32-unknown-unknown
+          rustup default 1.97.1
+          if ! wasm-bindgen --version | grep -q '^wasm-bindgen 0.2.114$'; then
+            cargo install wasm-bindgen-cli --version 0.2.114 --locked --force
+          fi
+      - run: cargo test -p muzak-core
       - run: npm test
       - name: Configure Pages
         id: pages
