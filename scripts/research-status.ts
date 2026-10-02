@@ -35,7 +35,7 @@ const corpus = JSON.parse(readFileSync('docs/research/corpus-candidates.json', '
   preferences: string[];
   analysisCandidates: Array<{ id: string; asset?: { path: string; sha256: string } }>;
   evaluationSources?: Array<{ id: string; root: string; retainedFiles: { count: number; sha256: string };
-    split?: { development: string[]; holdout: string[] };
+    split?: { training?: string[]; development: string[]; holdout: string[] };
     works?: Array<{ id: string; split: string; exactSourcePath?: string }> }>;
 };
 assert.equal(new Set(corpus.analysisCandidates.map(candidate => candidate.id)).size, corpus.analysisCandidates.length, 'Analysis source IDs must be unique.');
@@ -51,11 +51,12 @@ for (const dataset of corpus.evaluationSources ?? []) {
   const works = dataset.works ?? [];
   assert.equal(new Set(works.map(work => work.id)).size, works.length, `Duplicate work in ${dataset.id}`);
   if (dataset.split) {
-    const families = [...dataset.split.development, ...dataset.split.holdout];
+    const families = [...(dataset.split.training ?? []), ...dataset.split.development, ...dataset.split.holdout];
     assert.equal(new Set(families).size, families.length, `Overlapping tune-family splits in ${dataset.id}`);
   }
   for (const work of works) {
-    assert(['development', 'validation', 'holdout'].includes(work.split), `Unknown evaluation split: ${work.id}`);
+    assert(['training', 'development', 'validation', 'holdout'].includes(work.split), `Unknown corpus split: ${work.id}`);
+    if (work.split === 'training') assert(dataset.split?.training?.includes(work.id), `Undeclared training work: ${work.id}`);
     if (work.exactSourcePath) assert(existsSync(work.exactSourcePath), `Missing exact symbolic data: ${work.id}`);
     assert(registeredAssets(work).length, `No registered evidence for ${work.id}`);
   }
@@ -92,8 +93,9 @@ console.log(`Research checkpoint ${program.updatedDate}: ${program.tasks.length}
 console.log(`Corpus: ${corpus.analysisCandidates.length} active analysis sources; available asset hashes verified.`);
 for (const dataset of corpus.evaluationSources ?? []) {
   const development = dataset.split?.development.length ?? dataset.works!.filter(work => work.split === 'development').length;
+  const training = dataset.split?.training?.length ?? (dataset.works ?? []).filter(work => work.split === 'training').length;
   const holdout = dataset.split?.holdout.length ?? dataset.works!.filter(work => work.split === 'holdout').length;
-  console.log(`Evaluation: ${dataset.id}; ${development} development / ${holdout} held-out ${dataset.split ? 'tune families' : 'works'}. Integrity only; held-out content is not parsed.`);
+  console.log(`Corpus: ${dataset.id}; ${training} training / ${development} development / ${holdout} held-out ${dataset.split ? 'tune families' : 'works'}. Integrity only; held-out content is not parsed.`);
 }
 console.log(program.checkpoint.summary);
 console.log('\nNext actions:');

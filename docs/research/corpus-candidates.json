@@ -502,7 +502,13 @@
         ],
         "holdout": [
           "kv457_1"
-        ]
+        ],
+        "training": [
+          "kv280_2",
+          "kv332_1",
+          "kv333_1"
+        ],
+        "trainingRule": "Additional supervised training only; fixed before reading these works. No new independent-accuracy claim. Exclude complete K330/K331 development and K457 holdout sonata lineages from this extra training set."
       },
       "scope": "Actual Roland Batik performance MIDI, performed-repeat score MusicXML, note-level match files and score-note arrays linked by the authors to independent DCML analyses. Inference receives only score observations. Harmony labels are evaluation data, not composer intent or exhaustive per-note color-tone roles. Performance ticks must use the supplied note alignment; they are not score beats.",
       "works": [
@@ -727,6 +733,196 @@
             "retrievedDate": "2026-10-02"
           },
           "inspectionStatus": "downloaded-and-hashed-only"
+        },
+        {
+          "id": "kv280_2",
+          "split": "training",
+          "composer": "Wolfgang Amadeus Mozart",
+          "work": "Piano Sonata no. 2 in F major — II. Adagio",
+          "edition": "Batik performed-repeat score linked to independently expanded DCML harmonies; same pinned edition and license as development references.",
+          "purpose": "Additional supervised target-ontology training. No label or score content used to choose this assignment; not an evaluation work.",
+          "inspectionStatus": "Explicit training admission: exact score geometry/MIDI roundtrip and independently joined harmonic references; no audio listening.",
+          "scoreMusicXml": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/scores_edited/kv280_2.musicxml",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/scores_edited/kv280_2.musicxml",
+            "bytes": 414115,
+            "sha256": "ffbf31794971c566ae4298e8e97fc3e1125e47659a51509f46c3936e3a91d3fe",
+            "retrievedDate": "2026-10-02"
+          },
+          "scoreNotes": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/score_parts_annotated/kv280_2_spart_harmony.csv",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/score_parts_annotated/kv280_2_spart_harmony.csv",
+            "bytes": 65700,
+            "sha256": "087b13b7c440f066585e69d9f43be36b5dd18f26cd271fd5c6f0c9289ae2b1a2",
+            "retrievedDate": "2026-10-02"
+          },
+          "harmonicAnalysis": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/annotations/harmonies/K280-2.tsv",
+            "url": "https://raw.githubusercontent.com/DCMLab/mozart_piano_sonatas/7cfeb73968144d07589c14102822abcc7b8e6bae/harmonies/K280-2.tsv",
+            "bytes": 9922,
+            "sha256": "fa1d08707ed0b0d1575b9b33e43ea02cd5bec55f4e5bd4524c1c7574fb1cb2c9",
+            "retrievedDate": "2026-10-02"
+          },
+          "scorePpq": 8,
+          "alignment": {
+            "coordinate": "Exact onset_div/duration_div at 8 ticks per quarter, verified against every MusicXML divisions entry. Training reference copy rescales exactly by 6 to PPQ48; source Score/MIDI unchanged.",
+            "labelJoin": "Existing scoreObservations/alignReferences: source note ID and unfolded measure coordinates joined to independently expanded DCML labels; mismatches stay unsupported.",
+            "printedQuarterOriginOffset": 0,
+            "durationPolicy": "Successive chord-bearing rows delimit unfolded labels, retaining phrase-only/inherited-duration diagnostics.",
+            "knownOnsetDiscrepancies": []
+          },
+          "derivedScore": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/derived/kv280_2.score.json",
+            "bytes": 249943,
+            "sha256": "63002e84f1ac9a5ed57be02822eb0ab069846f3b880c403698e37686e6f9c9b3",
+            "retrievedDate": "2026-10-02"
+          },
+          "derivedScoreMidi": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/derived/kv280_2.score.mid",
+            "bytes": 9342,
+            "sha256": "44bdef7287e5452b567d84aa5fa6dda20e93cce1ffa413ed1bedd67594221d3d",
+            "retrievedDate": "2026-10-02",
+            "derivation": "Explicit training preparation using existing Rust MIDI codec and scoreObservations: exact source pitch/onset/duration/voice, meter and valid-bar silence. Uniform velocity80/release64 and120-quarter/minute audition tempo. No harmony/key labels enter observations."
+          },
+          "observed": {
+            "notes": 1142,
+            "zeroDurationGraceNotes": 9,
+            "quarters": 252,
+            "ppq": 8,
+            "independentChordRows": 174,
+            "unsupportedReferenceIntervals": 0
+          }
+        },
+        {
+          "id": "kv332_1",
+          "split": "training",
+          "composer": "Wolfgang Amadeus Mozart",
+          "work": "Piano Sonata no. 12 in F major — I. Allegro",
+          "edition": "Batik performed-repeat score linked to independently expanded DCML harmonies; same pinned edition and license as development references.",
+          "purpose": "Additional supervised target-ontology training. No label or score content used to choose this assignment; not an evaluation work.",
+          "inspectionStatus": "Explicit training admission: exact score geometry/MIDI roundtrip and independently joined harmonic references; no audio listening.",
+          "scoreMusicXml": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/scores_edited/kv332_1.musicxml",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/scores_edited/kv332_1.musicxml",
+            "bytes": 1138006,
+            "sha256": "ed1d232ef0406085a95eb6f165e929ddea52ab795b9870d07e2de0db790a2d7c",
+            "retrievedDate": "2026-10-02"
+          },
+          "scoreNotes": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/score_parts_annotated/kv332_1_spart_harmony.csv",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/score_parts_annotated/kv332_1_spart_harmony.csv",
+            "bytes": 209853,
+            "sha256": "672087ef2d363c119cd0287693c5791359700637719fc8ce08108351cf18fce5",
+            "retrievedDate": "2026-10-02"
+          },
+          "harmonicAnalysis": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/annotations/harmonies/K332-1.tsv",
+            "url": "https://raw.githubusercontent.com/DCMLab/mozart_piano_sonatas/7cfeb73968144d07589c14102822abcc7b8e6bae/harmonies/K332-1.tsv",
+            "bytes": 23478,
+            "sha256": "de65a48cb7a9469e19c6e2c46f106400f3e3a5713d05aee0f0846a3bca8b7dc0",
+            "retrievedDate": "2026-10-02"
+          },
+          "scorePpq": 24,
+          "alignment": {
+            "coordinate": "Exact onset_div/duration_div at 24 ticks per quarter, verified against every MusicXML divisions entry. Training reference copy rescales exactly by 2 to PPQ48; source Score/MIDI unchanged.",
+            "labelJoin": "Existing scoreObservations/alignReferences: source note ID and unfolded measure coordinates joined to independently expanded DCML labels; mismatches stay unsupported.",
+            "printedQuarterOriginOffset": null,
+            "durationPolicy": "Successive chord-bearing rows delimit unfolded labels, retaining phrase-only/inherited-duration diagnostics.",
+            "knownOnsetDiscrepancies": []
+          },
+          "derivedScore": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/derived/kv332_1.score.json",
+            "bytes": 762564,
+            "sha256": "13949da2a1834e07148068d31baf3cd6ffeea901a68905734eee2a5919f93849",
+            "retrievedDate": "2026-10-02"
+          },
+          "derivedScoreMidi": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/derived/kv332_1.score.mid",
+            "bytes": 28005,
+            "sha256": "eb7bbfef0a51c1593f4e3a4aa56e0dfadc76c28d9bef8c030ee23de87650a1a0",
+            "retrievedDate": "2026-10-02",
+            "derivation": "Explicit training preparation using existing Rust MIDI codec and scoreObservations: exact source pitch/onset/duration/voice, meter and valid-bar silence. Uniform velocity80/release64 and120-quarter/minute audition tempo. No harmony/key labels enter observations."
+          },
+          "observed": {
+            "notes": 3473,
+            "zeroDurationGraceNotes": 60,
+            "quarters": 966,
+            "ppq": 24,
+            "independentChordRows": 451,
+            "unsupportedReferenceIntervals": 0
+          }
+        },
+        {
+          "id": "kv333_1",
+          "split": "training",
+          "composer": "Wolfgang Amadeus Mozart",
+          "work": "Piano Sonata no. 13 in B-flat major — I. Allegro",
+          "edition": "Batik performed-repeat score linked to independently expanded DCML harmonies; same pinned edition and license as development references.",
+          "purpose": "Additional supervised target-ontology training. No label or score content used to choose this assignment; not an evaluation work.",
+          "inspectionStatus": "Explicit training admission: exact score geometry/MIDI roundtrip and independently joined harmonic references; no audio listening.",
+          "scoreMusicXml": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/scores_edited/kv333_1.musicxml",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/scores_edited/kv333_1.musicxml",
+            "bytes": 1313229,
+            "sha256": "75fb119f911b32a2c29c51818ee0c025b74e03a9fb3471900c5ead4abfe24b89",
+            "retrievedDate": "2026-10-02"
+          },
+          "scoreNotes": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/score_parts_annotated/kv333_1_spart_harmony.csv",
+            "url": "https://raw.githubusercontent.com/huispaty/batik_plays_mozart/9c5f7004c5ab1f15d64e959d011dbdf3b7863c3e/score_parts_annotated/kv333_1_spart_harmony.csv",
+            "bytes": 226631,
+            "sha256": "516c6d51ce947aac5f91a0d3e65c68bba7d27418e83ed9128421a44aceb917f0",
+            "retrievedDate": "2026-10-02"
+          },
+          "harmonicAnalysis": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/annotations/harmonies/K333-1.tsv",
+            "url": "https://raw.githubusercontent.com/DCMLab/mozart_piano_sonatas/7cfeb73968144d07589c14102822abcc7b8e6bae/harmonies/K333-1.tsv",
+            "bytes": 33112,
+            "sha256": "37add2222c41514c47ffbcdc04684dd5e28941dbbe6635b1769b5e04aa39ff04",
+            "retrievedDate": "2026-10-02"
+          },
+          "scorePpq": 8,
+          "alignment": {
+            "coordinate": "Exact onset_div/duration_div at 8 ticks per quarter, verified against every MusicXML divisions entry. Training reference copy rescales exactly by 6 to PPQ48; source Score/MIDI unchanged.",
+            "labelJoin": "Existing scoreObservations/alignReferences: source note ID and unfolded measure coordinates joined to independently expanded DCML labels; mismatches stay unsupported.",
+            "printedQuarterOriginOffset": -1,
+            "durationPolicy": "Successive chord-bearing rows delimit unfolded labels, retaining phrase-only/inherited-duration diagnostics.",
+            "knownOnsetDiscrepancies": [
+              {
+                "startTick": 0,
+                "endTick": 24,
+                "label": "Bb.I{",
+                "reason": "Error: Joined note onset disagrees with independent within-measure annotation."
+              },
+              {
+                "startTick": 2016,
+                "endTick": 2040,
+                "label": "Bb.I{",
+                "reason": "Error: Joined note onset disagrees with independent within-measure annotation."
+              }
+            ]
+          },
+          "derivedScore": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/derived/kv333_1.score.json",
+            "bytes": 824399,
+            "sha256": "dd0075618591030f97e206836f58a2ae8a938fca7e6521288832eeccb9d00fc8",
+            "retrievedDate": "2026-10-02"
+          },
+          "derivedScoreMidi": {
+            "path": "research/corpus/classical/batik-mozart-9c5f700/derived/kv333_1.score.mid",
+            "bytes": 30437,
+            "sha256": "7315e3f24da4746b66b43964089cc67a393d4c693b86cedf9bc82fe4121cdc1c",
+            "retrievedDate": "2026-10-02",
+            "derivation": "Explicit training preparation using existing Rust MIDI codec and scoreObservations: exact source pitch/onset/duration/voice, meter and valid-bar silence. Uniform velocity80/release64 and120-quarter/minute audition tempo. No harmony/key labels enter observations."
+          },
+          "observed": {
+            "notes": 3782,
+            "zeroDurationGraceNotes": 45,
+            "quarters": 912,
+            "ppq": 8,
+            "independentChordRows": 613,
+            "unsupportedReferenceIntervals": 2
+          }
         }
       ],
       "reproduction": {
@@ -745,9 +941,9 @@
         "retrievedDate": "2026-10-02"
       },
       "retainedFiles": {
-        "count": 29,
-        "sha256": "489cdac4b454f3545741e20352b2bdb4a41cb3bbab461d7f2eb1e492f6b7e71c",
-        "encoding": "SHA256 of concatenated sorted relative POSIX path + colon + lowercase file SHA256 + newline, UTF-8. Includes deterministic derived development files; holdout content only hashed."
+        "count": 44,
+        "sha256": "c53783c124e0d98fd8d1cbefe5fdd388c3661228aa1c47d8e3487b62eb9954eb",
+        "encoding": "SHA256 of concatenated sorted relative POSIX path + colon + lowercase file SHA256 + newline, UTF-8. Includes deterministic derived training/development files; holdout content only hashed."
       }
     }
   ]
