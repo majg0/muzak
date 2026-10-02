@@ -704,10 +704,49 @@ def quality_capture(bundle):
                           bundle['logits']['degree'], bundle['logits']['quality'], bundle['vocabularies'])
 
 
+def readout_training_batches(manifest_paths, admission_path=None, works=None):
+    """Compose independently admitted batches without rewriting their provenance."""
+    paths = [pathlib.Path(p).resolve() for p in manifest_paths]
+    if not paths or len(set(paths)) != len(paths):
+        raise ValueError('Choose distinct capture manifests.')
+    if admission_path and len(paths) != 1:
+        raise ValueError('An admission override is only valid for one capture manifest.')
+    if works is not None and (not works or len(set(works)) != len(works)):
+        raise ValueError('Choose distinct explicitly admitted works.')
+    loaded, provenance, identities, references, signature = [], [], set(), {}, None
+    for path in paths:
+        manifest = json.loads(path.read_text())
+        available = list(dict.fromkeys(e['work'] for e in manifest['works']))
+        selected = [w for w in works if w in available] if works is not None else available
+        if not selected:
+            continue
+        rows, origin = readout_captures(path, 'training', admission_path, selected)
+        current = {k: manifest[k] for k in ('sourceCommit', 'models', 'configSha256', 'modelPpq')}
+        if signature is not None and current != signature:
+            raise ValueError('Training batches use different model/configuration identities.')
+        signature = current
+        for row in rows:
+            identity = (row['work'], row['shift'])
+            if identity in identities:
+                raise ValueError('Duplicate work/shift across training batches.')
+            identities.add(identity)
+            reference = row['row']['references']
+            if row['work'] in references and references[row['work']] != reference:
+                raise ValueError('Training reference identity differs across batches.')
+            references[row['work']] = reference
+        loaded.extend(rows); provenance.append(origin)
+    if not loaded or (works is not None and set(works) != {r['work'] for r in loaded}):
+        raise ValueError('Requested training works are missing from the capture manifests.')
+    if works is not None:
+        order = {work: i for i, work in enumerate(works)}
+        loaded.sort(key=lambda row: order[row['work']])
+    return loaded, provenance
+
+
 def fit_quality(captures_path, admission_path, profile, works):
     import torch
     from rnbert_readout import CoreReference, QualityTrainingExample, RealizationVocabulary, fit_quality_readout, PROTOCOL
-    rows, provenance = readout_captures(captures_path, 'training', admission_path, works)
+    rows, provenance = readout_training_batches(captures_path, admission_path, works)
     destination = ROOT / f'readout-{profile}'
     if destination.exists():
         raise ValueError('Fit profile already exists; choose a new name to preserve frozen outputs.')
@@ -745,7 +784,7 @@ def fit_quality(captures_path, admission_path, profile, works):
     model_path = destination / 'model.pt'
     torch.save({'deltaWeight': fit.delta_weight, 'deltaBias': fit.delta_bias, 'vocabularies': fit.vocabularies,
                 'timebase': fit.timebase, 'qualityWeight': weight, 'qualityBias': bias}, model_path)
-    report = {'profile': profile, 'protocol': PROTOCOL, 'captureManifest': provenance, 'trainingInputs': inputs,
+    report = {'profile': profile, 'protocol': PROTOCOL, 'captureManifests': provenance, 'trainingInputs': inputs,
         'trainingWorks': list(dict.fromkeys(i['work'] for i in inputs)), 'targetLabelsRead': False,
         'model': {'path': artifact_reference(model_path), 'sha256': digest(model_path)},
         'runnerSha256': digest(pathlib.Path(__file__)), 'readoutSha256': digest(pathlib.Path(__file__).with_name('rnbert_readout.py')),
@@ -812,9 +851,9 @@ if __name__ == '__main__':
     parser.add_argument('--device', choices=['cpu', 'cuda'], default='cuda', help='Recorded by setup; no automatic device fallback.')
     parser.add_argument('--profile', default='baseline', help='Separate output profile; baseline preserves upstream threshold 0.3.')
     parser.add_argument('--onset-threshold', type=float, help='Explicit prediction-time calibration; requires a nonbaseline profile if changed.')
-    parser.add_argument('--admission', help='Admitted work roles/input hashes for capture; training references also required by fit-quality.')
+    parser.add_argument('--admission', help='Required for capture; optional original-admission override for a single fit-quality capture batch.')
     parser.add_argument('--shifts', nargs='+', type=int, default=[0], help='Capture semitone shifts, e.g. 0 1 2 ... 11. No labels are opened.')
-    parser.add_argument('--captures', help='Completed capture manifest for fit-quality or decode.')
+    parser.add_argument('--captures', nargs='+', help='Independently admitted capture manifests for fit-quality; exactly one for decode.')
     parser.add_argument('--model', help='Frozen fitted quality-readout manifest for decode.')
     parser.add_argument('--factor-evidence', action='store_true', help='Retain large per-frame candidate-state diagnostics from decode; predictions and compact accounting are always saved.')
     parser.add_argument('--works', nargs='+', help='Explicit admitted training subset for fit-quality; default is all admitted works.')
@@ -827,10 +866,12 @@ if __name__ == '__main__':
     if args.command not in ('capture', 'fit-quality') and args.admission:
         parser.error('--admission is for capture or fit-quality.')
     if args.command != 'capture' and args.shifts != [0]: parser.error('--shifts is capture-only.')
-    if args.command == 'fit-quality' and (not args.captures or not args.admission or args.profile == 'baseline'):
-        parser.error('fit-quality requires --captures, --admission, and a distinct --profile.')
+    if args.command == 'fit-quality' and (not args.captures or args.profile == 'baseline'):
+        parser.error('fit-quality requires --captures and a distinct --profile; each batch retains its original admission.')
     if args.command == 'decode' and (not args.captures or not args.model or args.profile == 'baseline'):
         parser.error('decode requires --captures, --model, and a distinct --profile.')
+    if args.command == 'decode' and len(args.captures) != 1:
+        parser.error('decode accepts exactly one capture manifest.')
     if args.works and args.command != 'fit-quality': parser.error('--works is fit-quality-only.')
     if args.model and args.command != 'decode': parser.error('--model is decode-only.')
     if args.factor_evidence and args.command != 'decode': parser.error('--factor-evidence is decode-only.')
@@ -840,7 +881,7 @@ if __name__ == '__main__':
     elif args.command == 'predict': predict(args.profile, args.onset_threshold)
     elif args.command == 'capture': print(json.dumps(capture(args.admission, args.profile, args.shifts), indent=2))
     elif args.command == 'fit-quality': fit_quality(args.captures, args.admission, args.profile, args.works)
-    elif args.command == 'decode': decode_readout(args.captures, args.model, args.profile, args.factor_evidence)
+    elif args.command == 'decode': decode_readout(args.captures[0], args.model, args.profile, args.factor_evidence)
     elif args.command == 'map': map_predictions(args.profile)
     else:
         from test_rnbert import run_tests

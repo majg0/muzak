@@ -3,14 +3,18 @@
 Run with the isolated research Python: ``python scripts/research/test_rnbert.py``.
 """
 from dataclasses import replace
+import json
+import pathlib
 import sys
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 import torch
 
 import rnbert_decode as decoder
 import rnbert_readout as readout
+import rnbert as runner
 
 
 def synthetic_parse(rn, key):
@@ -45,6 +49,40 @@ class ResearchControls(unittest.TestCase):
         result = decoder.self_test()
         self.assertEqual(result["exhaustiveDpCases"], 200)
         self.assertEqual(result["rejections"], 3)
+
+    def test_training_batches_preserve_separate_admissions_and_work_order(self):
+        common = dict(sourceCommit='source', models={'quality': 'checkpoint'}, configSha256='config', modelPpq=48)
+        manifests = {'a': {**common, 'works': [{'work': 'A'}]}, 'b': {**common, 'works': [{'work': 'B'}]}}
+        origins = []
+        def admit(path, split, override, selected):
+            self.assertEqual(split, 'training'); self.assertIsNone(override)
+            origin = {'path': path.name, 'admissionSha256': f'original-{path.name}'}
+            origins.append(origin)
+            return [{'work': w, 'shift': 0, 'row': {'references': {'sha256': w}}} for w in selected], origin
+        before = json.dumps(manifests, sort_keys=True)
+        with patch.object(pathlib.Path, 'read_text', lambda path: json.dumps(manifests[path.name])), patch.object(runner, 'readout_captures', side_effect=admit):
+            rows, provenance = runner.readout_training_batches(['a', 'b'], works=['B', 'A'])
+        self.assertEqual([r['work'] for r in rows], ['B', 'A'])
+        self.assertEqual(provenance, origins)
+        self.assertEqual([p['admissionSha256'] for p in provenance], ['original-a', 'original-b'])
+        self.assertEqual(json.dumps(manifests, sort_keys=True), before)
+
+    def test_training_batch_conflicts_fail_before_reference_loading(self):
+        common = dict(sourceCommit='source', models={'quality': 'checkpoint'}, configSha256='config', modelPpq=48)
+        manifests = {'a': {**common, 'works': [{'work': 'A'}]}, 'b': {**common, 'works': [{'work': 'B'}]}}
+        def admit(path, split, override, selected):
+            return [{'work': w, 'shift': 0, 'row': {'references': {'sha256': w}}} for w in selected], {'path': path.name}
+        with patch.object(pathlib.Path, 'read_text', lambda path: json.dumps(manifests[path.name])), patch.object(runner, 'readout_captures', side_effect=admit):
+            with self.assertRaisesRegex(ValueError, 'override'):
+                runner.readout_training_batches(['a', 'b'], admission_path='replacement')
+            with self.assertRaisesRegex(ValueError, 'missing'):
+                runner.readout_training_batches(['a', 'b'], works=['A', 'absent'])
+            manifests['b']['models'] = {'quality': 'different'}
+            with self.assertRaisesRegex(ValueError, 'model/configuration'):
+                runner.readout_training_batches(['a', 'b'])
+            manifests['b']['models'] = common['models']; manifests['b']['works'] = [{'work': 'A'}]
+            with self.assertRaisesRegex(ValueError, 'Duplicate work/shift'):
+                runner.readout_training_batches(['a', 'b'])
 
     def test_alias_probability_and_unknown_mass_are_retained(self):
         result = readout.membership_marginals(self.capture, self.capture.quality_logits, semantics=self.semantics)
