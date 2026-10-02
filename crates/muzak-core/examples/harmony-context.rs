@@ -1,4 +1,5 @@
-//! Offline context adapter. No key inference, reference labels or product API.
+//! Offline context adapter for observed bass and explicit model dependencies.
+//! No key inference, reference labels or product API.
 //! Input and output use native millicents for every pitch class.
 use muzak_core::{
     error::{CoreResult, invalid},

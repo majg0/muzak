@@ -1,12 +1,13 @@
-//! Observation-only root proposals from same-bass sonority resolution.
+//! Bass-supported root proposals with observed or explicitly inferred resolution.
 //! This is a declared contextual prior, not a key/cadence classifier or a
 //! probability. Proposals retain the realized core and the original hypothesis.
-//! "Same bass" compares the first sounding bass pitch class of each window;
+//! "Same bass" compares an explicitly selected bass observation per window;
 //! it does not assert a continuously held pedal or identified melodic voices.
 use crate::{
     error::{CoreResult, budget, invalid},
     harmony::HarmonyWindow,
     model::{MAX_SAFE, Score, ScoreNote, validate_score},
+    operations::pitch_at,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashSet};
@@ -15,11 +16,23 @@ use ts_rs::TS;
 const OCTAVE: i64 = 1_200_000;
 const RESOLUTION: [i64; 3] = [0, 400_000, 700_000];
 
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub enum HarmonyBassPosition {
+    #[default]
+    FirstSounding,
+    LowestSounding,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(default, deny_unknown_fields, rename_all = "camelCase")]
 pub struct HarmonyContextOptions {
     pub include_alternatives: bool,
     pub require_full_core: bool,
+    pub bass_position: HarmonyBassPosition,
+    /// Permit the next selected realization to supply unheard resolution tones.
+    /// Its alternative index is retained separately from observed note evidence.
+    pub allow_implied_resolution: bool,
     /// Maximum gap between consecutive predicted windows, in source ticks.
     pub max_gap_ticks: u64,
     /// None admits evidence throughout the immediate next predicted window.
@@ -38,6 +51,8 @@ impl Default for HarmonyContextOptions {
         Self {
             include_alternatives: true,
             require_full_core: false,
+            bass_position: HarmonyBassPosition::default(),
+            allow_implied_resolution: false,
             max_gap_ticks: 0,
             max_resolution_ticks: None,
             max_bass_delay_ticks: None,
@@ -57,6 +72,9 @@ pub struct HarmonyResolutionEvidence {
     pub next_bass_note_ids: Vec<String>,
     pub resolution_note_ids: Vec<String>,
     pub observed_resolution_intervals: Vec<i64>,
+    #[ts(optional)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resolution_alternative_index: Option<usize>,
     pub resolution_end_tick: u64,
 }
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -88,7 +106,8 @@ fn eligible(note: &ScoreNote) -> bool {
 }
 
 /// Return alternatives; the caller owns acceptance and rebuilding note roles.
-/// Pitch-class resolution is observed, but actual voice-leading is not asserted.
+/// Inferred resolution tones retain their selected-realization dependency;
+/// observed pitch-class support does not assert actual voice leading.
 pub fn contextual_harmonic_roots(
     score: &Score,
     windows: &[HarmonyWindow],
@@ -159,23 +178,58 @@ pub fn contextual_harmonic_roots(
             .filter(|n| n.onset < end_tick)
             .collect();
         let first = members.iter().map(|n| n.onset.max(window.start_tick)).min();
-        let bass = first.and_then(|tick| {
+        visits = members.iter().try_fold(visits, |count, note| {
+            count
+                .checked_add(note.pitch_envelope.as_ref().map_or(0, Vec::len))
+                .filter(|&n| n <= options.max_evidence_visits)
+                .ok_or_else(|| budget("Harmonic context trajectory budget exceeded."))
+        })?;
+        let bass = first.and_then(|first_tick| {
+            let candidates: Vec<_> = members
+                .iter()
+                .copied()
+                .filter(|n| {
+                    matches!(options.bass_position, HarmonyBassPosition::LowestSounding)
+                        || (n.onset <= first_tick && n.onset + n.duration > first_tick)
+                })
+                .collect();
+            let low = candidates.iter().map(|n| n.pitch.millicents).min()?;
+            let tick = candidates
+                .iter()
+                .filter(|n| n.pitch.millicents == low)
+                .map(|n| n.onset.max(window.start_tick))
+                .min()?;
             if options
                 .max_bass_delay_ticks
                 .is_some_and(|limit| tick - window.start_tick > limit)
             {
                 return None;
             }
-            let low = members
+            if candidates
                 .iter()
-                .filter(|n| n.onset <= tick && n.onset + n.duration > tick)
-                .map(|n| n.pitch.millicents)
-                .min()?;
-            if members.iter().any(|n| {
-                n.onset <= tick
-                    && n.onset + n.duration > tick
-                    && n.pitch.millicents == low
-                    && !eligible(n)
+                .any(|n| n.pitch.millicents == low && !eligible(n))
+            {
+                return None;
+            }
+            // Attack pitch does not bound a moving trajectory. Unsupported
+            // motion that reaches beneath the proposed bass stays a barrier.
+            if candidates.iter().filter(|n| !eligible(n)).any(|n| {
+                let from = if matches!(options.bass_position, HarmonyBassPosition::FirstSounding) {
+                    first_tick - n.onset
+                } else {
+                    window.start_tick.saturating_sub(n.onset)
+                };
+                let to = if matches!(options.bass_position, HarmonyBassPosition::FirstSounding) {
+                    from
+                } else {
+                    end_tick.min(n.onset + n.duration) - n.onset
+                };
+                pitch_at(n, from as f64) <= low as f64
+                    || pitch_at(n, to as f64) < low as f64
+                    || n.pitch_envelope
+                        .iter()
+                        .flatten()
+                        .any(|p| p.tick >= from && p.tick < to && p.pitch.millicents <= low)
             }) {
                 return None;
             }
@@ -211,12 +265,33 @@ pub fn contextual_harmonic_roots(
         else {
             continue;
         };
-        if bass != next_bass
-            || !RESOLUTION.iter().all(|interval| {
+        if bass != next_bass {
+            continue;
+        }
+        let observed_resolution_intervals: Vec<_> = RESOLUTION
+            .iter()
+            .copied()
+            .filter(|interval| {
                 observations[index + 1]
                     .classes
                     .contains(&((bass + interval).rem_euclid(OCTAVE)))
             })
+            .collect();
+        let resolution_alternative_index =
+            if observed_resolution_intervals.len() == RESOLUTION.len() {
+                None
+            } else if options.allow_implied_resolution {
+                next.selected.filter(|&i| {
+                    next.alternatives.get(i).is_some_and(|h| {
+                        h.root_millicents == *bass
+                            && RESOLUTION.iter().all(|p| h.core_intervals.contains(p))
+                    })
+                })
+            } else {
+                None
+            };
+        if observed_resolution_intervals.len() != RESOLUTION.len()
+            && resolution_alternative_index.is_none()
         {
             continue;
         }
@@ -270,7 +345,8 @@ pub fn contextual_harmonic_roots(
                     current_bass_note_ids: bass_ids.clone(),
                     next_bass_note_ids: next_ids.clone(),
                     resolution_note_ids,
-                    observed_resolution_intervals: RESOLUTION.to_vec(),
+                    observed_resolution_intervals,
+                    resolution_alternative_index,
                     resolution_end_tick: observations[index + 1].end_tick,
                 },
             },
@@ -426,6 +502,136 @@ mod tests {
         );
     }
     #[test]
+    fn broken_chord_bass_has_exact_witnesses_and_obeys_bounds() {
+        let (mut score, windows) = fixture();
+        for i in [0, 3] {
+            score.notes[i].onset += 1;
+            score.notes[i].duration -= 1;
+        }
+        assert!(
+            contextual_harmonic_roots(&score, &windows, &Default::default())
+                .unwrap()
+                .is_empty()
+        );
+        let mut options = HarmonyContextOptions {
+            bass_position: HarmonyBassPosition::LowestSounding,
+            ..Default::default()
+        };
+        let proposals = contextual_harmonic_roots(&score, &windows, &options).unwrap();
+        assert_eq!(proposals.len(), 1);
+        let evidence = &proposals[0].functional_root.evidence;
+        assert_eq!(
+            (evidence.current_bass_tick, evidence.next_bass_tick),
+            (1, 5)
+        );
+        assert_eq!(evidence.current_bass_note_ids, ["n0"]);
+        assert_eq!(evidence.next_bass_note_ids, ["n3"]);
+        options.max_bass_delay_ticks = Some(0);
+        assert!(
+            contextual_harmonic_roots(&score, &windows, &options)
+                .unwrap()
+                .is_empty()
+        );
+        options.max_bass_delay_ticks = None;
+        options.max_resolution_ticks = Some(1);
+        assert!(
+            contextual_harmonic_roots(&score, &windows, &options)
+                .unwrap()
+                .is_empty()
+        );
+        options.max_resolution_ticks = None;
+        score.notes[0].pitch.millicents += 1;
+        assert!(
+            contextual_harmonic_roots(&score, &windows, &options)
+                .unwrap()
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn bass_geometry_is_transposition_and_note_order_equivariant() {
+        let (mut score, mut windows) = fixture();
+        let options = HarmonyContextOptions {
+            bass_position: HarmonyBassPosition::LowestSounding,
+            ..Default::default()
+        };
+        for note in &mut score.notes {
+            note.pitch.millicents += 300_000;
+        }
+        for window in &mut windows {
+            for hypothesis in &mut window.alternatives {
+                hypothesis.root_millicents =
+                    (hypothesis.root_millicents + 300_000).rem_euclid(OCTAVE);
+            }
+        }
+        score.notes.reverse();
+        let proposals = contextual_harmonic_roots(&score, &windows, &options).unwrap();
+        assert_eq!(proposals.len(), 1);
+        assert_eq!(proposals[0].functional_root.root_millicents, 1_000_000);
+        // A root-position tonic cannot become a resolving six-four just because
+        // another chord follows; the actual lowest register matters.
+        score
+            .notes
+            .iter_mut()
+            .find(|n| n.id == "n1")
+            .unwrap()
+            .pitch
+            .millicents -= OCTAVE;
+        assert!(
+            contextual_harmonic_roots(&score, &windows, &options)
+                .unwrap()
+                .is_empty()
+        );
+    }
+    #[test]
+    fn moving_upper_note_cannot_hide_a_lower_pitch_in_the_evidence_horizon() {
+        use crate::model::PitchEnvelopePoint;
+        let (mut score, windows) = fixture();
+        let mut curve = score.notes[1].clone();
+        curve.id = "moving".into();
+        curve.pitch.millicents = 7_200_000;
+        curve.pitch_envelope = Some(vec![
+            PitchEnvelopePoint {
+                tick: 0,
+                pitch: curve.pitch,
+            },
+            PitchEnvelopePoint {
+                tick: 2,
+                pitch: Pitch {
+                    millicents: 3_600_000,
+                },
+            },
+            PitchEnvelopePoint {
+                tick: 4,
+                pitch: curve.pitch,
+            },
+        ]);
+        score.notes.push(curve);
+        assert_eq!(
+            contextual_harmonic_roots(&score, &windows, &Default::default())
+                .unwrap()
+                .len(),
+            1
+        );
+        let options = HarmonyContextOptions {
+            bass_position: HarmonyBassPosition::LowestSounding,
+            ..Default::default()
+        };
+        assert!(
+            contextual_harmonic_roots(&score, &windows, &options)
+                .unwrap()
+                .is_empty()
+        );
+        // Interpolated crossings count even when no knot lies in the window.
+        let mut shifted = windows.clone();
+        shifted[0].start_tick = 1;
+        assert!(
+            contextual_harmonic_roots(&score, &shifted, &Default::default())
+                .unwrap()
+                .is_empty()
+        );
+    }
+    #[test]
     fn selected_only_ablation_and_competing_qualities_abstain() {
         let (score, mut windows) = fixture();
         windows[0].selected = None;
@@ -454,6 +660,39 @@ mod tests {
         let mut minor = windows[0].alternatives[0].clone();
         minor.core_intervals = vec![0, 300_000, 700_000];
         windows[0].alternatives.push(minor);
+        assert!(
+            contextual_harmonic_roots(&score, &windows, &options)
+                .unwrap()
+                .is_empty()
+        );
+    }
+    #[test]
+    fn implied_resolution_requires_an_explicit_selected_realization_dependency() {
+        let (mut score, mut windows) = fixture();
+        score.notes.retain(|n| n.id != "n4"); // G-D remains; B is implied only.
+        assert!(
+            contextual_harmonic_roots(&score, &windows, &Default::default())
+                .unwrap()
+                .is_empty()
+        );
+        let options = HarmonyContextOptions {
+            allow_implied_resolution: true,
+            ..Default::default()
+        };
+        let proposals = contextual_harmonic_roots(&score, &windows, &options).unwrap();
+        assert_eq!(proposals.len(), 1);
+        let evidence = &proposals[0].functional_root.evidence;
+        assert_eq!(evidence.observed_resolution_intervals, [0, 700_000]);
+        assert_eq!(evidence.resolution_note_ids, ["n3", "n5"]);
+        assert_eq!(evidence.resolution_alternative_index, Some(0));
+        windows[1].selected = None;
+        assert!(
+            contextual_harmonic_roots(&score, &windows, &options)
+                .unwrap()
+                .is_empty()
+        );
+        windows[1].selected = Some(0);
+        windows[1].alternatives[0].core_intervals = vec![0, 300_000, 700_000];
         assert!(
             contextual_harmonic_roots(&score, &windows, &options)
                 .unwrap()

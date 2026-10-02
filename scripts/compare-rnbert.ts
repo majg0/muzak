@@ -23,7 +23,7 @@ type ContextReply = { parameters: HarmonyContextOptions; tonicFilter: boolean; p
 
 /** Native Rust owns the rule and the predicted-tonic gate. This only adapts
  * model observations into its DTO; zero fit fields are explicitly uncomputed. */
-function refineContext(executable: string, score: Score, prediction: MappedPrediction) {
+function refineContext(executable: string, score: Score, prediction: MappedPrediction, options?: Partial<HarmonyContextOptions>) {
   const tonics = prediction.windows.map(w => {
     if (w.tonicPitchClass === undefined) throw Error('Context refinement requires mapper tonicPitchClass metadata for every window.');
     return w.tonicPitchClass;
@@ -35,7 +35,7 @@ function refineContext(executable: string, score: Score, prediction: MappedPredi
       score: 0, coreCoverage: 0, coreMassFraction: 0, contextualCost: null })),
     selected: w.selected, ambiguityGap: null, localAmbiguityGap: null, roles: [], rhythms: [],
   }));
-  const input = JSON.stringify({ score, windows, predictedTonicPitchClasses: tonics });
+  const input = JSON.stringify({ score, windows, predictedTonicPitchClasses: tonics, options });
   const result = spawnSync(resolve(executable), [], { input, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, windowsHide: true });
   if (result.error) throw result.error;
   if (result.status !== 0) throw Error(`Native context adapter failed (${result.status}): ${result.stderr}`);
@@ -99,6 +99,15 @@ export function diagnosePredictionErrors(prediction: HarmonyPrediction, referenc
 }
 
 function run(args: string[]) {
+  const optionsAt = args.findIndex(a => a === '--context-options' || a.startsWith('--context-options='));
+  let contextOptions: Partial<HarmonyContextOptions> | undefined;
+  if (optionsAt >= 0) {
+    const inline = args[optionsAt].startsWith('--context-options=');
+    const path = inline ? args[optionsAt].slice('--context-options='.length) : args[optionsAt + 1];
+    if (!path || path.startsWith('--')) throw Error('Missing context options JSON path.');
+    contextOptions = JSON.parse(readFileSync(path, 'utf8'));
+    args = [...args.slice(0, optionsAt), ...args.slice(optionsAt + (inline ? 1 : 2))];
+  }
   const contextAt = args.findIndex(a => a === '--context' || a.startsWith('--context='));
   let context: string | undefined;
   if (contextAt >= 0) {
@@ -112,8 +121,8 @@ function run(args: string[]) {
   if (!profile || !/^[a-z0-9][a-z0-9._-]*$/.test(profile)) throw Error('Invalid output profile.');
   if (profileAt >= 0) args = [...args.slice(0, profileAt), ...args.slice(profileAt + 2)];
   const prepare = args.includes('--prepare');
-  if (args.some(a => !['--prepare', '--evaluate'].includes(a)) || args.length !== 1 || (prepare && context)) {
-    throw Error('Usage: npx tsx scripts/compare-rnbert.ts --prepare|--evaluate [--profile name] [--context native-example-path] (development only).');
+  if (args.some(a => !['--prepare', '--evaluate'].includes(a)) || args.length !== 1 || (prepare && context) || (contextOptions && !context)) {
+    throw Error('Usage: npx tsx scripts/compare-rnbert.ts --prepare|--evaluate [--profile name] [--context native-example-path [--context-options JSON]] (development only).');
   }
   const root = '.audit/contextual/rnbert'; mkdirSync(root, { recursive: true });
   const sources = JSON.parse(readFileSync('scripts/research/rnbert-sources.json', 'utf8'));
@@ -157,7 +166,7 @@ function run(args: string[]) {
     const scoreBytes = readFileSync(work.derivedScore.path);
     if (hash(scoreBytes) !== work.derivedScore.sha256) throw Error('Derived observation Score hash mismatch.');
     const score: Score = JSON.parse(scoreBytes.toString('utf8'));
-    const { refined, evidence } = refineContext(context, score, prediction);
+    const { refined, evidence } = refineContext(context, score, prediction, contextOptions);
     const refinedPath = `${root}/${work.id}-${profile}-context-predictions.json`, refinedBytes = JSON.stringify(refined, null, 2) + '\n';
     writeFileSync(refinedPath, refinedBytes);
     return { work, path, prediction, predictionSha256, refined, refinedPath, refinedSha256: hash(refinedBytes),
@@ -179,11 +188,11 @@ function run(args: string[]) {
   });
   const report = { experiment: 'Official RNBert training-overlap development diagnostic, not generalization.', profile,
     input: 'Projected notation-time MIDI; upstream quantization/detremolo/salami-slicing/dedoubling. No supplied key or chord labels/boundaries.',
-    mapping: 'Author atomic RN translator plus diatonic-default secondary-mode table and CAUTIONARY minor6/7. Realized core stays independent of functional root.',
+    mapping: 'Author atomic RN root translation plus diatonic-default secondary-mode table and CAUTIONARY minor6/7. Explicit predicted quality supplies realized core, independently of functional root.',
     context: context ? { executable: resolve(context), executableSha256: hash(readFileSync(context)),
       adapterSourceSha256: hash(readFileSync('crates/muzak-core/examples/harmony-context.rs')),
       ruleSourceSha256: hash(readFileSync('crates/muzak-core/src/harmony_context.rs')),
-      method: 'Existing Rust observation-only context defaults, accepting proposals only when the realized root equals predicted model-key tonic. No key inference or reference inputs. Functional root changes only; realized core, model windows and admission are fixed.',
+      method: 'Rust observed-bass context with explicit returned parameters and optional inferred-resolution dependencies, accepting proposals only when the realized root equals predicted model-key tonic. No key inference or reference inputs. Functional root changes only; realized core, model windows and admission are fixed.',
       adapter: 'Uncomputed role arrays are empty and fit scalars0; these are not scene/evidence claims. requireFullCore=false; no proposal consults uncomputed coverage.',
     } : null,
     sourcesManifest: 'scripts/research/rnbert-sources.json', modelManifest: `${root}/model-manifest.json`,

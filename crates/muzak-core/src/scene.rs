@@ -941,6 +941,7 @@ mod functional_root_validation_tests {
                 current_bass_note_ids: vec!["n0".into()], next_bass_note_ids: vec!["n3".into()],
                 resolution_note_ids: vec!["n3".into(),"n4".into(),"n5".into()],
                 observed_resolution_intervals: vec![0,400_000,700_000], resolution_end_tick: 8,
+                resolution_alternative_index: None,
             },
         });
         // The stored evidence remains structurally valid even when later model
@@ -973,6 +974,21 @@ mod functional_root_validation_tests {
             let invalid: MusicalScene = serde_json::from_value(invalid).unwrap();
             let error = decode_scene(&invalid).expect_err(suffix);
             assert!(error.message.contains("Functional") || error.message.contains("functional"), "{suffix}: {}", error.message);
+        }
+        let mut implied = original.clone();
+        let evidence = implied.pointer_mut("/harmony/windows/0/functionalRoot/evidence").unwrap();
+        evidence["resolutionAlternativeIndex"] = json!(scene.harmony.as_ref().unwrap().windows[1].selected.unwrap());
+        evidence["observedResolutionIntervals"] = json!([0,700_000]);
+        evidence["resolutionNoteIds"] = json!(["n3","n5"]);
+        assert_eq!(decode_scene(&serde_json::from_value(implied.clone()).unwrap()).unwrap(), score);
+        for (path, value) in [
+            ("/harmony/windows/0/functionalRoot/evidence/resolutionAlternativeIndex", json!(999)),
+            ("/harmony/windows/1/selected", json!(null)),
+            ("/harmony/windows/0/functionalRoot/evidence/resolutionAlternativeIndex", json!(null)),
+        ] {
+            let mut invalid = implied.clone();
+            *invalid.pointer_mut(path).unwrap() = value;
+            assert!(decode_scene(&serde_json::from_value(invalid).unwrap()).is_err(), "{path}");
         }
     }
 }
@@ -1252,6 +1268,16 @@ fn validate_scene_graph(scene: &MusicalScene) -> CoreResult<()> {
                     .ok_or_else(|| budget("Functional harmony witness budget exceeded."))?;
             }
             let next_members: HashSet<_> = next.note_ids.iter().map(String::as_str).collect();
+            if let Some(index) = evidence.resolution_alternative_index {
+                if next.selected != Some(index) || !next.alternatives.get(index).is_some_and(|h| {
+                    h.root_millicents == functional.root_millicents
+                        && [0, 400_000, 700_000].iter().all(|p| h.core_intervals.contains(p))
+                }) {
+                    return Err(invalid("Functional harmony implied tones require the next selected major realization."));
+                }
+            } else if evidence.observed_resolution_intervals != [0, 400_000, 700_000] {
+                return Err(invalid("Functional harmony needs observed resolution tones or an explicit realization dependency."));
+            }
             let exact_members = |ids: &[String], allowed: &HashSet<&str>| {
                 !ids.is_empty() && ids.len() <= allowed.len()
                     && ids.iter().map(String::as_str).collect::<HashSet<_>>().len() == ids.len()
