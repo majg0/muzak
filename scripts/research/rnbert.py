@@ -182,6 +182,7 @@ def predict(profile, onset_threshold):
 
 def mapper():
     import mspell
+    from music21.harmony import ChordSymbol
     from music21.roman import RomanNumeral, Minor67Default
     from musicbert_hf.decoding_helpers import MAJOR_KEYS, MINOR_KEYS
     source = ROOT / 'harmony-chords-upstream.py'
@@ -194,6 +195,13 @@ def mapper():
     namespace = {'re': re, 'warnings': warnings, 'Literal': Literal, 'UNSPELLER': mspell.Unspeller(), 'MAJOR_KEYS': MAJOR_KEYS, 'MINOR_KEYS': MINOR_KEYS}
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(source), 'exec'), namespace)
 
+    # The upstream display token keeps quality and inversion separately. Roman
+    # numerals alone can infer a different seventh from the local key, so use
+    # the explicit predicted quality to realize the core after resolving root.
+    quality_intervals = {'M': (0, 4, 7), 'm': (0, 3, 7), 'o': (0, 3, 6), '+': (0, 4, 8),
+                         'M7': (0, 4, 7, 11), 'Mm7': (0, 4, 7, 10), 'm7': (0, 3, 7, 10),
+                         'o7': (0, 3, 6, 9), 'ø7': (0, 3, 6, 10)}
+
     def parse(rn, key):
         if any(token in rn for token in ['aug6', 'x', '?', '<']):
             raise ValueError('Unknown/collapsed augmented-sixth class is not uniquely reconstructible.')
@@ -205,9 +213,17 @@ def mapper():
             if secondary != 'I' and secondary not in namespace['TONICIZATIONS']['M' if key[0].isupper() else 'm']:
                 raise ValueError('Unrecognized secondary degree.')
             local_key = namespace['tonicization_to_key'](secondary, key, case_matters=False)
+        token = re.fullmatch(r'[b#]*(?:VII|VI|IV|V|III|II|I)(Mm|M|m|o|ø|\+)(7|65|43|42|64|6)?', pieces[0])
+        if token is None:
+            raise ValueError('Unknown explicit quality or inversion.')
+        quality = token[1] + ('7' if token[2] in ('7', '65', '43', '42') else '')
+        if quality not in quality_intervals:
+            raise ValueError('Quality/inversion combination unavailable in model vocabulary.')
         translated = namespace['translate_rns'](pieces[0])
         roman = RomanNumeral(translated, local_key, sixthMinor=Minor67Default.CAUTIONARY, seventhMinor=Minor67Default.CAUTIONARY)
-        return {'translated': translated, 'localKey': local_key, 'root': int(roman.root().pitchClass), 'core': sorted(set(int(p) for p in roman.pitchClasses))}
+        root = int(roman.root().pitchClass)
+        return {'translated': translated, 'localKey': local_key, 'root': root,
+                'core': sorted((root + interval) % 12 for interval in quality_intervals[quality])}
 
     controls = [('IM','C',0,[0,4,7]),('VMm7','C',7,[2,5,7,11]),('VMm65','A',4,[2,4,8,11]),('IM64','C',0,[0,4,7]),
                 ('VIIo7','C',11,[2,5,8,11]),('#VIIo7','a',8,[2,5,8,11]),('VIm','C',9,[0,4,9]),('VMm7/IV','C',0,[0,4,7,10]),
@@ -217,7 +233,30 @@ def mapper():
         result = parse(rn, key)
         if result['root'] != root or result['core'] != core:
             raise ValueError(f'Independent mapping control failed: {rn}, {key}, {result}')
-    return parse, len(controls)
+    # Independent chord-symbol realization checks the full explicit-quality
+    # cross product, including inversions and contexts that changed sevenths.
+    symbols = {'M': 'C', 'm': 'Cm', 'o': 'Cdim', '+': 'C+', 'M7': 'Cmaj7',
+               'Mm7': 'C7', 'm7': 'Cm7', 'o7': 'Cdim7', 'ø7': 'Cm7b5'}
+    count = len(controls)
+    for quality, symbol in symbols.items():
+        expected = sorted(set(int(p) for p in ChordSymbol(symbol).pitchClasses))
+        figures = ('7', '65', '43', '42') if '7' in quality else ('', '6', '64')
+        for key in ('C', 'a', 'F#', 'eb'):
+            for degree in ('I', 'II', 'III', 'IV', 'V', 'VI', 'VII'):
+                for figure in figures:
+                    rn = degree + quality.replace('7', '') + figure
+                    result = parse(rn, key)
+                    if sorted((pitch - result['root']) % 12 for pitch in result['core']) != expected:
+                        raise ValueError(f'Explicit-quality control failed: {rn}, {key}, {result}')
+                    count += 1
+    for rn in ('Ix', 'Iaug67', 'I+7', 'Iø', 'IM?', 'IM/UNKNOWN'):
+        try:
+            parse(rn, 'C')
+        except ValueError:
+            count += 1
+        else:
+            raise ValueError(f'Unknown-label rejection control failed: {rn}')
+    return parse, count
 
 
 def map_predictions(profile):
@@ -251,7 +290,7 @@ def map_predictions(profile):
     manifest = 'mapping-manifest.json' if profile == 'baseline' else f'mapping-manifest-{profile}.json'
     save(manifest, {**SOURCES['translation'], 'profile': profile, 'controls': control_count, 'results': reports,
         'mapperSha256': digest(pathlib.Path(__file__)), 'tonicPitchClassUnit': 'Native millicents modulo 1200000, from the predicted model key only.',
-        'method': 'Author atomic translation plus tonicization_to_key(case_matters=False); music21 9.3.0 CAUTIONARY minor6/7. I64 keeps realization root I. Unknown/lossy classes unavailable, denominator retained.',
+        'method': 'Author atomic translation plus tonicization_to_key(case_matters=False) resolves root with music21 9.3.0 CAUTIONARY minor6/7; explicit predicted quality supplies core intervals independently of local-key seventh defaults. I64 keeps realization root I. Unknown/lossy classes unavailable, denominator retained.',
         'secondaryModeLimit': 'Mode absent from model degree vocabulary; author diatonic-default heuristic supplies it, not new model evidence.'})
     print(json.dumps(reports))
 
