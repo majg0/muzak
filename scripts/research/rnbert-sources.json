@@ -21,7 +21,24 @@
       "MozartPSData/K331-1.csv"
     ],
     "sha256": "dd3dfd813f08348bc1a7c9fdc28aae26f06e06d64a507bae126fe4719cdaa9d0",
-    "holdoutModelOverlap": "Training manifest also lists K457-1; this checkpoint cannot establish independent generalization on that work. No heldout notes/labels opened."
+    "holdoutModelOverlap": "Training manifest also lists K457-1; this checkpoint cannot establish independent generalization on that work. No heldout notes/labels opened.",
+    "projectionAudit": {
+      "archiveUrl": "https://raw.githubusercontent.com/malcolmsailor/rnbert/21e34511462e70e61a4525ba92fca674bb78e2f9/dataset.zip",
+      "members": [
+        {
+          "member": "MozartPSData/K330-1.csv",
+          "bytes": 401199,
+          "sha256": "6406bf0bffa3b42c5c1b7621108830ae4b91dfe9ea657d896c71736d9e668fd5"
+        },
+        {
+          "member": "MozartPSData/K331-1.csv",
+          "bytes": 550262,
+          "sha256": "61423121bd20f520a461190ff21ee448e41bcdaf9d6b5acd84a984eb65f5acee"
+        }
+      ],
+      "scope": "Only the two declared development members read; other work content untouched. Packaged labels, not inference inputs.",
+      "finding": "Both packaged works contain no minor7 or major7 targets. K331 q6-7.5 labels minor with E non-chord; the independent score-aligned reference labels minor7. The precise historical conversion cause is still under investigation."
+    }
   },
   "models": {
     "revision": "2239f010ad575d9a35eeb7fc9ded568176323386",

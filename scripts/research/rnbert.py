@@ -26,6 +26,47 @@ SOURCES = json.loads(pathlib.Path(__file__).with_name('rnbert-sources.json').rea
 ROOT = WORKSPACE / '.audit/contextual/rnbert'
 
 
+def sticky_viterbi(probabilities, alpha, pbar=True):
+    """Upstream float32 key DP, vectorized over states with identical tie order."""
+    import numpy as np
+    import torch
+    if alpha == 1:
+        return torch.argmax(probabilities, axis=-1)
+    if probabilities.dtype != torch.float32 or probabilities.device.type != 'cpu':
+        raise ValueError('Research key decoder expects upstream CPU float32 probabilities.')
+    length, states = probabilities.shape
+    transition = torch.ones((states, states))
+    transition[range(states), range(states)] *= alpha
+    transition /= transition.sum(axis=0, keepdims=True)
+    transition = torch.log(transition).numpy()
+    emission = torch.log(probabilities).numpy()
+    previous = emission[0]
+    back = np.empty((length - 1, states), dtype=np.int64)
+    for i in range(1, length):
+        candidates = (previous[:, None] + transition) + emission[i][None, :]
+        back[i - 1] = np.argmax(candidates, axis=0)
+        previous = candidates[back[i - 1], np.arange(states)]
+        if not np.all(previous > -1e10):
+            raise ValueError('Key path exhausted upstream numerical score range.')
+    state = int(np.argmax(previous)); path = [state]
+    for i in range(length - 2, -1, -1):
+        state = int(back[i, state]); path.append(state)
+    return torch.tensor(path[::-1])
+
+
+def check_key_decoder():
+    import torch
+    from musicbert_hf.utils.sticky_viterbi import sticky_viterbi as upstream
+    generator = torch.Generator().manual_seed(0)
+    count = 0
+    for alpha in (.9, 1., 1.2, 10.):
+        for values in (torch.full((8, 4), .25), torch.softmax(torch.randn(15, 7, generator=generator), -1)):
+            if not torch.equal(upstream(values, alpha, pbar=False), sticky_viterbi(values, alpha)):
+                raise ValueError('Vectorized key decoder differs from pinned upstream.')
+            count += 1
+    return count
+
+
 def digest(path):
     with path.open('rb') as stream:
         return hashlib.file_digest(stream, 'sha256').hexdigest()
@@ -68,6 +109,8 @@ def setup(device):
     helper = '''
 import random
 import numpy as np
+sys.path.insert(0, RESEARCH_PATH)
+from rnbert import sticky_viterbi
 random.seed(0)
 np.random.seed(0)
 torch.manual_seed(0)
@@ -78,7 +121,7 @@ def research_forward(model, **inputs):
     output.logits = values.detach().cpu() if isinstance(values, torch.Tensor) else type(values)(value.detach().cpu() for value in values)
     return output
 
-'''.replace('RESEARCH_DEVICE', repr(device))
+'''.replace('RESEARCH_DEVICE', repr(device)).replace('RESEARCH_PATH', repr(str(pathlib.Path(__file__).parent)))
     if predictor.count('@dataclass') != 1:
         raise ValueError('Predictor adapter anchor changed.')
     predictor = predictor.replace('@dataclass', helper + '@dataclass', 1)
@@ -111,6 +154,7 @@ def research_forward(model, **inputs):
         'runtimePredictSha256': digest(repo / 'scripts/predict.py'), 'readerSha256': digest(repo / 'musicbert_hf/utils/read.py'),
         'runtimeChanges': ['Disable interactive debugger', 'Seed Python/NumPy/Torch at zero',
                            'Move model and forward inputs to requested device, return logits to CPU',
+                           'Vectorize the same float32 key Viterbi state updates with original tie order',
                            'Use documented FIFO MIDI pairing; require independent event admission'],
         'modelInputProjection': 'Zero-duration grace exclusion; upstream 16 ticks/quarter quantization, detremolo, salami slicing and dedoubling.',
         'evaluation': 'Training-overlap development diagnostic; no supplied keys or chord boundaries.'})
@@ -309,4 +353,4 @@ if __name__ == '__main__':
     elif args.command == 'check': check_inputs()
     elif args.command == 'predict': predict(args.profile, args.onset_threshold)
     elif args.command == 'map': map_predictions(args.profile)
-    else: print(f'{mapper()[1]} independent mapping controls passed.')
+    else: print(f'{mapper()[1]} independent mapping controls and {check_key_decoder()} exact key-decoder controls passed.')
