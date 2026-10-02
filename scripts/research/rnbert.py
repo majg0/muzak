@@ -230,7 +230,7 @@ def predict(profile, onset_threshold):
 def capture(admission_path, profile, shifts):
     """Capture the official forward once per admitted source/shift, without labels.
 
-    Hooks observe the trained quality head and raw RN outputs; upstream owns
+    Hooks observe the trained degree/quality heads and raw RN outputs; upstream owns
     model execution, overlap collation and salami-slice pooling. Source-event
     admission precedes upstream quantization. No reference harmony enters here.
     """
@@ -291,14 +291,16 @@ def capture(admission_path, profile, shifts):
                 models[key] = model
                 if _conditioned:
                     targets = list(json.loads((ROOT / 'config.json').read_text())['rn_target_names'])
-                    if targets.count('quality') != 1:
-                        raise ValueError('Quality head identity is ambiguous.')
-                    quality = model.classifier.multi_tag_sub_heads[targets.index('quality')]
-                    if tuple(quality.out_proj.weight.shape) != (15, 1024):
-                        raise ValueError('Pinned quality readout shape changed.')
-                    state['model'], state['qualityHead'] = model, quality
-                    handles.append(quality.out_proj.register_forward_pre_hook(
-                        lambda _head, inputs: state['features'].extend(inputs[0].detach().cpu())))
+                    state['model'], state['readoutHeads'] = model, {}
+                    for label, target, count in [('quality', 'quality', 15), ('degree', degree_name, 193)]:
+                        if targets.count(target) != 1:
+                            raise ValueError(f'{label} head identity is ambiguous.')
+                        readout = model.classifier.multi_tag_sub_heads[targets.index(target)].out_proj
+                        if tuple(readout.weight.shape) != (count, 1024):
+                            raise ValueError(f'Pinned {label} readout shape changed.')
+                        state['readoutHeads'][label] = readout
+                        handles.append(readout.register_forward_pre_hook(
+                            lambda _head, inputs, label=label: state['features'][label].extend(inputs[0].detach().cpu())))
             return models[key]
 
         setattr(module, name, cached)
@@ -326,6 +328,11 @@ def capture(admission_path, profile, shifts):
     named_heads = {'degree': degree_name, 'quality': 'quality', 'inversion': 'inversion'}
     destination = ROOT / f'capture-{profile}'
     destination.mkdir(parents=True, exist_ok=True)
+    runner_source = pathlib.Path(__file__).read_bytes()
+    snapshot = destination / 'runner-source.py'
+    if snapshot.exists() and snapshot.read_bytes() != runner_source:
+        raise ValueError('Capture profile uses another runner revision; use a new profile.')
+    snapshot.write_bytes(runner_source)
     provenance = {'methodSha256': digest(pathlib.Path(__file__)), 'admissionPath': str(admission_path),
         'admissionSha256': digest(admission_path), 'registrySha256': digest(registry_path),
         'predictorSha256': digest(source), 'readerSha256': runtime['readerSha256'], 'sourceCommit': head,
@@ -389,7 +396,7 @@ def capture(admission_path, profile, shifts):
                 actual = collections.Counter(event_key(r.pitch, r.onset, r.release, r.track, row['ppq'], shift) for r in transposed.itertuples() if r.type == 'note')
                 if actual != expected_events:
                     raise ValueError('Transposition changed the admitted event multiset.')
-                state.update(targets=targets, features=[], masks=[], raw={t: [] for t in targets})
+                state.update(targets=targets, features={'quality': [], 'degree': []}, masks=[], raw={t: [] for t in targets})
                 random.seed(0); np.random.seed(0); torch.manual_seed(0)
                 config = module.load_config_from_json(str(ROOT / 'config.json'), str(input_path), str(output))
                 config.harmony_onset_threshold = .01  # Raw captures precede pooling; fixed display output only.
@@ -399,10 +406,10 @@ def capture(admission_path, profile, shifts):
                 def collate(values):
                     return module.collate_logits(values, overlap_size=config.window_size-config.hop_size,
                         attention_masks=state['masks'], trim_start=False, trim_end=False)[..., 1:-1, :]
-                features = collate(state['features'])
+                features = {name: collate(values) for name, values in state['features'].items()}
                 notes = pd.read_csv(output / 'annotated_music_df.csv')
                 notes = notes[notes.type == 'note'].reset_index(drop=True)
-                if slices.tolist() != notes.distinct_slice_id.astype(int).tolist() or features.shape != (len(notes), 1024):
+                if slices.tolist() != notes.distinct_slice_id.astype(int).tolist() or any(h.shape != (len(notes), 1024) for h in features.values()):
                     raise ValueError('Captured rows/slice IDs/features are misaligned.')
                 atomic_ids = torch.tensor(pd.factorize(notes.slice_id, sort=False)[0])
                 atom = lambda values: module.sync_slices(values, atomic_ids, return_per_slice=True)
@@ -417,18 +424,23 @@ def capture(admission_path, profile, shifts):
                         name = next(k for k, v in named_heads.items() if v == target)
                         raw[name], logits[name] = values, atom(values)
                         vocabularies[name] = [k for k, v in sorted(stoi.items(), key=lambda item: item[1])]
-                quality = state['qualityHead'].out_proj
-                weight, bias = quality.weight.detach().cpu().clone(), quality.bias.detach().cpu().clone()
-                quality_stoi = model.config.multitask_label2id['quality']
-                quality_columns = [quality_stoi[t] for t in vocabularies['quality']]
-                if quality_columns != list(range(4, 15)):
-                    raise ValueError('Pinned quality nonspecial columns changed.')
-                atomic_features = atom(features)
-                replay = torch.nn.functional.linear(atomic_features, weight, bias)
-                atomic_quality = atom(full['quality'])
-                if (not torch.isfinite(atomic_features).all() or not torch.allclose(replay, atomic_quality, atol=3e-5, rtol=1e-5)
-                        or not torch.equal(replay.argmax(-1), atomic_quality.argmax(-1))):
-                    raise ValueError('Captured linear quality readout does not reproduce logits.')
+                captured_readouts, raw_readouts, readout_checks = {}, {}, {}
+                for name, features_for_head in features.items():
+                    readout = state['readoutHeads'][name]
+                    weight, bias = readout.weight.detach().cpu().clone(), readout.bias.detach().cpu().clone()
+                    stoi = model.config.multitask_label2id[named_heads[name]]
+                    columns = [stoi[t] for t in vocabularies[name]]
+                    if columns != list(range(4, weight.shape[0])):
+                        raise ValueError(f'Pinned {name} nonspecial columns changed.')
+                    atomic_features = atom(features_for_head)
+                    replay = torch.nn.functional.linear(atomic_features, weight, bias)
+                    atomic_raw = atom(full[named_heads[name]])
+                    if (not torch.isfinite(atomic_features).all() or not torch.allclose(replay, atomic_raw, atol=3e-5, rtol=1e-5)
+                            or not torch.equal(replay.argmax(-1), atomic_raw.argmax(-1))):
+                        raise ValueError(f'Captured linear {name} readout does not reproduce logits.')
+                    captured_readouts.update({f'{name}Features': atomic_features, f'{name}Weight': weight[columns], f'{name}Bias': bias[columns]})
+                    raw_readouts.update({f'{name}Features': features_for_head, f'{name}Weight': weight, f'{name}Bias': bias})
+                    readout_checks.update({f'{name}ReplayMaxAbs': float((replay-atomic_raw).abs().max()), f'{name}ReplayArgmaxDifferences': 0})
                 key_stoi = model.config.multitask_label2id['key_pc_mode']
                 key_tokens = {v: k for k, v in key_stoi.items() if v >= 0}
                 onset_probability = torch.softmax(state['onsetLogits'], -1)[:, state['onsetVocabulary']['yes']]
@@ -448,12 +460,12 @@ def capture(admission_path, profile, shifts):
                 if geometry is not None and intervals != geometry:
                     raise ValueError('Transposition changed atomic model intervals.')
                 geometry = intervals
-                if len(frames) != atomic_features.shape[0]:
+                if any(len(frames) != captured_readouts[f'{name}Features'].shape[0] for name in features):
                     raise ValueError('Atomic frame count differs from feature rows.')
                 bundle = {'frames': frames, 'ppq': 48, 'vocabularies': vocabularies, 'logits': logits,
-                    'qualityFeatures': atomic_features, 'qualityWeight': weight[quality_columns], 'qualityBias': bias[quality_columns]}
+                    **captured_readouts}
                 torch.save(bundle, output / 'capture.pt')
-                torch.save({'rawHeads': full, 'qualityFeatures': features, 'qualityWeight': weight, 'qualityBias': bias,
+                torch.save({'rawHeads': full, **raw_readouts,
                     'sliceIds': slices, 'keyIndices': state['keys'], 'onsetLogits': state['onsetLogits'],
                     'dictionaries': model.config.multitask_label2id}, output / 'raw.pt')
                 (output / 'frames.json').write_text(json.dumps(frames, separators=(',', ':')) + '\n')
@@ -463,9 +475,8 @@ def capture(admission_path, profile, shifts):
                     'sourcePpq': row['ppq'], 'sourceInputSha256': row['sha256'], 'inputSha256': digest(input_path),
                     'expectedSha256': row['expectedSha256'], 'exactSourceEvents': expected_events.total(),
                     'rows': len(notes), 'frames': len(frames), 'files': files,
-                    'qualityReplayMaxAbs': float((replay-atomic_quality).abs().max()),
-                    'qualityReplayArgmaxDifferences': 0, 'seconds': time.perf_counter()-started,
-                    'targetLabelsRead': False, 'featureMeaning': 'Atomic mean of official overlap-collated quality dense+tanh outputs; original final linear readout retained.'}
+                    **readout_checks, 'seconds': time.perf_counter()-started,
+                    'targetLabelsRead': False, 'featureMeaning': 'Atomic means of separate official overlap-collated degree and quality dense+tanh outputs; original final linear readouts retained.'}
                 (output / 'manifest.json').write_text(json.dumps(result, indent=2) + '\n')
                 results.append({'work': row['work'], 'split': row['split'], 'shift': shift,
                     'path': str(output), 'sha256': digest(output / 'manifest.json')})

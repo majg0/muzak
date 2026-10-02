@@ -325,7 +325,12 @@ function run(args: string[]) {
     const results = works.map(work => training ? prepareTraining(work, root) : prepareInput(work, root));
     const policy = training ? 'Explicitly assigned training only; exact observations and separate supervised labels. No development or holdout references read.'
       : 'Zero-duration notes excluded explicitly; source positive events unchanged. No labels/keys/boundaries read.';
-    writeFileSync(`${root}/${training ? 'training-' : ''}admission.json`, JSON.stringify({ policy, works: results }, null, 2) + '\n');
+    const admissionPath = `${root}/${training ? 'training-' : ''}admission${profile === 'baseline' ? '' : `-${profile}`}.json`;
+    const admissionBytes = JSON.stringify({ policy, works: results }, null, 2) + '\n';
+    if (existsSync(admissionPath) && readFileSync(admissionPath, 'utf8') !== admissionBytes) {
+      throw Error('Admission profile already contains different inputs; choose a fresh --profile to preserve frozen captures.');
+    }
+    writeFileSync(admissionPath, admissionBytes);
     console.log(`Prepared ${results.length} ${training ? 'training observations and separate references' : 'development observations; no references read'}.`); return;
   }
   const originalProfile = mappedProfile(root, profile, works);
