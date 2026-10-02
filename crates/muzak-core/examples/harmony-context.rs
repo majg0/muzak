@@ -10,6 +10,10 @@ use muzak_core::{
 use serde::{Deserialize, Serialize};
 use std::io::{self, Read};
 
+#[path = "support/silent_gap_hold.rs"]
+mod silent_gap_hold;
+use silent_gap_hold::{SilentGapHold, hold_silent_gaps};
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 struct Request {
@@ -17,6 +21,9 @@ struct Request {
     windows: Vec<HarmonyWindow>,
     #[serde(default)]
     options: HarmonyContextOptions,
+    /// Offline opt-in; raw windows are copied and held before fresh context.
+    #[serde(default)]
+    hold_silent_gaps: bool,
     /// Absence disables the tonic gate. A null entry represents an unknown
     /// predicted tonic and rejects that window's proposal, never guessing a key.
     predicted_tonic_pitch_classes: Option<Vec<Option<i64>>>,
@@ -30,6 +37,8 @@ struct Response {
     proposed_count: usize,
     tonic_rejected_count: usize,
     proposals: Vec<HarmonyContextProposal>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    silent_gap_hold: Option<SilentGapHold>,
 }
 
 fn apply(request: Request) -> CoreResult<Response> {
@@ -45,12 +54,18 @@ fn apply(request: Request) -> CoreResult<Response> {
             ));
         }
     }
-    let mut proposals =
-        contextual_harmonic_roots(&request.score, &request.windows, &request.options)?;
+    let held = request
+        .hold_silent_gaps
+        .then(|| hold_silent_gaps(&request.score, &request.windows))
+        .transpose()?;
+    let windows = held
+        .as_ref()
+        .map_or(request.windows.as_slice(), |h| h.windows.as_slice());
+    let mut proposals = contextual_harmonic_roots(&request.score, windows, &request.options)?;
     let proposed_count = proposals.len();
     if let Some(tonics) = &request.predicted_tonic_pitch_classes {
         proposals.retain(|p| {
-            let h = &request.windows[p.window_index].alternatives
+            let h = &windows[p.window_index].alternatives
                 [p.functional_root.realization_alternative_index];
             tonics[p.window_index] == Some(h.root_millicents)
         });
@@ -61,6 +76,7 @@ fn apply(request: Request) -> CoreResult<Response> {
         proposed_count,
         tonic_rejected_count: proposed_count - proposals.len(),
         proposals,
+        silent_gap_hold: held,
     })
 }
 
@@ -146,5 +162,29 @@ mod tests {
         let mut input = fixture();
         input["references"] = json!([]);
         assert!(serde_json::from_value::<Request>(input).is_err());
+    }
+
+    #[test]
+    fn opt_in_hold_precedes_fresh_context_and_default_response_stays_unchanged() {
+        let mut input = fixture();
+        for note in input["score"]["notes"].as_array_mut().unwrap() {
+            note["duration"] = json!(1);
+        }
+        input["windows"][0]["endTick"] = json!(1);
+        input["windows"][1]["endTick"] = json!(5);
+        let default = apply(serde_json::from_value(input.clone()).unwrap()).unwrap();
+        assert!(default.proposals.is_empty());
+        assert!(
+            serde_json::to_value(default)
+                .unwrap()
+                .get("silentGapHold")
+                .is_none()
+        );
+        input["holdSilentGaps"] = json!(true);
+        input["predictedTonicPitchClasses"] = json!([0, 0]);
+        let held = apply(serde_json::from_value(input).unwrap()).unwrap();
+        assert_eq!(held.proposals.len(), 1);
+        assert_eq!(held.proposals[0].window_index, 0);
+        assert_eq!(held.silent_gap_hold.unwrap().extensions.len(), 2);
     }
 }

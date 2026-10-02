@@ -19,11 +19,13 @@ const sourceId = 'batik-mozart-harmony-9c5f700';
 type Work = HarmonyWork & { derivedScoreMidi: { path: string; sha256: string }; derivedScore: { path: string; sha256: string } };
 type MappedPrediction = { windows: Array<HarmonyPrediction['windows'][number] & { tonicPitchClass?: number | null }> };
 type ContextReply = { parameters: HarmonyContextOptions; tonicFilter: boolean; proposedCount: number;
-  tonicRejectedCount: number; proposals: Array<{ windowIndex: number; functionalRoot: HarmonyFunctionalRoot }> };
+  tonicRejectedCount: number; proposals: Array<{ windowIndex: number; functionalRoot: HarmonyFunctionalRoot }>;
+  silentGapHold?: { windows: HarmonyWindow[]; extensions: Array<{ windowIndex: number; startTick: number; endTick: number }> } };
 
 /** Native Rust owns the rule and the predicted-tonic gate. This only adapts
  * model observations into its DTO; zero fit fields are explicitly uncomputed. */
-function refineContext(executable: string, score: Score, prediction: MappedPrediction, options?: Partial<HarmonyContextOptions>) {
+function refineContext(executable: string, score: Score, prediction: MappedPrediction,
+  options?: Partial<HarmonyContextOptions>, holdSilentGaps = false) {
   const tonics = prediction.windows.map(w => {
     if (w.tonicPitchClass === undefined) throw Error('Context refinement requires mapper tonicPitchClass metadata for every window.');
     return w.tonicPitchClass;
@@ -35,13 +37,34 @@ function refineContext(executable: string, score: Score, prediction: MappedPredi
       score: 0, coreCoverage: 0, coreMassFraction: 0, contextualCost: null })),
     selected: w.selected, ambiguityGap: null, localAmbiguityGap: null, roles: [], rhythms: [],
   }));
-  const input = JSON.stringify({ score, windows, predictedTonicPitchClasses: tonics, options });
+  const input = JSON.stringify({ score, windows, predictedTonicPitchClasses: tonics, options, holdSilentGaps });
   const result = spawnSync(resolve(executable), [], { input, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, windowsHide: true });
   if (result.error) throw result.error;
   if (result.status !== 0) throw Error(`Native context adapter failed (${result.status}): ${result.stderr}`);
   const reply: ContextReply = JSON.parse(result.stdout);
   if (!reply.tonicFilter || reply.parameters.requireFullCore !== false) throw Error('Unexpected context adapter configuration.');
-  const refined = structuredClone(prediction), seen = new Set<number>();
+  const spanBaseline = structuredClone(prediction);
+  if (holdSilentGaps !== !!reply.silentGapHold) throw Error('Native adapter did not honor the explicit silence policy.');
+  if (reply.silentGapHold) {
+    const held = reply.silentGapHold;
+    if (held.windows.length !== windows.length) throw Error('Silence hold changed the window count.');
+    const extensions = new Map(held.extensions.map(e => [e.windowIndex, e]));
+    if (extensions.size !== held.extensions.length) throw Error('Duplicate silence-hold extension.');
+    held.windows.forEach((w, i) => {
+      if (!isDeepStrictEqual({ ...w, endTick: windows[i].endTick }, windows[i])) {
+        throw Error('Silence hold changed a field other than the window end.');
+      }
+      const extension = extensions.get(i);
+      if (extension ? extension.startTick !== windows[i].endTick || extension.endTick !== w.endTick
+        || w.endTick <= windows[i].endTick : w.endTick !== windows[i].endTick) {
+        throw Error('Silence-hold evidence does not match its span change.');
+      }
+      extensions.delete(i);
+      spanBaseline.windows[i].endTick = w.endTick;
+    });
+    if (extensions.size) throw Error('Silence-hold evidence names an absent window.');
+  }
+  const refined = structuredClone(spanBaseline), seen = new Set<number>();
   for (const p of reply.proposals) {
     if (!Number.isSafeInteger(p.windowIndex) || seen.has(p.windowIndex)) throw Error('Invalid or duplicated context proposal.');
     seen.add(p.windowIndex);
@@ -49,7 +72,9 @@ function refineContext(executable: string, score: Score, prediction: MappedPredi
     if (!w || w.selected !== p.functionalRoot.realizationAlternativeIndex) throw Error('Context cannot select an unpredicted model alternative.');
     w.functionalRoot = p.functionalRoot;
   }
-  return { refined, evidence: { ...reply, inputSha256: hash(input) } };
+  const { silentGapHold, ...contextEvidence } = reply;
+  return { refined, spanBaseline, evidence: { ...contextEvidence, inputSha256: hash(input),
+    ...(silentGapHold ? { silentGapHold: { extensions: silentGapHold.extensions } } : {}) } };
 }
 
 /** Posthoc diagnostics only: labels never feed prediction or choose a model setting. */
@@ -99,6 +124,8 @@ export function diagnosePredictionErrors(prediction: HarmonyPrediction, referenc
 }
 
 function run(args: string[]) {
+  const holdSilentGaps = args.includes('--hold-silent-gaps');
+  args = args.filter(a => a !== '--hold-silent-gaps');
   const optionsAt = args.findIndex(a => a === '--context-options' || a.startsWith('--context-options='));
   let contextOptions: Partial<HarmonyContextOptions> | undefined;
   if (optionsAt >= 0) {
@@ -121,8 +148,9 @@ function run(args: string[]) {
   if (!profile || !/^[a-z0-9][a-z0-9._-]*$/.test(profile)) throw Error('Invalid output profile.');
   if (profileAt >= 0) args = [...args.slice(0, profileAt), ...args.slice(profileAt + 2)];
   const prepare = args.includes('--prepare');
-  if (args.some(a => !['--prepare', '--evaluate'].includes(a)) || args.length !== 1 || (prepare && context) || (contextOptions && !context)) {
-    throw Error('Usage: npx tsx scripts/compare-rnbert.ts --prepare|--evaluate [--profile name] [--context native-example-path [--context-options JSON]] (development only).');
+  if (args.some(a => !['--prepare', '--evaluate'].includes(a)) || args.length !== 1 || (prepare && context)
+    || ((contextOptions || holdSilentGaps) && !context)) {
+    throw Error('Usage: npx tsx scripts/compare-rnbert.ts --prepare|--evaluate [--profile name] [--context native-example-path [--context-options JSON] [--hold-silent-gaps]] (development only).');
   }
   const root = '.audit/contextual/rnbert'; mkdirSync(root, { recursive: true });
   const sources = JSON.parse(readFileSync('scripts/research/rnbert-sources.json', 'utf8'));
@@ -166,11 +194,11 @@ function run(args: string[]) {
     const scoreBytes = readFileSync(work.derivedScore.path);
     if (hash(scoreBytes) !== work.derivedScore.sha256) throw Error('Derived observation Score hash mismatch.');
     const score: Score = JSON.parse(scoreBytes.toString('utf8'));
-    const { refined, evidence } = refineContext(context, score, prediction, contextOptions);
-    const refinedPath = `${root}/${work.id}-${profile}-context-predictions.json`, refinedBytes = JSON.stringify(refined, null, 2) + '\n';
+    const { refined, spanBaseline, evidence } = refineContext(context, score, prediction, contextOptions, holdSilentGaps);
+    const refinedPath = `${root}/${work.id}-${profile}${holdSilentGaps ? '-hold' : ''}-context-predictions.json`, refinedBytes = JSON.stringify(refined, null, 2) + '\n';
     writeFileSync(refinedPath, refinedBytes);
     return { work, path, prediction, predictionSha256, refined, refinedPath, refinedSha256: hash(refinedBytes),
-      evidence, sourceScore: score, sourceScoreSha256: hash(scoreBytes) };
+      spanBaseline, evidence, sourceScore: score, sourceScoreSha256: hash(scoreBytes) };
   });
   const results = prepared.map(item => {
     const { work, prediction, predictionSha256 } = item;
@@ -179,11 +207,12 @@ function run(args: string[]) {
     const evaluated = item.refined ?? prediction;
     const rawMetrics = compactHarmonyMetrics(evaluateHarmony(prediction, references, score.ppq, score.duration));
     const metrics = item.refined ? compactHarmonyMetrics(evaluateHarmony(evaluated, references, score.ppq, score.duration)) : rawMetrics;
-    if (metrics.referenceTicks !== rawMetrics.referenceTicks || metrics.selectedTicks !== rawMetrics.selectedTicks
-      || metrics.coreCorrectTicks !== rawMetrics.coreCorrectTicks) throw Error('Context refinement changed source coverage or realized core.');
+    const spanMetrics = item.spanBaseline ? compactHarmonyMetrics(evaluateHarmony(item.spanBaseline, references, score.ppq, score.duration)) : rawMetrics;
+    if (metrics.referenceTicks !== rawMetrics.referenceTicks || metrics.selectedTicks !== spanMetrics.selectedTicks
+      || metrics.coreCorrectTicks !== spanMetrics.coreCorrectTicks) throw Error('Context refinement changed its admitted spans or realized core.');
     return { id: work.id, trainingOverlap: true, predictionPath: item.path, predictionSha256,
       modelWindows: prediction.windows.length, metrics, errors: diagnosePredictionErrors(evaluated, references, score.ppq), diagnostics,
-      ...(item.refined ? { rawMetrics, rawErrors: diagnosePredictionErrors(prediction, references, score.ppq),
+      ...(item.refined ? { rawMetrics, ...(holdSilentGaps ? { heldMetrics: spanMetrics } : {}), rawErrors: diagnosePredictionErrors(prediction, references, score.ppq),
         refinedPath: item.refinedPath, refinedSha256: item.refinedSha256, sourceScoreSha256: item.sourceScoreSha256, context: item.evidence } : {}) };
   });
   const report = { experiment: 'Official RNBert training-overlap development diagnostic, not generalization.', profile,
@@ -192,14 +221,16 @@ function run(args: string[]) {
     context: context ? { executable: resolve(context), executableSha256: hash(readFileSync(context)),
       adapterSourceSha256: hash(readFileSync('crates/muzak-core/examples/harmony-context.rs')),
       ruleSourceSha256: hash(readFileSync('crates/muzak-core/src/harmony_context.rs')),
-      method: 'Rust observed-bass context with explicit returned parameters and optional inferred-resolution dependencies, accepting proposals only when the realized root equals predicted model-key tonic. No key inference or reference inputs. Functional root changes only; realized core, model windows and admission are fixed.',
+      method: 'Rust observed-bass context with explicit returned parameters and optional inferred-resolution dependencies, accepting proposals only when the realized root equals predicted model-key tonic. No key inference or reference inputs. Context changes functional root only; realized core and admitted spans are fixed.',
+      silencePolicy: holdSilentGaps ? 'Before context inference, extend selected windows only across verified pitched silence to the next window or source end. Every extension is recorded; observations and strict denominator stay fixed.' : 'Model spans unchanged.',
+      ...(holdSilentGaps ? { holdSourceSha256: hash(readFileSync('crates/muzak-core/examples/support/silent_gap_hold.rs')) } : {}),
       adapter: 'Uncomputed role arrays are empty and fit scalars0; these are not scene/evidence claims. requireFullCore=false; no proposal consults uncomputed coverage.',
     } : null,
     sourcesManifest: 'scripts/research/rnbert-sources.json', modelManifest: `${root}/model-manifest.json`,
     runtimeManifest: `${root}/runtime-manifest.json`, inferenceRuntime: `${root}/inference-runtime-${profile}.json`,
     mappingManifest: profile === 'baseline' ? `${root}/mapping-manifest.json` : `${root}/mapping-manifest-${profile}.json`,
     admission: `${root}/parser-admission.json`, evaluationSourceSha256: hash(readFileSync('scripts/evaluate-harmony.ts')), results };
-  const output = context ? `${root}/strict-agreement-${profile}-context.json`
+  const output = context ? `${root}/strict-agreement-${profile}${holdSilentGaps ? '-hold' : ''}-context.json`
     : profile === 'baseline' ? `${root}/strict-agreement.json` : `${root}/strict-agreement-${profile}.json`;
   writeFileSync(output, JSON.stringify(report, null, 2) + '\n');
   console.log(JSON.stringify(results.map(r => ({ id: r.id, joint: r.metrics.jointAccuracy, core: r.metrics.coreAccuracy, errors: r.errors })), null, 2));

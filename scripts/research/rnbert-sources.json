@@ -37,7 +37,12 @@
         }
       ],
       "scope": "Only the two declared development members read; other work content untouched. Packaged labels, not inference inputs.",
-      "finding": "Both packaged works contain no minor7 or major7 targets. K331 q6-7.5 labels minor with E non-chord; the independent score-aligned reference labels minor7. The precise historical conversion cause is still under investigation."
+      "finding": "Packaged Mozart targets contain no minor-seventh rows although the author source tables include vi7; K331 q6-7.5 labels minor with E non-chord where score-aligned DCML labels minor7. No major-seventh labels occur in these source tables, so their target absence establishes no major-seventh loss. The historical CSV constructor/version is unavailable in the inspected release.",
+      "sourceTypeParser": {
+        "url": "https://raw.githubusercontent.com/malcolmsailor/mozart_piano_sonatas/5a2f75f6af05a20a697d49cc1b54a1623326b098/utils/expand_labels.py",
+        "sha256": "c4a8032db4d7d96ae7cf783b14f3b672f37d505c7372184cd4c416a93a59255a",
+        "controls": "Seven independent type controls preserve minor, major, dominant and diminished sevenths. This parser is not evidence of the later CSV loss."
+      }
     }
   },
   "models": {
