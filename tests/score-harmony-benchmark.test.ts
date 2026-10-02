@@ -1,9 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { alignReferences, compactHarmonyMetrics, diagnoseHarmony, evaluateHarmony, latticeHarmonyCeiling, loadDevelopment, localTonic, nativeHarmonyBackend, oracleHarmony, parseHarmonyArguments, parseTable, scoreObservations } from '../scripts/evaluate-harmony';
 import type { HarmonicReference, HarmonyPrediction, HarmonyWork } from '../scripts/evaluate-harmony';
 import { exportScoreMidi, importMidi } from '../src/score/midi-score';
 import { callCoreSync } from '../src/core/sync';
+import { admitMappedPrediction, prepareTraining, projectHarmonyLayers } from '../scripts/compare-rnbert';
 
 const row = (id: string, onset: number, duration: number, more = {}) => ({ id: `${id}-1`, xml_mn: '1', mn: '1', voice: '1', pitch: '60', onset_div: String(onset), duration_div: String(duration), label: '', chord: '', ...more });
 const xml = `<score-partwise><part id="p"><measure number="1"><attributes><divisions>4</divisions><time><beats>6</beats><beat-type>8</beat-type></time></attributes><note id="a"><pitch/><duration>4</duration></note><!-- <note id="discard"><duration>400</duration></note> --><note id="g"><grace/><pitch/></note><note id="b"><pitch/><duration>4</duration></note><note><rest/><duration>4</duration></note></measure></part></score-partwise>`;
@@ -12,6 +14,53 @@ const cMajor = { rootMillicents: 0, coreIntervals: [0, 400_000, 700_000], colorI
 const gMajor = { rootMillicents: 700_000, coreIntervals: [0, 400_000, 700_000], colorIntervals: [] };
 const window = (startTick: number, endTick: number, alternative = cMajor, selected: number | null = 0) => ({ startTick, endTick, selected, alternatives: [alternative] });
 const reference = (startTick: number, endTick: number, root = 0, core = [0, 400_000, 700_000]): HarmonicReference => ({ startTick, endTick, label: 'independent', root, core, added: [] });
+
+test('mapped predictions require exact bytes, edition, work and timebase before evaluation', () => {
+  const identity = { work: 'synthetic', ppq: 12, sourceScoreSha256: 'source-digest' };
+  const payload = { ...identity, targetLabelsRead: false, windows: [window(0, 12)] };
+  const bytes = Buffer.from(JSON.stringify(payload));
+  const entry = { ...identity, output: 'synthetic-predictions.json', predictionSha256: createHash('sha256').update(bytes).digest('hex') };
+  assert.deepEqual(admitMappedPrediction(bytes, entry, identity), payload);
+  for (const change of [{ work: 'other' }, { ppq: 24 }, { sourceScoreSha256: 'other-edition' }]) {
+    assert.throws(() => admitMappedPrediction(bytes, entry, { ...identity, ...change }), /Mapped prediction/);
+  }
+  for (const change of [{ targetLabelsRead: true }, { ppq: null }, { windows: null }]) {
+    const corrupt = Buffer.from(JSON.stringify({ ...payload, ...change }));
+    assert.throws(() => admitMappedPrediction(corrupt, { ...entry, predictionSha256: createHash('sha256').update(corrupt).digest('hex') }, identity));
+  }
+  assert.throws(() => admitMappedPrediction(Buffer.from(JSON.stringify({ ...payload, windows: [] })), entry, identity));
+});
+
+test('factored harmony preserves unequal memberships and never transfers functional proof', () => {
+  const functionLayer: HarmonyPrediction = { windows: [
+    { ...window(0, 4), functionalRoot: { rootMillicents: 700_000, realizationAlternativeIndex: 0 } }, window(4, 8, gMajor),
+  ] };
+  const surface: HarmonyPrediction = { windows: [
+    window(1, 3, { rootMillicents: 900_000, coreIntervals: [0, 300_000, 700_000], colorIntervals: [] }),
+    window(3, 6), window(6, 9, cMajor, null),
+  ] };
+  const original = structuredClone({ functionLayer, surface });
+  const combined = projectHarmonyLayers(functionLayer, surface, 10);
+  assert.deepEqual(combined.cells.map(c => [c.startTick, c.endTick, c.available]), [
+    [0, 1, false], [1, 3, true], [3, 4, true], [4, 6, true], [6, 8, false], [8, 9, false], [9, 10, false],
+  ]);
+  assert.deepEqual(combined.cells[1].corePitchClasses, [0, 400_000, 900_000]);
+  assert.equal(combined.cells[1].functionRootMillicents, 700_000);
+  assert.deepEqual(combined.prediction.windows[1].alternatives[0].coreIntervals, [200_000, 500_000, 900_000]);
+  assert(combined.prediction.windows.every(w => !('functionalRoot' in w)));
+  assert.deepEqual({ functionLayer, surface }, original);
+  const edited = structuredClone(surface); edited.windows[0].alternatives[0].coreIntervals = [0, 400_000, 700_000];
+  assert.equal(projectHarmonyLayers(functionLayer, edited, 10).cells[1].functionRootMillicents, 700_000);
+  assert.deepEqual(functionLayer, original.functionLayer);
+  const stale = structuredClone(functionLayer); stale.windows[0].functionalRoot!.realizationAlternativeIndex = 1;
+  assert.throws(() => projectHarmonyLayers(stale, surface, 10), /Stale/);
+});
+
+test('training preparation rejects other splits before reading absent assets', () => {
+  for (const split of ['development', 'holdout']) {
+    assert.throws(() => prepareTraining({ id: 'unread', split } as Parameters<typeof prepareTraining>[0], '.audit'), /explicitly assigned training/);
+  }
+});
 
 test('strict table parser preserves quoted labels; malformed rows and duplicate headers fail', () => {
   assert.deepEqual(parseTable('id,label\r\na,"I(6,4)"\r\nb,"line\n""two"""'), [{ id: 'a', label: 'I(6,4)' }, { id: 'b', label: 'line\n"two"' }]);

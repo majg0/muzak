@@ -6,8 +6,9 @@
     "summary": "The exact Rust codec separates realized palettes from witnessed functional-root proposals. Shipped Mozart K330-I/K331-I strict joint root/core agreement remains 63.04% / 55.93%. Preserving the pretrained quality representation and adapting its final linear map on three separate sonatas in all twelve transpositions, with one fixed atomic decoder, reaches 92.82% / 93.50% joint and 93.54% / 93.99% core agreement. The immutable function branch remains at 98.44% / 98.17% root agreement; original proofs never transfer to changed surface cores. A separately witnessed continuation recovers .75 quarter of K331 function. The teacher has known Mozart training overlap: these are development experiments, not shipped inference or independent validation. Requested 100% remains unmet; strict denominators and observations stay fixed and no holdout is parsed.",
     "nextActions": [
       "Close realized-core and boundary errors jointly. Atomic source frames plus explicit pitched-silence holds can represent 100% of supported reference timing; this oracle says nothing about selecting labels. Remaining surface errors include absent suspended-third vocabulary and poorly ranked implied/seventh members. Do not freeze the decoder's selected windows or alter the strict denominator.",
-      "Adapt the pretrained degree and quality readouts jointly for realized cores while retaining the original function branch. A full-vocabulary capacity audit isolates substantial degree-only errors with unchanged quality; quality adaptation alone cannot repair these. Preserve both trained nonlinear transformations and exact zero-correction controls; fit only on admitted training works, without target-label inputs or a parameter sweep.",
-      "Preserve explicit functional-span evidence separately from native immediate-neighbor proof. Identical core and bass alone are insufficient; the narrow successful continuation also requires uniformly predicted second inversion. Keep unresolved direct-to-tonic and changing-bass cases separate. Package the accepted readout/capture/decoder experiment as one maintainable research path, replacing one-off scripts rather than importing them into production.",
+      "Retain the reproducible three-work pretrained quality-readout control. Joint degree/quality correction and the fixed six-work quality fit underperform; no per-work oracle selection or further blind head sweeps. The six-work corpus has abundant V(64) but no I(64) replacements, so transposition alone cannot supply the missing context.",
+      "Infer shared parent-to-realization operations through the existing compiler. KEEP versus paired next-degree replacement of third/fifth already passes independent semantic-edit controls. Measure supplied-parent/domain capacity first, then source-only proposal coverage using frozen key/function/numeric-head witnesses. Fit shared candidate-relative evidence only after separating proposal failures; marginalize compatible derivations and preserve implied members separately from emitted notes.",
+      "Preserve explicit functional-span evidence separately from native immediate-neighbor proof. Identical core and bass alone are insufficient; the narrow successful continuation also requires uniformly predicted second inversion. Keep unresolved direct-to-tonic and changing-bass cases separate. Retain one maintained capture/fit/decode/evaluate path with immutable function/surface layers and strict source/timebase admission.",
       "Require continuity, independent seventh, ambiguity and track-repartition controls when changing scoring. Missing members can be implied by surrounding harmony; passing/neighbor motion can be structurally chordal. These musical distinctions constrain any learned or hand-written proposal.",
       "Preserve an edited composition program independently of reanalysis. Keep source observations, authored parameters and inferred evidence distinct; a new inverse reading must not erase an authored dependency.",
       "After representation/ranking choices are frozen, evaluate held-out work lineages once, alongside exact reconstruction, useful edits, runtime and explanatory cost."
@@ -44,13 +45,13 @@
         "docs/research/structure-inference.md",
         "crates/muzak-core/examples/harmony-context.rs"
       ],
-      "nextAction": "Retain the shared 92.82% / 93.50% pretrained-quality adaptation control. Test one fixed joint degree/quality readout correction for realized-core errors, preserving the original function branch and trained nonlinear heads. Package the accepted experiment durably and combine separately witnessed function continuation only through explicit immutable layers. The root-only AnalysisGNN comparator underperforms and is not adopted. Preserve strict denominators, source/model projections, original evidence and unopened holdouts."
+      "nextAction": "Use the maintained capture/fit/decode/evaluate path for the shared 92.82% / 93.50% control; preserve its separate .75-quarter function-continuation evidence. Joint-readout and six-work quality fits do not improve aggregate transfer. Move to shared parent-to-realization candidates with explicit key/domain premises; separate supplied-input capacity, source-only proposal coverage and learned ranking. Preserve strict denominators, source/model projections, original proof ownership and unopened holdouts."
     },
     {
       "id": "bounded-inverse-search",
       "title": "Select competing executable explanations",
-      "status": "planned",
-      "owner": null,
+      "status": "in_progress",
+      "owner": "/root/evaluation_rebuild",
       "dependsOn": [],
       "evidence": [
         "crates/muzak-core/src/scene.rs",
@@ -59,7 +60,7 @@
         "crates/muzak-core/src/harmony.rs",
         "crates/muzak-core/src/partition.rs"
       ],
-      "nextAction": "Extend the existing exhaustive triple oracle to competing executable explanations, comparing exhaustive and bounded search. Separate proposal recall, ranking and final selection. Challenge unique-relation/recurrence ownership against alternatives while preserving exclusive emission and overlapping memberships. Include crossing voices, cadential versus tonic sonorities, color versus ornament, pedals, native pitch and source-track repartition controls."
+      "nextAction": "Measure KEEP versus paired contextual replacement over six admitted training works, first with supplied parent/domain and then frozen source-only key/function hypotheses. Existing compiler controls prove the same operation transfers across degrees and modes; the corpus contains no I(64) replacement examples. Distinguish candidate capacity from selection and marginalize compatible parses. Preserve exact emissions, explicit domain uncertainty and literal fallback."
     },
     {
       "id": "joint-contextual-inference",

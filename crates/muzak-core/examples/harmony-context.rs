@@ -17,6 +17,8 @@ use silent_gap_hold::{SilentGapHold, hold_silent_gaps};
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 struct Request {
+    #[serde(default)]
+    action: Action,
     score: Score,
     windows: Vec<HarmonyWindow>,
     #[serde(default)]
@@ -29,6 +31,14 @@ struct Request {
     predicted_tonic_pitch_classes: Option<Vec<Option<i64>>>,
 }
 
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+enum Action {
+    #[default]
+    Context,
+    Hold,
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct Response {
@@ -39,6 +49,30 @@ struct Response {
     proposals: Vec<HarmonyContextProposal>,
     #[serde(skip_serializing_if = "Option::is_none")]
     silent_gap_hold: Option<SilentGapHold>,
+}
+
+#[derive(Serialize)]
+#[serde(untagged)]
+enum Output {
+    Context(Response),
+    Hold {
+        #[serde(rename = "silentGapHold")]
+        silent_gap_hold: SilentGapHold,
+    },
+}
+
+fn dispatch(request: Request) -> CoreResult<Output> {
+    match request.action {
+        Action::Context => apply(request).map(Output::Context),
+        Action::Hold => {
+            if request.predicted_tonic_pitch_classes.is_some() {
+                return Err(invalid("A hold-only request cannot include predicted tonics."));
+            }
+            Ok(Output::Hold {
+                silent_gap_hold: hold_silent_gaps(&request.score, &request.windows)?,
+            })
+        }
+    }
 }
 
 fn apply(request: Request) -> CoreResult<Response> {
@@ -89,7 +123,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if input.len() as u64 > MAX_INPUT_BYTES {
         return Err(invalid("Context adapter input exceeds 64 MiB.").into());
     }
-    let output = apply(serde_json::from_str(&input)?)?;
+    let output = dispatch(serde_json::from_str(&input)?)?;
     println!("{}", serde_json::to_string(&output)?);
     Ok(())
 }
@@ -186,5 +220,24 @@ mod tests {
         assert_eq!(held.proposals.len(), 1);
         assert_eq!(held.proposals[0].window_index, 0);
         assert_eq!(held.silent_gap_hold.unwrap().extensions.len(), 2);
+    }
+
+    #[test]
+    fn hold_only_carries_no_functional_claim_and_preserves_sounding_gaps() {
+        let mut input = fixture();
+        input["action"] = json!("hold");
+        input["windows"][0]["endTick"] = json!(1);
+        let result = serde_json::to_value(dispatch(serde_json::from_value(input.clone()).unwrap()).unwrap()).unwrap();
+        assert_eq!(result.as_object().unwrap().len(), 1);
+        assert_eq!(result["silentGapHold"]["windows"][0]["endTick"], 1);
+        assert!(result["silentGapHold"]["extensions"].as_array().unwrap().is_empty());
+        for note in &mut input["score"]["notes"].as_array_mut().unwrap()[..3] {
+            note["duration"] = json!(1);
+        }
+        let result = serde_json::to_value(dispatch(serde_json::from_value(input.clone()).unwrap()).unwrap()).unwrap();
+        assert_eq!(result["silentGapHold"]["windows"][0]["endTick"], 4);
+        assert_eq!(result["silentGapHold"]["extensions"].as_array().unwrap().len(), 1);
+        input["predictedTonicPitchClasses"] = json!([0, 0]);
+        assert!(dispatch(serde_json::from_value(input).unwrap()).is_err());
     }
 }

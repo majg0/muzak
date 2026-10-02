@@ -1186,6 +1186,195 @@ mod pitch_binding_tests {
         }
     }
 
+    // A test-only constructor for one shared realization operation. Tone slots
+    // are explicitly root/third/fifth here; the compiler does not infer roles.
+    fn replace_third_and_fifth(harmony: &str) -> Vec<PitchBinding> {
+        let mut bindings = vec![PitchBinding::Harmony {
+            harmony: harmony.into(),
+            tone: 0,
+            octave: 0,
+            residual_millicents: 0,
+        }];
+        bindings.extend((1..=2).map(|tone| PitchBinding::LatticePath {
+            lattice: "diatonic".into(),
+            from: harmonic_anchor(harmony, tone),
+            to: harmonic_anchor(harmony, tone),
+            numerator: 0,
+            denominator: 1,
+            degree_offset: 1,
+            residual_millicents: 0,
+        }));
+        bindings
+    }
+
+    fn realization_plan() -> CompositionPlan {
+        let mut plan = plan();
+        plan.harmonies = Some(vec![CompositionHarmony {
+            id: "parent".into(),
+            root_millicents: 6_000_000,
+            intervals: vec![0, 400_000, 700_000],
+        }]);
+        plan.placements[0].pitch_bindings = Some(replace_third_and_fifth("parent"));
+        plan
+    }
+
+    fn assert_same_expression_and_rhythm(before: &Score, after: &Score) {
+        assert_eq!(before.notes.len(), after.notes.len());
+        for (original, changed) in before.notes.iter().zip(&after.notes) {
+            let mut restored = changed.clone();
+            let shift = changed.pitch.millicents - original.pitch.millicents;
+            restored.pitch.millicents -= shift;
+            if let Some(curve) = &mut restored.pitch_envelope {
+                for point in curve {
+                    point.pitch.millicents -= shift;
+                }
+            }
+            assert_eq!(&restored, original);
+        }
+        assert_eq!(before.ppq, after.ppq);
+        assert_eq!(before.duration, after.duration);
+        assert_eq!(before.parts, after.parts);
+        assert_eq!(before.attachments, after.attachments);
+        assert_eq!(before.track_ends, after.track_ends);
+    }
+
+    #[test]
+    fn shared_realization_step_uses_contextual_degrees_not_fixed_semitones() {
+        let original = realization_plan();
+        let baseline = compile_composition(&original, &CompositionLimits::default()).unwrap();
+        assert_eq!(
+            baseline
+                .notes
+                .iter()
+                .map(|n| n.pitch.millicents)
+                .collect::<Vec<_>>(),
+            [6_000_000, 6_500_000, 6_900_000]
+        );
+        // Major context, minor context, and VI in F harmonic minor: the same
+        // operation yields fourth/sixth distances 5/9, 5/8, and 6/9 semitones.
+        let cases = [
+            (
+                6_000_000,
+                6_000_000,
+                vec![0, 200_000, 400_000, 500_000, 700_000, 900_000, 1_100_000],
+                [6_000_000, 6_500_000, 6_900_000],
+            ),
+            (
+                6_700_000,
+                6_000_000,
+                vec![0, 200_000, 300_000, 500_000, 700_000, 800_000, 1_100_000],
+                [6_700_000, 7_200_000, 7_500_000],
+            ),
+            (
+                6_100_000,
+                6_500_000,
+                vec![0, 200_000, 300_000, 500_000, 700_000, 800_000, 1_100_000],
+                [6_100_000, 6_700_000, 7_000_000],
+            ),
+        ];
+        for (root, origin, intervals, expected) in cases {
+            let mut plan = original.clone();
+            plan.harmonies.as_mut().unwrap()[0].root_millicents = root;
+            let lattice = &mut plan.pitch_lattices.as_mut().unwrap()[0];
+            lattice.origin_millicents = origin;
+            lattice.intervals = intervals;
+            let saved = serde_json::to_value(&plan).unwrap();
+            let standalone: CompositionPlan = serde_json::from_value(saved.clone()).unwrap();
+            let score = compile_composition(&standalone, &CompositionLimits::default()).unwrap();
+            assert_eq!(
+                score
+                    .notes
+                    .iter()
+                    .map(|n| n.pitch.millicents)
+                    .collect::<Vec<_>>(),
+                expected
+            );
+            assert_same_expression_and_rhythm(&baseline, &score);
+            assert_eq!(serde_json::to_value(&plan).unwrap(), saved);
+        }
+    }
+
+    #[test]
+    fn shared_realization_parent_and_domain_edits_are_independent() {
+        let mut plan = realization_plan();
+        let baseline = compile_composition(&plan, &CompositionLimits::default()).unwrap();
+        // Change only the domain: C Lydian keeps all C-major parent anchors but
+        // moves the derived fourth to F sharp; the sixth remains A.
+        plan.pitch_lattices.as_mut().unwrap()[0].intervals[3] = 600_000;
+        let domain_edit = compile_composition(&plan, &CompositionLimits::default()).unwrap();
+        assert_eq!(
+            domain_edit
+                .notes
+                .iter()
+                .map(|n| n.pitch.millicents)
+                .collect::<Vec<_>>(),
+            [6_000_000, 6_600_000, 6_900_000]
+        );
+        assert_same_expression_and_rhythm(&baseline, &domain_edit);
+        // Restore the domain and edit only the parent from G major to A minor.
+        // The resulting A-D-F differs from a literal/global +2-semitone shift.
+        plan.pitch_lattices = Some(vec![domain()]);
+        plan.harmonies.as_mut().unwrap()[0].root_millicents = 6_700_000;
+        let g = compile_composition(&plan, &CompositionLimits::default()).unwrap();
+        let parent = &mut plan.harmonies.as_mut().unwrap()[0];
+        parent.root_millicents = 6_900_000;
+        parent.intervals[1] = 300_000;
+        let a_minor = compile_composition(&plan, &CompositionLimits::default()).unwrap();
+        assert_eq!(
+            a_minor
+                .notes
+                .iter()
+                .map(|n| n.pitch.millicents)
+                .collect::<Vec<_>>(),
+            [6_900_000, 7_400_000, 7_700_000]
+        );
+        assert_ne!(
+            a_minor.notes[2].pitch.millicents,
+            g.notes[2].pitch.millicents + 200_000
+        );
+        assert_same_expression_and_rhythm(&g, &a_minor);
+        plan.harmonies.as_mut().unwrap()[0].intervals[1] += 1;
+        assert!(compile_composition(&plan, &CompositionLimits::default())
+            .unwrap_err()
+            .message
+            .contains("exactly"));
+    }
+
+    #[test]
+    fn shared_realization_preserves_declared_local_and_global_palette_scope() {
+        let mut plan = realization_plan();
+        plan.context.duration = 36;
+        plan.context.track_ends = vec![36];
+        let mut second = plan.placements[0].clone();
+        second.onset = 12;
+        let mut unrelated = second.clone();
+        unrelated.onset = 24;
+        unrelated.pitch_bindings = Some(vec![
+            literal(6_000_000),
+            literal(6_400_000),
+            literal(6_700_000),
+        ]);
+        plan.placements.extend([second, unrelated]);
+        let before = compile_composition(&plan, &CompositionLimits::default()).unwrap();
+        plan.harmonies.as_mut().unwrap()[0].root_millicents = 6_700_000;
+        let shared = compile_composition(&plan, &CompositionLimits::default()).unwrap();
+        assert_eq!(shared.notes[1].pitch.millicents, 7_200_000);
+        assert_eq!(shared.notes[4].pitch.millicents, 7_200_000);
+        assert_eq!(shared.notes[6..], before.notes[6..]);
+        let mut local = plan.harmonies.as_ref().unwrap()[0].clone();
+        local.id = "local".into();
+        local.root_millicents = 6_900_000;
+        local.intervals[1] = 300_000;
+        plan.harmonies.as_mut().unwrap().push(local);
+        plan.placements[1].pitch_bindings = Some(replace_third_and_fifth("local"));
+        let changed = compile_composition(&plan, &CompositionLimits::default()).unwrap();
+        assert_eq!(changed.notes[..3], shared.notes[..3]);
+        assert_eq!(changed.notes[6..], shared.notes[6..]);
+        assert_eq!(changed.notes[4].pitch.millicents, 7_400_000);
+        assert_eq!(changed.notes[5].pitch.millicents, 7_700_000);
+        assert_same_expression_and_rhythm(&before, &changed);
+    }
+
     #[test]
     fn value_anchors_need_no_emitted_anchor_notes_and_follow_shared_palette_edits() {
         let mut plan = plan();
