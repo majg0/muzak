@@ -21,6 +21,7 @@ Open MIDI or choose a local reference. Analysis covers the whole score automatic
 - `harmony.rs`, `harmony_context.rs`: global metrical-window hypotheses, separate realized core/color and witnessed functional-root proposals.
 - `pitch_relations.rs`, `scene_relations.rs`: bounded anchor-path proposals and executable dependency closure.
 - `paired_pitch.rs`: bounded shared-binding candidates across two supplied realizations, retaining ambiguity and edit behavior.
+- `segmental.rs`: bounded latent span inference with accumulated source evidence, exact gradients and full core/operation marginals.
 - `partition.rs`, `harmonic.rs`: weighted structural proposals and co-release support relationships.
 - `composition.rs`: the single exact realization algebra, including shared arbitrary pitch lattices and source-independent anchor paths.
 - `model.rs`, `midi.rs`, `meter.rs`, `performance.rs`: observations, interchange, shared metrical geometry and performance preparation.

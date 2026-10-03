@@ -17,6 +17,7 @@ pub mod performance;
 pub mod pitch_relations;
 pub mod scene;
 mod scene_relations;
+pub mod segmental;
 pub mod structure;
 #[cfg(test)]
 mod tests;
