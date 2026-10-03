@@ -6,9 +6,8 @@
     "summary": "Shipped Mozart K330-I/K331-I strict joint root/core agreement remains 63.04% / 55.93%. The maintained four-work quality readout with witnessed function spans reaches 93.03% / 93.75%; the frozen duration-integrated operation/surface-selector extension reaches 93.51% / 94.27% joint and 94.29% / 94.78% core. Sources, function proofs and strict denominators remain unchanged. All nine conditional musical controls and five selected-program exact/edit controls pass. Teacher training overlaps these Mozart works, so results are development diagnostics, not shipped inference or independent validation. Requested 100% remains unmet; no holdout is parsed.",
     "nextActions": [
       "Improve contextual program selection. Every remaining development core-error interval is expressible by existing surface or operation candidates. The relation marginal puts truth among tied maxima on 31.25 of 66.5 error quarters (uniquely first on 27.25), but the mixture on only 2.67; final temporal decoding accounts for 2.625 and frame averaging .0417. Preserve immutable sources, strict denominators and distinct functional errors.",
-      "Retain the reproducible four-work pretrained quality-readout control. Joint degree/quality correction, direct function supervision and the six-work quality fit underperform; no per-work oracle selection or further blind head sweeps. K283-III improves both works but repairs none of their I(64) replacements. More examples alone do not resolve this output-structure gap.",
-      "Retain the simpler frozen selector and current segmental result. Partial-core supervision leaves agreement unchanged. A contextual correction to the flat root prior fails the cadential V(64) training control and discards useful native function readings; reject it before development evaluation. Preserve the teacher's surface evidence and infer functional-parent/member-operation hypotheses through the existing compiler instead of conflating their roots.",
-      "The audited member grammar admits the correct joint root/core on all captured training duration; this is capacity, not prediction. Two directed-restoration weights with predictor-KL regularization reach 86.02% captured training pair-posterior agreement (85.36% group-MAP), but still fail the fixed K280 cadential contrast. Source extraction and endpoint-edit controls pass. Test the same potential within the immutable native root/core/window/continuation witness, with no standalone witness bonus. Preserve exact zero-correction replay. No development inference until the contrast passes; no coefficient sweeps if this representation fails.",
+      "Retain the four-work quality readout and frozen segmental selector. Their single expert gate lacks candidate-specific relationships; the current sequence model has only identity-change penalties. Test jointly hypothesized functional-parent transitions using one fixed prior from coalesced original training root runs. Preserve family mass, UNKNOWN, source-only resets and fixed-lattice semantics; do not claim normalized continuous-time probabilities.",
+      "Stop tuning the two-feature restoration branch: context-scoped predictor-KL fitting reaches only 85.94% captured training pair-posterior agreement and still fails K280 V(64). It rewards correspondence coverage instead of restoration direction. The residue-level scorer does not assign individual events to members or anchors. Infer exact event-addressed direct, event-only and shared-parent alternatives through the existing compiler; verify endpoint/parent edits before another ranking experiment.",
       "Require continuity, independent seventh, ambiguity and track-repartition controls when changing scoring. Missing members can be implied by surrounding harmony; passing/neighbor motion can be structurally chordal. These musical distinctions constrain any learned or hand-written proposal.",
       "Preserve an edited composition program independently of reanalysis. Keep source observations, authored parameters and inferred evidence distinct; a new inverse reading must not erase an authored dependency.",
       "After representation/ranking choices are frozen, evaluate held-out work lineages once, alongside exact reconstruction, useful edits, runtime and explanatory cost."
@@ -44,20 +43,12 @@
         "scripts/evaluate-harmony.ts",
         "docs/research/structure-inference.md",
         "crates/muzak-core/examples/harmony-context.rs",
-        ".audit/score/function-member-transform-audit.json",
-        ".audit/score/joint-program-teacher.json",
-        ".audit/score/joint-program-controls-evaluation-protocol.json",
-        ".audit/score/joint-program-prior-diagnosis.json",
-        ".audit/score/joint-program-branch-fit.json",
-        ".audit/score/joint-program-branch-training-evaluate.json",
-        ".audit/score/joint-program-branch-training-native-evaluate.json",
-        ".audit/score/source-succession-manifest.json",
-        ".audit/score/resolution-dependency-gate.json",
-        ".audit/score/member-resolution-mapping-index-audit.json",
-        ".audit/score/member-resolution-kl-training-evaluate.json",
-        ".audit/score/member-resolution-witness-mask-v2-manifest.json"
+        ".audit/score/segmental-surface-evaluation.json",
+        ".audit/score/member-resolution-context-training-evaluate.json",
+        ".audit/score/member-event-inverse-gate-manifest.json",
+        ".audit/score/root-transition-prior.json"
       ],
-      "nextAction": "Retain maintained 93.03% / 93.75% and frozen segmental 93.51% / 94.27% controls. Run one context-scoped two-coefficient restoration fit over frozen114 using the audited witness-v2 mask and predictor KL. Keep conditional member mappings, UNKNOWN and zero-score identity. Evaluate joint-pair posterior and group-MAP separately; ordinary-I64 versus V(64) must both pass before development. If it fails, investigate missing shared-parameter/preparation structure rather than another coefficient sweep. Event-only dependency and shared harmonic ownership remain distinct executable hypotheses."
+      "nextAction": "Run the source-only joint root-transition control on K280 after exhaustive tiny-chain math checks. Its fixed prior uses four original training works once, eleven directed root intervals with Dirichlet1 and observed change rate; no sweep. Preserve the local-pair disabled comparison, conditional program ambiguity and exact strict denominator. Both ordinary-I64 and V(64) must pass before development. Keep the accepted segmental result while event-addressed program evidence is developed."
     },
     {
       "id": "bounded-inverse-search",
@@ -73,7 +64,7 @@
         "crates/muzak-core/src/harmony.rs",
         "crates/muzak-core/src/partition.rs"
       ],
-      "nextAction": "Rank retained alternatives without confusing melodic dependence with nonchord status. Native search now retains chord-core dependents and exact release-to-attack paths across unrelated attacks; these cannot auto-select. The authored seventh/neighbor control proves exact alternative recall and distinct edits. Use paired inverse and backward parent proposals to separate correspondence/context capacity from automatic discovery; charge complete programs against literals before selecting ownership or claiming abstraction."
+      "nextAction": "The supplied-context member-event inverse gate passes: eight immutable events yield seven exact alternatives in four families, with distinct endpoint/parent/domain edits and endpoint aliases. Next make event ownership and compatible binding patches explicit in candidate scoring; no pitch-residue count may substitute for event ownership. Retain supplied correspondence as a premise until automatic matching is independently evaluated. Charge complete programs against literals."
     },
     {
       "id": "joint-contextual-inference",
