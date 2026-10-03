@@ -28,6 +28,8 @@ Costs count complete program, identity and velocity-residual JSON bytes. Binding
 
 Persisted selected relationship records must cover the executable paths exactly. Event anchors require their exact event witness; every shared-value witness must retain the same symbolic harmonic address. Corrupt, missing, duplicated or detached records are rejected. Shared/local placement transforms act after pitch resolution; a local edit of a dependency component moves all of its emitted witnesses and descendants together.
 
+The inverse kernel returns exact candidate bindings and domains; current scene serialization keeps only descriptions of unselected alternatives and drops unused domains. These records are not standalone executable alternatives. Retain future alternatives as compact binding patches against an authoritative program revision: the existing `PitchBinding`, target occurrence address, event-index relocation map and shared domain references. Activation must form and remap a bounded dependency closure through the same compiler while preserving transforms and exclusive emission. Event anchors must remain event dependencies; evidence IDs supply no values. A stale patch requires revalidation against the current program.
+
 ## Global harmony and rhythm
 
 Analyze all instruments jointly on an exact candidate lattice derived from shared Rust meter geometry, with a declared fallback grid when meter is missing. Add exact silence boundaries; never quantize source note events. A bounded variable-span dynamic program retains a state for each endpoint and chord label. Duration, attacks and velocity contribute explicit evidence; part normalization is a parameter and identical part profiles do not gain a duplicate vote. Pitch-class coverage, unexplained/color mass, complexity and metrical change costs are experimental priors calibrated on development examples and generic controls.
@@ -72,7 +74,7 @@ The native `segmental` module accepts externally admitted source cells, exact PP
 
 The UI exposes the selected relation's anchors, dependent notes, lattice premise and evidence. Thin connectors use explicit relation IDs; palette edits recompile and re-encode the changed score. Literal residuals remain visible. Rectangles are views of memberships, never their source. Playback and viewport navigation remain independent of whole-score inference.
 
-Editing currently replaces observations with the compiled score and runs inference again. This can lose the edited relationship even when realization is correct: shifting the Dire q50–52 palette up two semitones yields C♯–D–C♯ in both leads, but the new harmonic reading no longer admits that dependency. Preserve the authoritative edited program separately from refreshed analytical hypotheses before treating reanalysis as a composition workflow. Do not force the inverse scorer to rediscover an authored decision or report consistency as independent accuracy.
+Editing currently replaces observations with the compiled score and runs inference again. This can lose the edited relationship even when realization is correct: shifting the Dire q50–52 palette up two semitones yields C♯–D–C♯ in both leads, but the new harmonic reading no longer admits that dependency. Edits should return the updated authoritative program revision and its decoded score; reanalysis should produce separate hypotheses. Do not force the inverse scorer to rediscover an authored decision or report consistency as independent accuracy.
 
 ## Acceptance gates
 
