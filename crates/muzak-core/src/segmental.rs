@@ -18,6 +18,9 @@ mod marginal_tests;
 #[path = "segmental/marginals.rs"]
 mod marginals;
 #[cfg(test)]
+#[path = "segmental/partial_tests.rs"]
+mod partial_tests;
+#[cfg(test)]
 #[path = "segmental/span_tests.rs"]
 mod span_tests;
 
@@ -39,9 +42,26 @@ pub struct Block {
 }
 #[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
+/// A known realized core, optionally constrained to one opaque operation.
+/// JSON null/missing `operator` sums all matching-core operations. In contrast,
+/// a null entry in Cache.constraints provides no supervision at that cell.
 pub struct Constraint {
-    pub operator: u32,
+    pub operator: Option<u32>,
     pub core_mask: i16,
+}
+impl Constraint {
+    fn intersection(self, other: Self) -> Option<Self> {
+        if self.core_mask != other.core_mask
+            || matches!((self.operator, other.operator), (Some(a), Some(b)) if a != b)
+        {
+            None
+        } else {
+            Some(Self {
+                core_mask: self.core_mask,
+                operator: self.operator.or(other.operator),
+            })
+        }
+    }
 }
 #[derive(Debug, Clone, Deserialize)]
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
@@ -71,6 +91,9 @@ pub struct Cache {
     /// but positive classes. Short duration sums restart at each span start.
     pub quality_probabilities: Vec<Vec<f64>>,
     pub blocks: Vec<Block>,
+    /// Half-open cell supervision. A span must satisfy every covered known
+    /// core/operator; compatible wildcards intersect rather than overwrite.
+    /// This never changes the full partition, MAP or full state marginals.
     pub constraints: Vec<Option<Constraint>>,
     #[serde(default)]
     pub limits: SpanLimits,
@@ -383,8 +406,11 @@ impl Admitted {
                         *sum += cell_duration * p;
                     }
                     if let Some(label) = c.constraints[cell] {
-                        if wanted.is_some_and(|w| w != label) {
-                            conflict = true;
+                        if let Some(previous) = wanted {
+                            match previous.intersection(label) {
+                                Some(merged) => wanted = Some(merged),
+                                None => conflict = true,
+                            }
                         } else {
                             wanted = Some(label);
                         }
@@ -433,7 +459,7 @@ impl Admitted {
                         admitted[i] = !conflict
                             && wanted.is_none_or(|label| {
                                 state.core_mask == label.core_mask
-                                    && state.operator == Some(label.operator)
+                                    && label.operator.is_none_or(|op| state.operator == Some(op))
                             });
                         if score > maximum {
                             maximum = score;

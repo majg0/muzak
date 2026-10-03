@@ -40,12 +40,12 @@ fn cache() -> Cache {
         }],
         constraints: vec![
             Some(Constraint {
-                operator: 0,
+                operator: Some(0),
                 core_mask: 17,
             }),
             None,
             Some(Constraint {
-                operator: 0,
+                operator: Some(0),
                 core_mask: 17,
             }),
         ],
@@ -171,7 +171,7 @@ fn rare_positive_prior_survives_later_cells_and_constrained_logsum_scaling() {
         }],
         constraints: vec![
             Some(Constraint {
-                operator: 1,
+                operator: Some(1),
                 core_mask: 2
             });
             2
@@ -222,7 +222,7 @@ fn source_budgets_invalid_priors_and_unreachable_constraints_fail_closed() {
     assert_eq!(admit(invalid).err().unwrap().code, "invalid-input");
     let mut impossible = c;
     impossible.constraints[0] = Some(Constraint {
-        operator: 3,
+        operator: Some(3),
         core_mask: 4095,
     });
     assert_eq!(

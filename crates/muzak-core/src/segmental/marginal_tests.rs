@@ -195,7 +195,7 @@ fn marginals_ignore_constraints_and_exact_budget_rejects_before_solving() {
     let mut restricted = c;
     restricted.constraints[1] = Some(Constraint {
         core_mask: 17,
-        operator: 7,
+        operator: Some(7),
     });
     let b = admit(restricted)
         .unwrap()
