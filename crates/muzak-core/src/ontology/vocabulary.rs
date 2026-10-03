@@ -59,6 +59,8 @@ pub enum Representation {
     Performer,
     Timbre,
     Orchestration,
+    Spectrum,
+    SpectralCorrespondence,
     Voice,
     Phrase,
     Motif,
@@ -105,6 +107,8 @@ impl Representation {
             Self::Performer => Some(ComponentKind::Performer),
             Self::Timbre => Some(ComponentKind::Timbre),
             Self::Orchestration => Some(ComponentKind::Orchestration),
+            Self::Spectrum => Some(ComponentKind::Spectrum),
+            Self::SpectralCorrespondence => Some(ComponentKind::SpectralCorrespondence),
             Self::Voice => Some(ComponentKind::Voice),
             Self::Phrase => Some(ComponentKind::Phrase),
             Self::Motif => Some(ComponentKind::Motif),
@@ -696,11 +700,11 @@ music_vocabulary! {
     PlayingRange => ("playing range", Instrumentation, Orchestration, [], ["https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/part-group/"]);
     Tessitura => ("tessitura", Instrumentation, Orchestration, [], ["https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/part-group/"]);
     Timbre => ("timbre", Timbre, Timbre, ["tone color", "tone colour", "color", "colour"], [TIMBRE]);
-    Spectrum => ("spectrum", Timbre, Timbre, [], [TIMBRE]);
-    Partial => ("partial", Timbre, Timbre, [], [TIMBRE]);
-    Overtone => ("overtone", Timbre, Timbre, [], [TIMBRE]);
-    Fundamental => ("fundamental", Timbre, Timbre, [], [TIMBRE]);
-    Inharmonicity => ("inharmonicity", Timbre, Timbre, [], [TIMBRE]);
+    Spectrum => ("spectrum", Timbre, Spectrum, [], [TIMBRE]);
+    Partial => ("partial", Timbre, Spectrum, [], [TIMBRE]);
+    Overtone => ("overtone", Timbre, Spectrum, [], [TIMBRE]);
+    Fundamental => ("fundamental", Timbre, Spectrum, [], [TIMBRE]);
+    Inharmonicity => ("inharmonicity", Timbre, Spectrum, [], [TIMBRE]);
     SpectralEnvelope => ("spectral envelope", Timbre, Timbre, [], [TIMBRE]);
     AmplitudeEnvelope => ("amplitude envelope", Timbre, Timbre, [], [TIMBRE]);
     AttackEnvelope => ("attack envelope", Timbre, Timbre, [], [TIMBRE]);
@@ -712,7 +716,9 @@ music_vocabulary! {
     Noise => ("noise", Timbre, Timbre, [], [TIMBRE]);
     Brightness => ("brightness", Timbre, Timbre, [], [TIMBRE]);
     Roughness => ("roughness", Timbre, Timbre, [], [TIMBRE]);
-    HarmonicSeries => ("harmonic series", Timbre, Timbre, [], [TIMBRE]);
+    HarmonicSeries => ("harmonic series", Timbre, Spectrum, [], [TIMBRE]);
+    SpectralTuningCorrespondence => ("spectral tuning correspondence", Timbre, SpectralCorrespondence, ["related spectrum and scale"], ["https://sethares.engr.wisc.edu/consemi.html"]);
+    SensoryDissonance => ("sensory dissonance", Timbre, SpectralCorrespondence, ["sensory consonance"], ["https://sethares.engr.wisc.edu/comprog.html"]);
     Acoustics => ("acoustics", Timbre, Timbre, [], [ACOUSTICS]);
     Frequency => ("frequency", Timbre, Timbre, [], [ACOUSTICS]);
     Amplitude => ("amplitude", Timbre, Timbre, [], [ACOUSTICS]);
@@ -1111,7 +1117,7 @@ mod tests {
                 entry.term
             );
         }
-        assert_eq!(categories.len(), 39);
+        assert_eq!(categories.len(), 41);
     }
 
     #[test]

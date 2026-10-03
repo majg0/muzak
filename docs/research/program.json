@@ -3,9 +3,9 @@
   "updatedDate": "2026-10-03",
   "objective": "Generate musically compelling, controllable music through one Rust composition algebra. Establish a comprehensive composable musical ontology first, before extending composition or inference.",
   "checkpoint": {
-    "summary": "The current unit is ontology only: typed musical entities, independent components, exact values, explicit relationships, provenance and an audited glossary inventory. Existing generation, audition, structural edits and MIDI interchange retain their compiler. Representation coverage does not imply executable techniques or musical quality. Classifier calibration is deferred.",
+    "summary": "The ontology now separates arbitrary logarithmic pitch coordinates, basis, acoustic reference and optional repetition. Exact and approximate scalars are shared by tuning and independent spectra. Explicit scale-degree bindings and conditioned spectral correspondences preserve identity and context; a coordinated warp control establishes partial alignment without claiming a roughness optimum. This remains representation work with the existing compiler as sole note emitter.",
     "nextActions": [
-      "Review the ontology as a vocabulary for musical intent: pitch and tuning, rhythm and meter, chord and voicing, voices and phrases, orchestration, timbre, techniques, expression, form and notation.",
+      "Review the parameterized coordinate model and spectral correspondence on concrete musical examples. Retain arbitrary bases, independent reference Hz, optional periods, unsorted/unbounded coordinates and exact or approximate inputs without silent normalization.",
       "Keep all indexed LilyPond glossary headwords mapped, canonical aliases inspectable, cultural extensions qualified and parameterized concepts distinct from names.",
       "When composition work is requested, lower a small useful set of these components through CompositionPlan and prove shared/local edits on complete passages.",
       "Judge later progress by audition and useful composition across varied musical languages. Artist references guide musical goals, never hard-coded identities or fixed phrase lengths."
@@ -23,14 +23,16 @@
         "docs/research/ontology.md",
         "docs/research/music-vocabulary.json"
       ],
-      "nextAction": "Review the represented nouns and parameter boundaries with the user. Add or refine concepts where musical intent cannot be stated without stringly typed or conflated values; preserve exact member correspondence and explicit unknowns."
+      "nextAction": "Use the generalized coordinate, spectrum and correspondence types to state complete musical intentions. Next evaluate shared generator coordinates, typed trajectories and resource-specific realization where they simplify a concrete composition task; do not add a universal parameter graph."
     },
     {
       "id": "composition-lowering",
       "title": "Make chosen musical intentions executable",
       "status": "planned",
       "owner": null,
-      "dependsOn": ["ontology-review"],
+      "dependsOn": [
+        "ontology-review"
+      ],
       "evidence": [
         "crates/muzak-core/src/ontology/",
         "crates/muzak-core/src/composition.rs",
@@ -44,7 +46,9 @@
       "title": "Develop and audition complete editable passages",
       "status": "planned",
       "owner": null,
-      "dependsOn": ["composition-lowering"],
+      "dependsOn": [
+        "composition-lowering"
+      ],
       "evidence": [
         "crates/muzak-core/src/generator.rs",
         "crates/muzak-core/src/scene.rs",
@@ -57,7 +61,9 @@
       "title": "Infer reusable structure when composition needs it",
       "status": "planned",
       "owner": null,
-      "dependsOn": ["composition-lowering"],
+      "dependsOn": [
+        "composition-lowering"
+      ],
       "evidence": [
         "crates/muzak-core/src/pitch_relations.rs",
         "crates/muzak-core/src/paired_pitch.rs",

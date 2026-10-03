@@ -25,6 +25,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         CoreRequest::export_all(&config)?;
         muzak_core::generator::GeneratorOptions::export_all(&config)?;
         muzak_core::ontology::MusicOntology::export_all(&config)?;
+        muzak_core::ontology::spectral_relation::LogFrequencyWarp::export_all(&config)?;
         muzak_core::ontology::vocabulary::GlossaryEntry::export_all(&config)?;
         CoreResponse::export_all(&config)?;
         CoreReply::export_all(&config)?;

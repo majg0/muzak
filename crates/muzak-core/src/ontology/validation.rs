@@ -6,10 +6,11 @@
 
 use super::{
     Component, ComponentKind, Entity, EntityId, MusicOntology, Relation,
-    instrumentation::SoundSource,
+    instrumentation::{SoundSource, Synthesis},
     notation::NotationMark,
-    pitch::Voicing,
+    pitch::{ScalePitches, Voicing},
     rhythm::MeterOrganization,
+    spectral_relation::SpectralTuningCorrespondence,
     structure::{FormRelationship, MotifIdentity, TransformationOperation},
 };
 use crate::error::{CoreResult, invalid};
@@ -98,6 +99,90 @@ fn validate_voicing(entities: &Entities<'_>, voicing: &Voicing) -> CoreResult<()
                 "Voice-leading destination {} has no member {}.",
                 address.voicing.0, address.member
             )));
+        }
+    }
+    Ok(())
+}
+
+/// This checks the addresses of a declared constraint, not numerical partial
+/// alignment, a roughness minimum, or a perceptual preference.
+fn validate_spectral_correspondence(
+    entities: &Entities<'_>,
+    correspondence: &SpectralTuningCorrespondence,
+) -> CoreResult<()> {
+    let scale = entity(entities, &correspondence.scale)?
+        .components
+        .iter()
+        .find_map(|assertion| match &assertion.component {
+            Component::Scale(scale) => Some(scale),
+            _ => None,
+        })
+        .ok_or_else(|| invalid("Spectral correspondence scale must carry Scale."))?;
+    let tuning = entity(entities, &correspondence.tuning)?
+        .components
+        .iter()
+        .find_map(|assertion| match &assertion.component {
+            Component::Tuning(tuning) => Some(tuning),
+            _ => None,
+        })
+        .ok_or_else(|| invalid("Spectral correspondence tuning must carry Tuning."))?;
+    if !matches!(
+        &scale.pitches,
+        ScalePitches::TuningDegrees { tuning, .. } if tuning == &correspondence.tuning
+    ) {
+        return Err(invalid(
+            "Spectral correspondence requires a scale bound to its exact tuning entity.",
+        ));
+    }
+    let mut spectra = HashMap::new();
+    for sound in &correspondence.sounds {
+        let timbre = entity(entities, &sound.timbre)?
+            .components
+            .iter()
+            .find_map(|assertion| match &assertion.component {
+                Component::Timbre(timbre) => Some(timbre),
+                _ => None,
+            })
+            .ok_or_else(|| invalid("Spectral correspondence sound must carry Timbre."))?;
+        let binding = timbre
+            .spectra
+            .iter()
+            .find(|binding| binding.id == sound.binding)
+            .ok_or_else(|| {
+                invalid("Spectral correspondence names an absent timbre spectrum binding.")
+            })?;
+        let spectrum = entity(entities, &binding.spectrum)?
+            .components
+            .iter()
+            .find_map(|assertion| match &assertion.component {
+                Component::Spectrum(spectrum) => Some(spectrum),
+                _ => None,
+            })
+            .ok_or_else(|| invalid("Timbre spectrum binding must carry Spectrum."))?;
+        spectra.insert(sound.id.as_str(), spectrum);
+    }
+    for pair in &correspondence.partial_pairs {
+        for endpoint in [&pair.left, &pair.right] {
+            if endpoint.scale_degree as usize >= scale.member_count() {
+                return Err(invalid(
+                    "Spectral endpoint addresses an absent scale degree.",
+                ));
+            }
+            if endpoint.period != 0 && !tuning.is_periodic() {
+                return Err(invalid("The selected tuning supplies no repeated period."));
+            }
+            let spectrum = spectra
+                .get(endpoint.sound.as_str())
+                .ok_or_else(|| invalid("Spectral endpoint names an absent sound."))?;
+            if !spectrum
+                .partials
+                .iter()
+                .any(|partial| partial.id == endpoint.partial)
+            {
+                return Err(invalid(
+                    "Spectral endpoint names an absent partial in its selected spectrum.",
+                ));
+            }
         }
     }
     Ok(())
@@ -221,9 +306,25 @@ pub(super) fn validate_references(document: &MusicOntology) -> CoreResult<()> {
                     }
                 }
                 Component::Scale(scale) => {
-                    if let Some(tuning) = &scale.tuning {
-                        require(&entities, tuning, ComponentKind::Tuning, "Scale tuning")?;
+                    if let ScalePitches::TuningDegrees { tuning, degrees } = &scale.pitches {
+                        let tuning = entity(&entities, tuning)?
+                            .components
+                            .iter()
+                            .find_map(|assertion| match &assertion.component {
+                                Component::Tuning(tuning) => Some(tuning),
+                                _ => None,
+                            })
+                            .ok_or_else(|| invalid("Scale tuning must carry Tuning."))?;
+                        if degrees
+                            .iter()
+                            .any(|degree| *degree as usize >= tuning.degree_count())
+                        {
+                            return Err(invalid("Scale selects an absent tuning degree."));
+                        }
                     }
+                }
+                Component::SpectralCorrespondence(correspondence) => {
+                    validate_spectral_correspondence(&entities, correspondence)?;
                 }
                 Component::Chord(chord) => {
                     for function in &chord.functions {
@@ -424,25 +525,53 @@ pub(super) fn validate_references(document: &MusicOntology) -> CoreResult<()> {
                         )?;
                     }
                 }
-                Component::Timbre(timbre) => match &timbre.source {
-                    SoundSource::Acoustic { instrument } => require(
-                        &entities,
-                        instrument,
-                        ComponentKind::Instrument,
-                        "Acoustic timbre instrument",
-                    )?,
-                    SoundSource::Layered { layers } => {
-                        for layer in layers {
+                Component::Timbre(timbre) => {
+                    for binding in &timbre.spectra {
+                        require(
+                            &entities,
+                            &binding.spectrum,
+                            ComponentKind::Spectrum,
+                            "Timbre spectrum",
+                        )?;
+                        if let Some(technique) = &binding.context.technique {
                             require(
                                 &entities,
-                                &layer.timbre,
-                                ComponentKind::Timbre,
-                                "Timbre layer",
+                                technique,
+                                ComponentKind::Technique,
+                                "Spectrum context technique",
                             )?;
                         }
                     }
-                    _ => {}
-                },
+                    match &timbre.source {
+                        SoundSource::Acoustic { instrument } => require(
+                            &entities,
+                            instrument,
+                            ComponentKind::Instrument,
+                            "Acoustic timbre instrument",
+                        )?,
+                        SoundSource::Layered { layers } => {
+                            for layer in layers {
+                                require(
+                                    &entities,
+                                    &layer.timbre,
+                                    ComponentKind::Timbre,
+                                    "Timbre layer",
+                                )?;
+                            }
+                        }
+                        SoundSource::Synthesizer {
+                            synthesis: Synthesis::Additive { spectrum },
+                        } => {
+                            require(
+                                &entities,
+                                spectrum,
+                                ComponentKind::Spectrum,
+                                "Additive synthesis spectrum",
+                            )?;
+                        }
+                        _ => {}
+                    }
+                }
                 Component::Orchestration(orchestration) => {
                     for assignment in &orchestration.assignments {
                         require(
@@ -705,6 +834,274 @@ mod tests {
         }
     }
 
+    fn spectral_document() -> MusicOntology {
+        let values = [
+            (
+                "tuning",
+                serde_json::json!({"kind": "tuning", "value": {
+                    "referencePitch": null, "referenceFrequencyHz": 261.625565,
+                    "mapping": {
+                        "kind": "logarithmic", "basis": {"kind": "exact", "value": {"numerator": 2, "denominator": 1}},
+                        "degrees": (0..12).map(|index| serde_json::json!({"kind": "exact", "value": {"numerator": index, "denominator": 12}})).collect::<Vec<_>>(),
+                        "period": {"kind": "exact", "value": {"numerator": 1, "denominator": 1}}
+                    },
+                    "temperament": "equal"
+                }}),
+            ),
+            (
+                "scale",
+                serde_json::json!({"kind": "scale", "value": {
+                    "pitches": {"kind": "tuningDegrees", "tuning": "tuning", "degrees": [0, 6, 11]},
+                    "family": "unclassified", "mode": null, "usage": "bidirectional", "spellings": []
+                }}),
+            ),
+            (
+                "spectrum",
+                serde_json::json!({"kind": "spectrum", "value": {"partials": [
+                    {"id": "reference", "frequency": {"kind": "relative", "ratio": {"kind": "exact", "value": {"numerator": 1, "denominator": 1}}}, "amplitude": 1.0, "phaseCycles": null},
+                    {"id": "upper", "frequency": {"kind": "relative", "ratio": {"kind": "exact", "value": {"numerator": 3, "denominator": 2}}}, "amplitude": 0.7, "phaseCycles": null}
+                ]}}),
+            ),
+            (
+                "timbre",
+                serde_json::json!({"kind": "timbre", "value": {
+                    "name": "conditioned additive sound", "descriptors": [],
+                    "source": {"kind": "synthesizer", "synthesis": {"kind": "additive", "spectrum": "spectrum"}},
+                    "spectra": [{"id": "sustain", "spectrum": "spectrum", "context": {
+                        "referenceFrequencyHz": 261.625565, "elapsedSeconds": 0.2,
+                        "excitation": null, "technique": null, "stage": "beforeEffects"
+                    }}], "envelope": null, "effects": []
+                }}),
+            ),
+            (
+                "correspondence",
+                serde_json::json!({"kind": "spectralCorrespondence", "value": {
+                    "scale": "scale", "tuning": "tuning", "criterion": {"kind": "partialAlignment"},
+                    "sounds": [
+                        {"id": "low", "timbre": "timbre", "binding": "sustain", "frequencyUse": "relativeToTuningDegree", "gain": 1.0},
+                        {"id": "high", "timbre": "timbre", "binding": "sustain", "frequencyUse": "relativeToTuningDegree", "gain": 0.6}
+                    ],
+                    "partialPairs": [{
+                        "left": {"sound": "low", "scaleDegree": 0, "period": 0, "partial": "upper"},
+                        "right": {"sound": "high", "scaleDegree": 1, "period": 0, "partial": "reference"}
+                    }]
+                }}),
+            ),
+        ];
+        MusicOntology {
+            entities: values
+                .into_iter()
+                .map(|(name, value)| with_component(name, serde_json::from_value(value).unwrap()))
+                .collect(),
+            ..MusicOntology::default()
+        }
+    }
+
+    fn component_mut<'a>(document: &'a mut MusicOntology, name: &str) -> &'a mut Component {
+        &mut document
+            .entities
+            .iter_mut()
+            .find(|entity| entity.id.0 == name)
+            .unwrap()
+            .components[0]
+            .component
+    }
+
+    #[test]
+    fn spectral_constraints_round_trip_without_claiming_alignment() {
+        // The selected tuning degree does not numerically align these partials.
+        // This is a valid authored constraint, not verified acoustic evidence.
+        let document = spectral_document();
+        document.validate().unwrap();
+        let serialized = serde_json::to_string(&document).unwrap();
+        let decoded: MusicOntology = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(document, decoded);
+        decoded.validate().unwrap();
+    }
+
+    #[test]
+    fn equal_tunings_do_not_establish_shared_parameter_identity() {
+        let mut document = spectral_document();
+        let tuning = document.entities[0].components[0].component.clone();
+        document
+            .entities
+            .push(with_component("equal-but-independent", tuning));
+        if let Component::SpectralCorrespondence(correspondence) =
+            component_mut(&mut document, "correspondence")
+        {
+            correspondence.tuning = id("equal-but-independent");
+        }
+        let error = document.validate().unwrap_err();
+        assert!(error.message.contains("exact tuning entity"), "{error}");
+    }
+
+    #[test]
+    fn partials_resolve_through_the_named_timbre_binding() {
+        let mut document = spectral_document();
+        if let Component::SpectralCorrespondence(correspondence) =
+            component_mut(&mut document, "correspondence")
+        {
+            correspondence.sounds[0].binding = "missing-frame".into();
+        }
+        let error = document.validate().unwrap_err();
+        assert!(
+            error.message.contains("absent timbre spectrum binding"),
+            "{error}"
+        );
+
+        let mut document = spectral_document();
+        if let Component::SpectralCorrespondence(correspondence) =
+            component_mut(&mut document, "correspondence")
+        {
+            correspondence.partial_pairs[0].left.partial = "missing-partial".into();
+        }
+        let error = document.validate().unwrap_err();
+        assert!(error.message.contains("absent partial"), "{error}");
+    }
+
+    #[test]
+    fn scale_selection_and_spectral_endpoints_have_different_index_spaces() {
+        let mut document = spectral_document();
+        if let Component::Scale(scale) = component_mut(&mut document, "scale") {
+            if let ScalePitches::TuningDegrees { degrees, .. } = &mut scale.pitches {
+                degrees[2] = 12;
+            }
+        }
+        let error = document.validate().unwrap_err();
+        assert!(error.message.contains("absent tuning degree"), "{error}");
+
+        let mut document = spectral_document();
+        if let Component::SpectralCorrespondence(correspondence) =
+            component_mut(&mut document, "correspondence")
+        {
+            // Degree six exists in the tuning, but the selected scale has only
+            // three members. Its degree one selects tuning degree six.
+            correspondence.partial_pairs[0].right.scale_degree = 6;
+        }
+        let error = document.validate().unwrap_err();
+        assert!(error.message.contains("absent scale degree"), "{error}");
+    }
+
+    #[test]
+    fn nonperiodic_tunings_do_not_acquire_an_octave() {
+        let mappings = [
+            serde_json::json!({
+                "kind": "explicitFrequencies", "pitches": [
+                    {"pitch": {"millicents": 6_000_000}, "frequencyHz": 261.625565},
+                    {"pitch": {"millicents": 6_500_000}, "frequencyHz": 350.0},
+                    {"pitch": {"millicents": 6_900_000}, "frequencyHz": 431.0}
+                ]
+            }),
+            serde_json::json!({
+                "kind": "logarithmic", "basis": {"kind": "exact", "value": {"numerator": 2, "denominator": 1}},
+                "degrees": [
+                    {"kind": "exact", "value": {"numerator": -2, "denominator": 1}},
+                    {"kind": "exact", "value": {"numerator": 3, "denominator": 2}},
+                    {"kind": "exact", "value": {"numerator": -2, "denominator": 1}}
+                ], "period": null
+            }),
+            serde_json::json!({
+                "kind": "frequencyRatios", "degrees": [
+                    {"kind": "exact", "value": {"numerator": 3, "denominator": 1}},
+                    {"kind": "approximate", "value": 0.5},
+                    {"kind": "exact", "value": {"numerator": 3, "denominator": 1}}
+                ], "periodRatio": null
+            }),
+        ];
+        for mapping in mappings {
+            let mut document = spectral_document();
+            if let Component::Tuning(tuning) = component_mut(&mut document, "tuning") {
+                tuning.mapping = serde_json::from_value(mapping).unwrap();
+            }
+            if let Component::Scale(scale) = component_mut(&mut document, "scale") {
+                if let ScalePitches::TuningDegrees { degrees, .. } = &mut scale.pitches {
+                    *degrees = vec![0, 1, 2];
+                }
+            }
+            document.validate().unwrap();
+            if let Component::SpectralCorrespondence(correspondence) =
+                component_mut(&mut document, "correspondence")
+            {
+                correspondence.partial_pairs[0].right.period = 1;
+            }
+            let error = document.validate().unwrap_err();
+            assert!(error.message.contains("no repeated period"), "{error}");
+        }
+    }
+
+    #[test]
+    fn period_does_not_fold_order_or_merge_tuning_coordinates() {
+        let mut document = spectral_document();
+        if let Component::Tuning(tuning) = component_mut(&mut document, "tuning") {
+            tuning.mapping = serde_json::from_value(serde_json::json!({
+                "kind": "logarithmic", "basis": {"kind": "exact", "value": {"numerator": 3, "denominator": 1}},
+                "degrees": [
+                    {"kind": "exact", "value": {"numerator": -2, "denominator": 1}},
+                    {"kind": "exact", "value": {"numerator": 3, "denominator": 2}},
+                    {"kind": "exact", "value": {"numerator": -2, "denominator": 1}}
+                ], "period": {"kind": "exact", "value": {"numerator": 1, "denominator": 1}}
+            })).unwrap();
+        }
+        if let Component::Scale(scale) = component_mut(&mut document, "scale") {
+            if let ScalePitches::TuningDegrees { degrees, .. } = &mut scale.pitches {
+                *degrees = vec![2, 0, 1];
+            }
+        }
+        document.validate().unwrap();
+        if let Component::SpectralCorrespondence(correspondence) =
+            component_mut(&mut document, "correspondence")
+        {
+            correspondence.partial_pairs[0].right.period = -1;
+        }
+        document.validate().unwrap();
+        let serialized = serde_json::to_string(&document).unwrap();
+        let decoded: MusicOntology = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(document, decoded);
+    }
+
+    #[test]
+    fn spectral_references_require_the_right_components() {
+        let mut document = spectral_document();
+        if let Component::Timbre(timbre) = component_mut(&mut document, "timbre") {
+            timbre.spectra[0].context.technique = Some(id("scale"));
+        }
+        let error = document.validate().unwrap_err();
+        assert!(
+            error.message.contains("Spectrum context technique"),
+            "{error}"
+        );
+
+        let mut document = spectral_document();
+        if let Component::Timbre(timbre) = component_mut(&mut document, "timbre") {
+            timbre.source = SoundSource::Synthesizer {
+                synthesis: Synthesis::Additive {
+                    spectrum: id("scale"),
+                },
+            };
+        }
+        let error = document.validate().unwrap_err();
+        assert!(
+            error.message.contains("Additive synthesis spectrum"),
+            "{error}"
+        );
+    }
+
+    #[test]
+    fn muting_keeps_a_spectral_constraint_without_proving_it() {
+        let mut document = spectral_document();
+        if let Component::Spectrum(spectrum) = component_mut(&mut document, "spectrum") {
+            for partial in &mut spectrum.partials {
+                partial.amplitude = 0.0;
+            }
+        }
+        if let Component::SpectralCorrespondence(correspondence) =
+            component_mut(&mut document, "correspondence")
+        {
+            correspondence.sounds[0].gain = 0.0;
+        }
+        document.validate().unwrap();
+    }
+
     fn voicing(chord: Option<&str>, member: &str) -> Voicing {
         Voicing {
             chord: chord.map(id),
@@ -865,6 +1262,7 @@ mod tests {
             ComponentKind::Timbre => Component::Timbre(Timbre {
                 name: "timbre".into(),
                 descriptors: vec![],
+                spectra: vec![],
                 source: target.map_or(
                     SoundSource::Noise {
                         color: NoiseColor::White,
@@ -921,6 +1319,7 @@ mod tests {
                     Component::Timbre(Timbre {
                         name: "bowed violin".into(),
                         descriptors: vec![],
+                        spectra: vec![],
                         source: SoundSource::Acoustic {
                             instrument: id("violin"),
                         },

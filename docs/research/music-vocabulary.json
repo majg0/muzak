@@ -2140,7 +2140,7 @@
       ]
     }
   ],
-  "canonicalConceptCount": 792,
+  "canonicalConceptCount": 794,
   "supplementalReferences": [
     {
       "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/beat",
@@ -2289,6 +2289,14 @@
     {
       "url": "https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/words/",
       "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://sethares.engr.wisc.edu/consemi.html",
+      "coverage": "Related spectra and scales, spectral and tuning transformations; selected conceptual mappings."
+    },
+    {
+      "url": "https://sethares.engr.wisc.edu/comprog.html",
+      "coverage": "Published sensory-dissonance model convention and explicit partial-pair policies."
     }
   ]
 }

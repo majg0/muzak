@@ -1,7 +1,7 @@
 //! Physical instruments, people, ensemble membership, sound design and routing
 //! are independent coordinates. A General MIDI patch never defines an instrument.
 
-use super::{EntityId, Rational, pitch::PitchRange};
+use super::{EntityId, Rational, pitch::PitchRange, spectrum::SpectrumBinding};
 use crate::error::{CoreResult, invalid};
 use crate::model::{MAX_SAFE, Pitch};
 use serde::{Deserialize, Serialize};
@@ -355,6 +355,10 @@ pub struct Timbre {
     pub name: String,
     pub descriptors: Vec<TimbreDescriptor>,
     pub source: SoundSource,
+    /// Contextual spectral descriptions may be authored or measured for any
+    /// sound source. They do not exhaust the timbre's temporal or noise content.
+    #[serde(default)]
+    pub spectra: Vec<SpectrumBinding>,
     pub envelope: Option<AmplitudeEnvelope>,
     /// Ordered signal-processing intent; no audio renderer is implied.
     pub effects: Vec<AudioEffect>,
@@ -435,7 +439,8 @@ pub enum NoiseColor {
 #[ts(rename = "OntologySynthesis")]
 pub enum Synthesis {
     Additive {
-        partials: Vec<SpectralPartial>,
+        /// Shared spectral data; realization will supply its frequency context.
+        spectrum: EntityId,
     },
     Subtractive {
         oscillators: Vec<Oscillator>,
@@ -459,14 +464,6 @@ pub enum Synthesis {
         damping: f64,
         excitation: Excitation,
     },
-}
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(rename = "OntologySpectralPartial")]
-pub struct SpectralPartial {
-    pub frequency_ratio: f64,
-    pub amplitude: f64,
-    pub phase_cycles: f64,
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -660,29 +657,36 @@ impl Timbre {
         for effect in &self.effects {
             effect.validate()?;
         }
+        for spectrum in &self.spectra {
+            spectrum.validate()?;
+        }
+        unique(
+            &self
+                .spectra
+                .iter()
+                .map(|binding| &binding.id)
+                .collect::<Vec<_>>(),
+            "timbre spectrum binding identities",
+        )?;
         validate_references(self.references())
     }
     pub fn references(&self) -> Vec<&EntityId> {
-        match &self.source {
+        let mut references = match &self.source {
             SoundSource::Acoustic { instrument } => vec![instrument],
             SoundSource::Layered { layers } => layers.iter().map(|layer| &layer.timbre).collect(),
+            SoundSource::Synthesizer {
+                synthesis: Synthesis::Additive { spectrum },
+            } => vec![spectrum],
             _ => Vec::new(),
-        }
+        };
+        references.extend(self.spectra.iter().flat_map(SpectrumBinding::references));
+        references
     }
 }
 impl Synthesis {
     pub fn validate(&self) -> CoreResult<()> {
         match self {
-            Self::Additive { partials } => {
-                if partials.is_empty() {
-                    return Err(invalid("Additive synthesis needs at least one partial."));
-                }
-                for partial in partials {
-                    positive(partial.frequency_ratio, "partial frequency ratio")?;
-                    nonnegative(partial.amplitude, "partial amplitude")?;
-                    finite(partial.phase_cycles, "partial phase")?;
-                }
-            }
+            Self::Additive { spectrum } => spectrum.validate()?,
             Self::Subtractive {
                 oscillators,
                 filter,
@@ -1095,6 +1099,7 @@ fn bipolar(value: f64, label: &str) -> CoreResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ontology::spectrum::{SpectrumContext, SpectrumStage};
     #[test]
     fn course_tuning_preserves_doubled_strings_and_validates_capo() {
         let mut tuning = InstrumentTuning {
@@ -1122,6 +1127,7 @@ mod tests {
         let timbre = Timbre {
             name: "Layer".into(),
             descriptors: vec![],
+            spectra: vec![],
             source: SoundSource::Layered {
                 layers: vec![
                     TimbreLayer {
@@ -1143,6 +1149,49 @@ mod tests {
         assert_eq!(timbre.references().len(), 2);
         let json = serde_json::to_string(&timbre).unwrap();
         assert_eq!(serde_json::from_str::<Timbre>(&json).unwrap(), timbre);
+    }
+    #[test]
+    fn additive_timbre_reuses_spectrum_and_preserves_binding_context_identity() {
+        let mut timbre = Timbre {
+            name: "Inharmonic bell".into(),
+            descriptors: vec![],
+            source: SoundSource::Synthesizer {
+                synthesis: Synthesis::Additive {
+                    spectrum: EntityId("bell-spectrum".into()),
+                },
+            },
+            spectra: vec![SpectrumBinding {
+                id: "attack".into(),
+                spectrum: EntityId("bell-spectrum".into()),
+                context: SpectrumContext {
+                    reference_frequency_hz: 220.0,
+                    elapsed_seconds: Some(0.0),
+                    excitation: Some(0.7),
+                    technique: Some(EntityId("strike".into())),
+                    stage: SpectrumStage::BeforeEffects,
+                },
+            }],
+            envelope: None,
+            effects: vec![],
+        };
+        timbre.validate().unwrap();
+        assert_eq!(
+            timbre.references(),
+            vec![
+                &EntityId("bell-spectrum".into()),
+                &EntityId("bell-spectrum".into()),
+                &EntityId("strike".into()),
+            ]
+        );
+        let mut later = timbre.spectra[0].clone();
+        later.id = "decay".into();
+        later.context.elapsed_seconds = Some(1.0);
+        timbre.spectra.push(later);
+        timbre.validate().unwrap();
+        timbre.spectra[1].id = "attack".into();
+        assert!(timbre.validate().is_err());
+        timbre.spectra[1].id = " ".into();
+        assert!(timbre.validate().is_err());
     }
     #[test]
     fn synthesis_and_effects_reject_missing_operators_and_nonfinite_values() {

@@ -8,9 +8,13 @@ pub mod notation;
 pub mod performance;
 pub mod pitch;
 pub mod rhythm;
+pub mod scalar;
+pub mod spectral_relation;
+pub mod spectrum;
 pub mod structure;
 mod validation;
 pub mod vocabulary;
+pub use scalar::Scalar;
 
 use crate::{
     composition::CompositionPlan,
@@ -383,6 +387,7 @@ components! {
     PitchGesture(performance::PitchGesture), Dynamics(performance::Dynamics), Expression(performance::Expression),
     Instrument(instrumentation::Instrument), Ensemble(instrumentation::Ensemble), Performer(instrumentation::Performer),
     Timbre(instrumentation::Timbre), Orchestration(instrumentation::Orchestration),
+    Spectrum(spectrum::Spectrum), SpectralCorrespondence(spectral_relation::SpectralTuningCorrespondence),
     Voice(structure::Voice), Phrase(structure::Phrase), Motif(structure::Motif), Form(structure::Form),
     Texture(structure::Texture), Transformation(structure::Transformation), Notation(notation::Notation), Lyrics(notation::Lyrics),
 }
