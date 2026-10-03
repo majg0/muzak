@@ -8,6 +8,7 @@ pub mod harmonic;
 pub mod harmony;
 pub mod harmony_context;
 pub mod meter;
+pub mod member_transform;
 pub mod midi;
 pub mod model;
 pub mod operations;
