@@ -8,7 +8,7 @@
       "Improve contextual program selection. Every remaining development core-error interval is expressible by existing surface or operation candidates. The relation marginal puts truth among tied maxima on 31.25 of 66.5 error quarters (uniquely first on 27.25), but the mixture on only 2.67; final temporal decoding accounts for 2.625 and frame averaging .0417. Preserve immutable sources, strict denominators and distinct functional errors.",
       "Retain the reproducible four-work pretrained quality-readout control. Joint degree/quality correction, direct function supervision and the six-work quality fit underperform; no per-work oracle selection or further blind head sweeps. K283-III improves both works but repairs none of their I(64) replacements. More examples alone do not resolve this output-structure gap.",
       "Retain the simpler frozen selector and current segmental result. Partial-core supervision leaves agreement unchanged. A contextual correction to the flat root prior fails the cadential V(64) training control and discards useful native function readings; reject it before development evaluation. Preserve the teacher's surface evidence and infer functional-parent/member-operation hypotheses through the existing compiler instead of conflating their roots.",
-      "The audited member grammar admits the correct joint root/core on all captured training duration; this is capacity, not prediction. Replace global candidate-count normalization with explicit KEEP, parent-edit and surface-parent branch probabilities, then normalize realizations within each branch. The 112-parameter scorer fails the fixed cadential training contrast; candidate counts give KEEP only 3.97–16.02% prior mass. Preserve the frozen teacher marginal and original native witness premises.",
+      "The audited member grammar admits the correct joint root/core on all captured training duration; this is capacity, not prediction. Explicit KEEP, parent-edit and surface-parent priors remove the cross-branch catalog-count bias, but the frozen 114-parameter scorer reaches only 85.14% captured training joint agreement and still fails the fixed K280 cadential contrast. Do not evaluate it on development. Identify missing candidate-specific temporal relationships before another fit; preserve the frozen teacher marginal and original native witness premises.",
       "Require continuity, independent seventh, ambiguity and track-repartition controls when changing scoring. Missing members can be implied by surrounding harmony; passing/neighbor motion can be structurally chordal. These musical distinctions constrain any learned or hand-written proposal.",
       "Preserve an edited composition program independently of reanalysis. Keep source observations, authored parameters and inferred evidence distinct; a new inverse reading must not erase an authored dependency.",
       "After representation/ranking choices are frozen, evaluate held-out work lineages once, alongside exact reconstruction, useful edits, runtime and explanatory cost."
@@ -46,12 +46,13 @@
         "crates/muzak-core/examples/harmony-context.rs",
         ".audit/score/function-member-transform-audit.json",
         ".audit/score/joint-program-teacher.json",
-        ".audit/score/joint-program-fit.json",
         ".audit/score/joint-program-controls-evaluation-protocol.json",
         ".audit/score/joint-program-prior-diagnosis.json",
-        ".audit/score/joint-program-training-native-evaluate.json"
+        ".audit/score/joint-program-branch-fit.json",
+        ".audit/score/joint-program-branch-training-evaluate.json",
+        ".audit/score/joint-program-branch-training-native-evaluate.json"
       ],
-      "nextAction": "Retain maintained 93.03% / 93.75% and frozen segmental 93.51% / 94.27% controls. Correct the measured catalog-count prior with three disjoint conditional grammar branches and two shared branch logits, keeping existing source features and full inventory. Require exact identity-only replay, UNKNOWN, branch/alias invariance and numeric-gradient controls before one training fit. Recheck fixed K280 ordinary-I64 versus V(64) before development. Synthetic authored-parent preferences remain descriptive where alternate parses are valid."
+      "nextAction": "Retain maintained 93.03% / 93.75% and frozen segmental 93.51% / 94.27% controls. Inspect exact note succession, bass continuity and candidate-member resolution in fixed K280 ordinary-I64 versus V(64). Test the smallest source-derived relationship that distinguishes them, with matched-content negative controls, before fitting another scorer. The corrected branch prior passes numerical/identity controls but not this musical distinction; neither local nor temporal inference is admitted to development. Synthetic authored-parent preferences remain descriptive where alternate parses are valid."
     },
     {
       "id": "bounded-inverse-search",
