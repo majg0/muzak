@@ -1,0 +1,2294 @@
+{
+  "schemaVersion": 1,
+  "scope": "Finite glossary coverage and curated additions; concept names and aliases only, not copied definitions or a claim of complete worldwide terminology. Source inventory is independent from the Rust vocabulary macro. Typed parameterized components carry musical values; vocabulary labels alone do not imply executable realization.",
+  "canonicalRegistry": "crates/muzak-core/src/ontology/vocabulary.rs",
+  "retrievedDate": "2026-10-03",
+  "sources": [
+    {
+      "id": "lilypond-2.26",
+      "title": "LilyPond Music Glossary",
+      "version": "2.26.0",
+      "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/",
+      "indexSha256": "0e793341e16b57338a56cbbda7ecf34c4553dbebba79edeabb5adefbffe624e1",
+      "coverage": "All numbered headwords in sections 1 and 4; section 2 duration-name and section 3 pitch-name translation tables are outside this finite headword inventory.",
+      "headwordCount": 354,
+      "headings": [
+        {
+          "section": "1.1",
+          "heading": "A",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/a",
+          "term": "pitchNameA"
+        },
+        {
+          "section": "1.2",
+          "heading": "a due",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/a-due",
+          "term": "aDue"
+        },
+        {
+          "section": "1.3",
+          "heading": "accelerando",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/accelerando",
+          "term": "accelerando"
+        },
+        {
+          "section": "1.4",
+          "heading": "accent",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/accent",
+          "term": "accent"
+        },
+        {
+          "section": "1.5",
+          "heading": "accessory",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/accessory",
+          "term": "ornament"
+        },
+        {
+          "section": "1.6",
+          "heading": "acciaccatura",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/acciaccatura",
+          "term": "acciaccatura"
+        },
+        {
+          "section": "1.7",
+          "heading": "accidental",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/accidental",
+          "term": "accidental"
+        },
+        {
+          "section": "1.8",
+          "heading": "adagio",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/adagio",
+          "term": "adagio"
+        },
+        {
+          "section": "1.9",
+          "heading": "al fine",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/al-fine",
+          "term": "alFine"
+        },
+        {
+          "section": "1.10",
+          "heading": "al niente",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/al-niente",
+          "term": "alNiente"
+        },
+        {
+          "section": "1.11",
+          "heading": "alla breve",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/alla-breve",
+          "term": "cutTime"
+        },
+        {
+          "section": "1.12",
+          "heading": "allegro",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/allegro",
+          "term": "allegro"
+        },
+        {
+          "section": "1.13",
+          "heading": "alteration",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/alteration",
+          "term": "alteration"
+        },
+        {
+          "section": "1.14",
+          "heading": "alto",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/alto",
+          "term": "alto"
+        },
+        {
+          "section": "1.15",
+          "heading": "alto clef",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/alto-clef",
+          "term": "altoClef"
+        },
+        {
+          "section": "1.16",
+          "heading": "ambitus",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/ambitus",
+          "term": "ambitus"
+        },
+        {
+          "section": "1.17",
+          "heading": "anacrusis",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/anacrusis",
+          "term": "pickup"
+        },
+        {
+          "section": "1.18",
+          "heading": "ancient minor scale",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/ancient-minor-scale",
+          "term": "naturalMinorScale"
+        },
+        {
+          "section": "1.19",
+          "heading": "andante",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/andante",
+          "term": "andante"
+        },
+        {
+          "section": "1.20",
+          "heading": "appoggiatura",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/appoggiatura",
+          "term": "appoggiatura"
+        },
+        {
+          "section": "1.21",
+          "heading": "arpeggio",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/arpeggio",
+          "term": "arpeggio"
+        },
+        {
+          "section": "1.22",
+          "heading": "arrastre",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/arrastre",
+          "term": "arrastre"
+        },
+        {
+          "section": "1.23",
+          "heading": "articulation",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/articulation",
+          "term": "articulation"
+        },
+        {
+          "section": "1.24",
+          "heading": "ascending interval",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/ascending-interval",
+          "term": "ascendingInterval"
+        },
+        {
+          "section": "1.25",
+          "heading": "augmentation",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/augmentation",
+          "term": "augmentation"
+        },
+        {
+          "section": "1.26",
+          "heading": "augmented interval",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/augmented-interval",
+          "term": "augmentedInterval"
+        },
+        {
+          "section": "1.27",
+          "heading": "autograph",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/autograph",
+          "term": "autograph"
+        },
+        {
+          "section": "1.28",
+          "heading": "B",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/b",
+          "term": "pitchNameB"
+        },
+        {
+          "section": "1.29",
+          "heading": "backfall",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/backfall",
+          "term": "appoggiatura"
+        },
+        {
+          "section": "1.30",
+          "heading": "bar",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/bar",
+          "term": "measure"
+        },
+        {
+          "section": "1.31",
+          "heading": "bar line",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/bar-line",
+          "term": "barLine"
+        },
+        {
+          "section": "1.32",
+          "heading": "baritone",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/baritone",
+          "term": "baritone"
+        },
+        {
+          "section": "1.33",
+          "heading": "baritone clef",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/baritone-clef",
+          "term": "baritoneClef"
+        },
+        {
+          "section": "1.34",
+          "heading": "bass",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/bass",
+          "term": "bass"
+        },
+        {
+          "section": "1.35",
+          "heading": "bass clef",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/bass-clef",
+          "term": "fClef"
+        },
+        {
+          "section": "1.36",
+          "heading": "beam",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/beam",
+          "term": "beam"
+        },
+        {
+          "section": "1.37",
+          "heading": "beat",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/beat",
+          "term": "beat"
+        },
+        {
+          "section": "1.38",
+          "heading": "beat repeat",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/beat-repeat",
+          "term": "beatRepeat"
+        },
+        {
+          "section": "1.39",
+          "heading": "bind",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/bind",
+          "term": "tie"
+        },
+        {
+          "section": "1.40",
+          "heading": "brace",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/brace",
+          "term": "brace"
+        },
+        {
+          "section": "1.41",
+          "heading": "bracket",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/bracket",
+          "term": "bracket"
+        },
+        {
+          "section": "1.42",
+          "heading": "brass",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/brass",
+          "term": "brass"
+        },
+        {
+          "section": "1.43",
+          "heading": "breath mark",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/breath-mark",
+          "term": "breathMark"
+        },
+        {
+          "section": "1.44",
+          "heading": "breve",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/breve",
+          "term": "breve"
+        },
+        {
+          "section": "1.45",
+          "heading": "C",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/c",
+          "term": "pitchNameC"
+        },
+        {
+          "section": "1.46",
+          "heading": "C clef",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/c-clef",
+          "term": "cClef"
+        },
+        {
+          "section": "1.47",
+          "heading": "cadence",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/cadence",
+          "term": "cadence"
+        },
+        {
+          "section": "1.48",
+          "heading": "cadenza",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/cadenza",
+          "term": "cadenza"
+        },
+        {
+          "section": "1.49",
+          "heading": "caesura",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/caesura",
+          "term": "caesura"
+        },
+        {
+          "section": "1.50",
+          "heading": "canon",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/canon",
+          "term": "canon"
+        },
+        {
+          "section": "1.51",
+          "heading": "cent",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/cent",
+          "term": "cent"
+        },
+        {
+          "section": "1.52",
+          "heading": "central C",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/central-c",
+          "term": "middleC"
+        },
+        {
+          "section": "1.53",
+          "heading": "chord",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/chord",
+          "term": "chord"
+        },
+        {
+          "section": "1.54",
+          "heading": "chord grid",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/chord-grid",
+          "term": "chordGrid"
+        },
+        {
+          "section": "1.55",
+          "heading": "chromatic scale",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/chromatic-scale",
+          "term": "chromaticScale"
+        },
+        {
+          "section": "1.56",
+          "heading": "chromaticism",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/chromaticism",
+          "term": "chromaticism"
+        },
+        {
+          "section": "1.57",
+          "heading": "church mode",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/church-mode",
+          "term": "churchMode"
+        },
+        {
+          "section": "1.58",
+          "heading": "clef",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/clef",
+          "term": "clef"
+        },
+        {
+          "section": "1.59",
+          "heading": "cluster",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/cluster",
+          "term": "cluster"
+        },
+        {
+          "section": "1.60",
+          "heading": "comma",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/comma",
+          "term": "comma"
+        },
+        {
+          "section": "1.61",
+          "heading": "common meter",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/common-meter",
+          "term": "commonTime"
+        },
+        {
+          "section": "1.62",
+          "heading": "Common Practice Period",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/common-practice-period",
+          "term": "commonPracticePeriod"
+        },
+        {
+          "section": "1.63",
+          "heading": "common time",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/common-time",
+          "term": "commonTime"
+        },
+        {
+          "section": "1.64",
+          "heading": "complement",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/complement",
+          "term": "complement"
+        },
+        {
+          "section": "1.65",
+          "heading": "compound interval",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/compound-interval",
+          "term": "compoundInterval"
+        },
+        {
+          "section": "1.66",
+          "heading": "compound meter",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/compound-meter",
+          "term": "compoundMeter"
+        },
+        {
+          "section": "1.67",
+          "heading": "compound time",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/compound-time",
+          "term": "compoundMeter"
+        },
+        {
+          "section": "1.68",
+          "heading": "concert pitch",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/concert-pitch",
+          "term": "concertPitch"
+        },
+        {
+          "section": "1.69",
+          "heading": "conjunct movement",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/conjunct-movement",
+          "term": "conjunctMovement"
+        },
+        {
+          "section": "1.70",
+          "heading": "consonance",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/consonance",
+          "term": "consonance"
+        },
+        {
+          "section": "1.71",
+          "heading": "contralto",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/contralto",
+          "term": "contralto"
+        },
+        {
+          "section": "1.72",
+          "heading": "copying music",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/copying-music",
+          "term": "copyingMusic"
+        },
+        {
+          "section": "1.73",
+          "heading": "counterpoint",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/counterpoint",
+          "term": "counterpoint"
+        },
+        {
+          "section": "1.74",
+          "heading": "countertenor",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/countertenor",
+          "term": "countertenor"
+        },
+        {
+          "section": "1.75",
+          "heading": "crescendo",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/crescendo",
+          "term": "crescendo"
+        },
+        {
+          "section": "1.76",
+          "heading": "cue-notes",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/cue_002dnotes",
+          "term": "cueNotes"
+        },
+        {
+          "section": "1.77",
+          "heading": "custos",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/custos",
+          "term": "custos"
+        },
+        {
+          "section": "1.78",
+          "heading": "cut time",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/cut-time",
+          "term": "cutTime"
+        },
+        {
+          "section": "1.79",
+          "heading": "D",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/d",
+          "term": "pitchNameD"
+        },
+        {
+          "section": "1.80",
+          "heading": "da capo",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/da-capo",
+          "term": "daCapo"
+        },
+        {
+          "section": "1.81",
+          "heading": "dal niente",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/dal-niente",
+          "term": "dalNiente"
+        },
+        {
+          "section": "1.82",
+          "heading": "dal segno",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/dal-segno",
+          "term": "dalSegno"
+        },
+        {
+          "section": "1.83",
+          "heading": "decrescendo",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/decrescendo",
+          "term": "decrescendo"
+        },
+        {
+          "section": "1.84",
+          "heading": "descending interval",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/descending-interval",
+          "term": "descendingInterval"
+        },
+        {
+          "section": "1.85",
+          "heading": "diatonic scale",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/diatonic-scale",
+          "term": "diatonicScale"
+        },
+        {
+          "section": "1.86",
+          "heading": "didymic comma",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/didymic-comma",
+          "term": "syntonicComma"
+        },
+        {
+          "section": "1.87",
+          "heading": "diminished interval",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/diminished-interval",
+          "term": "diminishedInterval"
+        },
+        {
+          "section": "1.88",
+          "heading": "diminuendo",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/diminuendo",
+          "term": "decrescendo"
+        },
+        {
+          "section": "1.89",
+          "heading": "diminution",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/diminution",
+          "term": "diminution"
+        },
+        {
+          "section": "1.90",
+          "heading": "direct",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/direct",
+          "term": "custos"
+        },
+        {
+          "section": "1.91",
+          "heading": "disjunct movement",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/disjunct-movement",
+          "term": "disjunctMovement"
+        },
+        {
+          "section": "1.92",
+          "heading": "dissonance",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/dissonance",
+          "term": "dissonance"
+        },
+        {
+          "section": "1.93",
+          "heading": "dissonant interval",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/dissonant-interval",
+          "term": "dissonantInterval"
+        },
+        {
+          "section": "1.94",
+          "heading": "divisio",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/divisio",
+          "term": "divisio"
+        },
+        {
+          "section": "1.95",
+          "heading": "doit",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/doit",
+          "term": "doit"
+        },
+        {
+          "section": "1.96",
+          "heading": "dominant",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/dominant",
+          "term": "dominant"
+        },
+        {
+          "section": "1.97",
+          "heading": "dominant ninth chord",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/dominant-ninth-chord",
+          "term": "dominantNinthChord"
+        },
+        {
+          "section": "1.98",
+          "heading": "dominant seventh chord",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/dominant-seventh-chord",
+          "term": "dominantSeventhChord"
+        },
+        {
+          "section": "1.99",
+          "heading": "dorian mode",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/dorian-mode",
+          "term": "dorianMode"
+        },
+        {
+          "section": "1.100",
+          "heading": "dot (augmentation dot)",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/dot-_0028augmentation-dot_0029",
+          "term": "augmentationDot"
+        },
+        {
+          "section": "1.101",
+          "heading": "dotted note",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/dotted-note",
+          "term": "dottedNote"
+        },
+        {
+          "section": "1.102",
+          "heading": "double appoggiatura",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/double-appoggiatura",
+          "term": "doubleAppoggiatura"
+        },
+        {
+          "section": "1.103",
+          "heading": "double bar line",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/double-bar-line",
+          "term": "doubleBarLine"
+        },
+        {
+          "section": "1.104",
+          "heading": "double dotted note",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/double-dotted-note",
+          "term": "doubleDottedNote"
+        },
+        {
+          "section": "1.105",
+          "heading": "double flat",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/double-flat",
+          "term": "doubleFlat"
+        },
+        {
+          "section": "1.106",
+          "heading": "double sharp",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/double-sharp",
+          "term": "doubleSharp"
+        },
+        {
+          "section": "1.107",
+          "heading": "double time signature",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/double-time-signature",
+          "term": "doubleTimeSignature"
+        },
+        {
+          "section": "1.108",
+          "heading": "double trill",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/double-trill",
+          "term": "doubleTrill"
+        },
+        {
+          "section": "1.109",
+          "heading": "duple meter",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/duple-meter",
+          "term": "dupleMeter"
+        },
+        {
+          "section": "1.110",
+          "heading": "duplet",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/duplet",
+          "term": "duplet"
+        },
+        {
+          "section": "1.111",
+          "heading": "duration",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/duration",
+          "term": "duration"
+        },
+        {
+          "section": "1.112",
+          "heading": "dynamics",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/dynamics",
+          "term": "dynamics"
+        },
+        {
+          "section": "1.113",
+          "heading": "E",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/e",
+          "term": "pitchNameE"
+        },
+        {
+          "section": "1.114",
+          "heading": "ecclesiastical mode",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/ecclesiastical-mode",
+          "term": "churchMode"
+        },
+        {
+          "section": "1.115",
+          "heading": "eighth note",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/eighth-note",
+          "term": "eighthNote"
+        },
+        {
+          "section": "1.116",
+          "heading": "eighth rest",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/eighth-rest",
+          "term": "eighthRest"
+        },
+        {
+          "section": "1.117",
+          "heading": "elision",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/elision",
+          "term": "elision"
+        },
+        {
+          "section": "1.118",
+          "heading": "embellishment",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/embellishment",
+          "term": "ornament"
+        },
+        {
+          "section": "1.119",
+          "heading": "engraving",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/engraving",
+          "term": "engraving"
+        },
+        {
+          "section": "1.120",
+          "heading": "enharmonic",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/enharmonic",
+          "term": "enharmonic"
+        },
+        {
+          "section": "1.121",
+          "heading": "equal temperament",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/equal-temperament",
+          "term": "equalTemperament"
+        },
+        {
+          "section": "1.122",
+          "heading": "expression mark",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/expression-mark",
+          "term": "expressionMark"
+        },
+        {
+          "section": "1.123",
+          "heading": "extender line",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/extender-line",
+          "term": "melismaLine"
+        },
+        {
+          "section": "1.124",
+          "heading": "F",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/f",
+          "term": "pitchNameF"
+        },
+        {
+          "section": "1.125",
+          "heading": "F clef",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/f-clef",
+          "term": "fClef"
+        },
+        {
+          "section": "1.126",
+          "heading": "fall",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/fall",
+          "term": "fall"
+        },
+        {
+          "section": "1.127",
+          "heading": "feathered beam",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/feathered-beam",
+          "term": "featheredBeam"
+        },
+        {
+          "section": "1.128",
+          "heading": "fermata",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/fermata",
+          "term": "fermata"
+        },
+        {
+          "section": "1.129",
+          "heading": "fifth",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/fifth",
+          "term": "fifth"
+        },
+        {
+          "section": "1.130",
+          "heading": "figured bass",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/figured-bass",
+          "term": "figuredBass"
+        },
+        {
+          "section": "1.131",
+          "heading": "fine",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/fine",
+          "term": "fine"
+        },
+        {
+          "section": "1.132",
+          "heading": "fingering",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/fingering",
+          "term": "fingering"
+        },
+        {
+          "section": "1.133",
+          "heading": "flag",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/flag",
+          "term": "flag"
+        },
+        {
+          "section": "1.134",
+          "heading": "flageolet",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/flageolet",
+          "term": "flageolet"
+        },
+        {
+          "section": "1.135",
+          "heading": "flat",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/flat",
+          "term": "flat"
+        },
+        {
+          "section": "1.136",
+          "heading": "forefall",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/forefall",
+          "term": "appoggiatura"
+        },
+        {
+          "section": "1.137",
+          "heading": "forte",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/forte",
+          "term": "forte"
+        },
+        {
+          "section": "1.138",
+          "heading": "fourth",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/fourth",
+          "term": "fourth"
+        },
+        {
+          "section": "1.139",
+          "heading": "Frenched score",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/frenched-score",
+          "term": "frenchedScore"
+        },
+        {
+          "section": "1.140",
+          "heading": "Frenched staff",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/frenched-staff",
+          "term": "frenchedStaff"
+        },
+        {
+          "section": "1.141",
+          "heading": "Frenched staves",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/frenched-staves",
+          "term": "frenchedStaff"
+        },
+        {
+          "section": "1.142",
+          "heading": "fugue",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/fugue",
+          "term": "fugue"
+        },
+        {
+          "section": "1.143",
+          "heading": "functional harmony",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/functional-harmony",
+          "term": "functionalHarmony"
+        },
+        {
+          "section": "1.144",
+          "heading": "G",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/g",
+          "term": "pitchNameG"
+        },
+        {
+          "section": "1.145",
+          "heading": "G clef",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/g-clef",
+          "term": "gClef"
+        },
+        {
+          "section": "1.146",
+          "heading": "glissando",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/glissando",
+          "term": "glissando"
+        },
+        {
+          "section": "1.147",
+          "heading": "grace notes",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/grace-notes",
+          "term": "graceNotes"
+        },
+        {
+          "section": "1.148",
+          "heading": "grand staff",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/grand-staff",
+          "term": "grandStaff"
+        },
+        {
+          "section": "1.149",
+          "heading": "grave",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/grave",
+          "term": "grave"
+        },
+        {
+          "section": "1.150",
+          "heading": "gruppetto",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/gruppetto",
+          "term": "turn"
+        },
+        {
+          "section": "1.151",
+          "heading": "H",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/h",
+          "term": "pitchNameH"
+        },
+        {
+          "section": "1.152",
+          "heading": "hairpin",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/hairpin",
+          "term": "hairpin"
+        },
+        {
+          "section": "1.153",
+          "heading": "half note",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/half-note",
+          "term": "halfNote"
+        },
+        {
+          "section": "1.154",
+          "heading": "half rest",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/half-rest",
+          "term": "halfRest"
+        },
+        {
+          "section": "1.155",
+          "heading": "harmonic cadence",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/harmonic-cadence",
+          "term": "harmonicCadence"
+        },
+        {
+          "section": "1.156",
+          "heading": "harmonics",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/harmonics",
+          "term": "harmonics"
+        },
+        {
+          "section": "1.157",
+          "heading": "harmony",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/harmony",
+          "term": "harmony"
+        },
+        {
+          "section": "1.158",
+          "heading": "hemiola",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/hemiola",
+          "term": "hemiola"
+        },
+        {
+          "section": "1.159",
+          "heading": "high bass clef",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/high-bass-clef",
+          "term": "highBassClef"
+        },
+        {
+          "section": "1.160",
+          "heading": "homophony",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/homophony",
+          "term": "homophony"
+        },
+        {
+          "section": "1.161",
+          "heading": "hook",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/hook",
+          "term": "flag"
+        },
+        {
+          "section": "1.162",
+          "heading": "hymn meter",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/hymn-meter",
+          "term": "hymnMeter"
+        },
+        {
+          "section": "1.163",
+          "heading": "incomplete dominant seventh chord",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/incomplete-dominant-seventh-chord",
+          "term": "incompleteDominantSeventhChord"
+        },
+        {
+          "section": "1.164",
+          "heading": "interval",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/interval",
+          "term": "interval"
+        },
+        {
+          "section": "1.165",
+          "heading": "inversion",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/inversion",
+          "term": "chordInversion"
+        },
+        {
+          "section": "1.166",
+          "heading": "inverted interval",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/inverted-interval",
+          "term": "invertedInterval"
+        },
+        {
+          "section": "1.167",
+          "heading": "just intonation",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/just-intonation",
+          "term": "justIntonation"
+        },
+        {
+          "section": "1.168",
+          "heading": "key",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/key",
+          "term": "key"
+        },
+        {
+          "section": "1.169",
+          "heading": "key signature",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/key-signature",
+          "term": "keySignature"
+        },
+        {
+          "section": "1.170",
+          "heading": "Kievan notation",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/kievan-notation",
+          "term": "kievanNotation"
+        },
+        {
+          "section": "1.171",
+          "heading": "laissez vibrer",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/laissez-vibrer",
+          "term": "laissezVibrer"
+        },
+        {
+          "section": "1.172",
+          "heading": "largo",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/largo",
+          "term": "largo"
+        },
+        {
+          "section": "1.173",
+          "heading": "leading note",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/leading-note",
+          "term": "leadingNote"
+        },
+        {
+          "section": "1.174",
+          "heading": "ledger line",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/ledger-line",
+          "term": "ledgerLine"
+        },
+        {
+          "section": "1.175",
+          "heading": "legato",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/legato",
+          "term": "legato"
+        },
+        {
+          "section": "1.176",
+          "heading": "legato curve",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/legato-curve",
+          "term": "slur"
+        },
+        {
+          "section": "1.177",
+          "heading": "leger line",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/leger-line",
+          "term": "ledgerLine"
+        },
+        {
+          "section": "1.178",
+          "heading": "ligature",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/ligature",
+          "term": "ligature"
+        },
+        {
+          "section": "1.179",
+          "heading": "lilypond",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/lilypond",
+          "term": "lilypond"
+        },
+        {
+          "section": "1.180",
+          "heading": "line",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/line",
+          "term": "staffLine"
+        },
+        {
+          "section": "1.181",
+          "heading": "loco",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/loco",
+          "term": "loco"
+        },
+        {
+          "section": "1.182",
+          "heading": "long appoggiatura",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/long-appoggiatura",
+          "term": "longAppoggiatura"
+        },
+        {
+          "section": "1.183",
+          "heading": "longa",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/longa",
+          "term": "longa"
+        },
+        {
+          "section": "1.184",
+          "heading": "lyric tie",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/lyric-tie",
+          "term": "lyricTie"
+        },
+        {
+          "section": "1.185",
+          "heading": "lyrics",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/lyrics",
+          "term": "lyrics"
+        },
+        {
+          "section": "1.186",
+          "heading": "major",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/major",
+          "term": "majorMode"
+        },
+        {
+          "section": "1.187",
+          "heading": "major interval",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/major-interval",
+          "term": "majorInterval"
+        },
+        {
+          "section": "1.188",
+          "heading": "maxima",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/maxima",
+          "term": "maxima"
+        },
+        {
+          "section": "1.189",
+          "heading": "meantone temperament",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/meantone-temperament",
+          "term": "meantoneTemperament"
+        },
+        {
+          "section": "1.190",
+          "heading": "measure",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/measure",
+          "term": "measure"
+        },
+        {
+          "section": "1.191",
+          "heading": "measure repeat",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/measure-repeat",
+          "term": "measureRepeat"
+        },
+        {
+          "section": "1.192",
+          "heading": "mediant",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/mediant",
+          "term": "mediant"
+        },
+        {
+          "section": "1.193",
+          "heading": "melisma",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/melisma",
+          "term": "melisma"
+        },
+        {
+          "section": "1.194",
+          "heading": "melisma line",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/melisma-line",
+          "term": "melismaLine"
+        },
+        {
+          "section": "1.195",
+          "heading": "melodic cadence",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/melodic-cadence",
+          "term": "melodicCadence"
+        },
+        {
+          "section": "1.196",
+          "heading": "mensural notation",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/mensural-notation",
+          "term": "mensuralNotation"
+        },
+        {
+          "section": "1.197",
+          "heading": "mensuration sign",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/mensuration-sign",
+          "term": "mensurationSign"
+        },
+        {
+          "section": "1.198",
+          "heading": "mensurstrich",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/mensurstrich",
+          "term": "mensurstrich"
+        },
+        {
+          "section": "1.199",
+          "heading": "meter",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/meter",
+          "term": "meter"
+        },
+        {
+          "section": "1.200",
+          "heading": "metronome",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/metronome",
+          "term": "metronome"
+        },
+        {
+          "section": "1.201",
+          "heading": "metronome mark",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/metronome-mark",
+          "term": "metronomeMark"
+        },
+        {
+          "section": "1.202",
+          "heading": "metronomic indication",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/metronomic-indication",
+          "term": "metronomeMark"
+        },
+        {
+          "section": "1.203",
+          "heading": "mezzo",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/mezzo",
+          "term": "mezzo"
+        },
+        {
+          "section": "1.204",
+          "heading": "mezzo-soprano",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/mezzo_002dsoprano",
+          "term": "mezzoSoprano"
+        },
+        {
+          "section": "1.205",
+          "heading": "middle C",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/middle-c",
+          "term": "middleC"
+        },
+        {
+          "section": "1.206",
+          "heading": "minor",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/minor",
+          "term": "minorMode"
+        },
+        {
+          "section": "1.207",
+          "heading": "minor interval",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/minor-interval",
+          "term": "minorInterval"
+        },
+        {
+          "section": "1.208",
+          "heading": "mixolydian mode",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/mixolydian-mode",
+          "term": "mixolydianMode"
+        },
+        {
+          "section": "1.209",
+          "heading": "mode",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/mode",
+          "term": "mode"
+        },
+        {
+          "section": "1.210",
+          "heading": "modulation",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/modulation",
+          "term": "modulation"
+        },
+        {
+          "section": "1.211",
+          "heading": "mordent",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/mordent",
+          "term": "mordent"
+        },
+        {
+          "section": "1.212",
+          "heading": "motif",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/motif",
+          "term": "motif"
+        },
+        {
+          "section": "1.213",
+          "heading": "motive",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/motive",
+          "term": "motif"
+        },
+        {
+          "section": "1.214",
+          "heading": "movement",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/movement",
+          "term": "movement"
+        },
+        {
+          "section": "1.215",
+          "heading": "multi-measure rest",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/multi_002dmeasure-rest",
+          "term": "multiMeasureRest"
+        },
+        {
+          "section": "1.216",
+          "heading": "natural",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/natural",
+          "term": "natural"
+        },
+        {
+          "section": "1.217",
+          "heading": "neighbor tones",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/neighbor-tones",
+          "term": "neighborTones"
+        },
+        {
+          "section": "1.218",
+          "heading": "ninth",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/ninth",
+          "term": "ninth"
+        },
+        {
+          "section": "1.219",
+          "heading": "non-legato",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/non_002dlegato",
+          "term": "nonLegato"
+        },
+        {
+          "section": "1.220",
+          "heading": "note",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/note",
+          "term": "note"
+        },
+        {
+          "section": "1.221",
+          "heading": "note head",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/note-head",
+          "term": "noteHead"
+        },
+        {
+          "section": "1.222",
+          "heading": "note names",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/note-names",
+          "term": "noteNames"
+        },
+        {
+          "section": "1.223",
+          "heading": "note value",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/note-value",
+          "term": "noteValue"
+        },
+        {
+          "section": "1.224",
+          "heading": "octavation",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/octavation",
+          "term": "octavation"
+        },
+        {
+          "section": "1.225",
+          "heading": "octave",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/octave",
+          "term": "octave"
+        },
+        {
+          "section": "1.226",
+          "heading": "octave mark",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/octave-mark",
+          "term": "octaveMark"
+        },
+        {
+          "section": "1.227",
+          "heading": "octave marking",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/octave-marking",
+          "term": "octaveMark"
+        },
+        {
+          "section": "1.228",
+          "heading": "octave sign",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/octave-sign",
+          "term": "octaveMark"
+        },
+        {
+          "section": "1.229",
+          "heading": "ornament",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/ornament",
+          "term": "ornament"
+        },
+        {
+          "section": "1.230",
+          "heading": "ossia",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/ossia",
+          "term": "ossia"
+        },
+        {
+          "section": "1.231",
+          "heading": "part",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/part",
+          "term": "part"
+        },
+        {
+          "section": "1.232",
+          "heading": "pause",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/pause",
+          "term": "fermata"
+        },
+        {
+          "section": "1.233",
+          "heading": "pennant",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/pennant",
+          "term": "flag"
+        },
+        {
+          "section": "1.234",
+          "heading": "percent repeat",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/percent-repeat",
+          "term": "percentRepeat"
+        },
+        {
+          "section": "1.235",
+          "heading": "percussion",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/percussion",
+          "term": "percussion"
+        },
+        {
+          "section": "1.236",
+          "heading": "perfect interval",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/perfect-interval",
+          "term": "perfectInterval"
+        },
+        {
+          "section": "1.237",
+          "heading": "phrase",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/phrase",
+          "term": "phrase"
+        },
+        {
+          "section": "1.238",
+          "heading": "phrasing",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/phrasing",
+          "term": "phrasing"
+        },
+        {
+          "section": "1.239",
+          "heading": "piano",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/piano",
+          "term": "pianoDynamic"
+        },
+        {
+          "section": "1.240",
+          "heading": "pickup",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/pickup",
+          "term": "pickup"
+        },
+        {
+          "section": "1.241",
+          "heading": "pitch",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/pitch",
+          "term": "pitch"
+        },
+        {
+          "section": "1.242",
+          "heading": "pizzicato",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/pizzicato",
+          "term": "pizzicato"
+        },
+        {
+          "section": "1.243",
+          "heading": "polymeter",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/polymeter",
+          "term": "polymeter"
+        },
+        {
+          "section": "1.244",
+          "heading": "polymetric",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/polymetric",
+          "term": "polymeter"
+        },
+        {
+          "section": "1.245",
+          "heading": "polymetric time signature",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/polymetric-time-signature",
+          "term": "polymetricTimeSignature"
+        },
+        {
+          "section": "1.246",
+          "heading": "polyphony",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/polyphony",
+          "term": "polyphony"
+        },
+        {
+          "section": "1.247",
+          "heading": "portato",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/portato",
+          "term": "portato"
+        },
+        {
+          "section": "1.248",
+          "heading": "power chord",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/power-chord",
+          "term": "powerChord"
+        },
+        {
+          "section": "1.249",
+          "heading": "presto",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/presto",
+          "term": "presto"
+        },
+        {
+          "section": "1.250",
+          "heading": "proportion",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/proportion",
+          "term": "proportion"
+        },
+        {
+          "section": "1.251",
+          "heading": "Pythagorean comma",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/pythagorean-comma",
+          "term": "pythagoreanComma"
+        },
+        {
+          "section": "1.252",
+          "heading": "quadruplet",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/quadruplet",
+          "term": "quadruplet"
+        },
+        {
+          "section": "1.253",
+          "heading": "quality",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/quality",
+          "term": "intervalQuality"
+        },
+        {
+          "section": "1.254",
+          "heading": "quarter note",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/quarter-note",
+          "term": "quarterNote"
+        },
+        {
+          "section": "1.255",
+          "heading": "quarter rest",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/quarter-rest",
+          "term": "quarterRest"
+        },
+        {
+          "section": "1.256",
+          "heading": "quarter tone",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/quarter-tone",
+          "term": "quarterTone"
+        },
+        {
+          "section": "1.257",
+          "heading": "quintuplet",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/quintuplet",
+          "term": "quintuplet"
+        },
+        {
+          "section": "1.258",
+          "heading": "rallentando",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/rallentando",
+          "term": "rallentando"
+        },
+        {
+          "section": "1.259",
+          "heading": "relative key",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/relative-key",
+          "term": "relativeKey"
+        },
+        {
+          "section": "1.260",
+          "heading": "repeat",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/repeat",
+          "term": "repeat"
+        },
+        {
+          "section": "1.261",
+          "heading": "rest",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/rest",
+          "term": "rest"
+        },
+        {
+          "section": "1.262",
+          "heading": "rhythm",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/rhythm",
+          "term": "rhythm"
+        },
+        {
+          "section": "1.263",
+          "heading": "ritardando",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/ritardando",
+          "term": "ritardando"
+        },
+        {
+          "section": "1.264",
+          "heading": "ritenuto",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/ritenuto",
+          "term": "ritenuto"
+        },
+        {
+          "section": "1.265",
+          "heading": "scale",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/scale",
+          "term": "scale"
+        },
+        {
+          "section": "1.266",
+          "heading": "scale degree",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/scale-degree",
+          "term": "scaleDegree"
+        },
+        {
+          "section": "1.267",
+          "heading": "scordatura",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/scordatura",
+          "term": "scordatura"
+        },
+        {
+          "section": "1.268",
+          "heading": "score",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/score",
+          "term": "score"
+        },
+        {
+          "section": "1.269",
+          "heading": "second",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/second",
+          "term": "second"
+        },
+        {
+          "section": "1.270",
+          "heading": "semibreve",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/semibreve",
+          "term": "wholeNote"
+        },
+        {
+          "section": "1.271",
+          "heading": "semitone",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/semitone",
+          "term": "semitone"
+        },
+        {
+          "section": "1.272",
+          "heading": "seventh",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/seventh",
+          "term": "seventh"
+        },
+        {
+          "section": "1.273",
+          "heading": "sextolet",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/sextolet",
+          "term": "sextuplet"
+        },
+        {
+          "section": "1.274",
+          "heading": "sextuplet",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/sextuplet",
+          "term": "sextuplet"
+        },
+        {
+          "section": "1.275",
+          "heading": "shake",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/shake",
+          "term": "trill"
+        },
+        {
+          "section": "1.276",
+          "heading": "sharp",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/sharp",
+          "term": "sharp"
+        },
+        {
+          "section": "1.277",
+          "heading": "simile",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/simile",
+          "term": "simileMark"
+        },
+        {
+          "section": "1.278",
+          "heading": "simile mark",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/simile-mark",
+          "term": "simileMark"
+        },
+        {
+          "section": "1.279",
+          "heading": "simple meter",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/simple-meter",
+          "term": "simpleMeter"
+        },
+        {
+          "section": "1.280",
+          "heading": "sixteenth note",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/sixteenth-note",
+          "term": "sixteenthNote"
+        },
+        {
+          "section": "1.281",
+          "heading": "sixteenth rest",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/sixteenth-rest",
+          "term": "sixteenthRest"
+        },
+        {
+          "section": "1.282",
+          "heading": "sixth",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/sixth",
+          "term": "sixth"
+        },
+        {
+          "section": "1.283",
+          "heading": "sixty-fourth note",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/sixty_002dfourth-note",
+          "term": "sixtyFourthNote"
+        },
+        {
+          "section": "1.284",
+          "heading": "sixty-fourth rest",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/sixty_002dfourth-rest",
+          "term": "sixtyFourthRest"
+        },
+        {
+          "section": "1.285",
+          "heading": "slash repeat",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/slash-repeat",
+          "term": "slashRepeat"
+        },
+        {
+          "section": "1.286",
+          "heading": "slur",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/slur",
+          "term": "slur"
+        },
+        {
+          "section": "1.287",
+          "heading": "solmization",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/solmization",
+          "term": "solmization"
+        },
+        {
+          "section": "1.288",
+          "heading": "sonata",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/sonata",
+          "term": "sonata"
+        },
+        {
+          "section": "1.289",
+          "heading": "sonata form",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/sonata-form",
+          "term": "sonataForm"
+        },
+        {
+          "section": "1.290",
+          "heading": "song texts",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/song-texts",
+          "term": "lyrics"
+        },
+        {
+          "section": "1.291",
+          "heading": "soprano",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/soprano",
+          "term": "soprano"
+        },
+        {
+          "section": "1.292",
+          "heading": "staccato",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/staccato",
+          "term": "staccato"
+        },
+        {
+          "section": "1.293",
+          "heading": "staff",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/staff",
+          "term": "staff"
+        },
+        {
+          "section": "1.294",
+          "heading": "staves",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/staves",
+          "term": "staff"
+        },
+        {
+          "section": "1.295",
+          "heading": "stem",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/stem",
+          "term": "stem"
+        },
+        {
+          "section": "1.296",
+          "heading": "stringendo",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/stringendo",
+          "term": "stringendo"
+        },
+        {
+          "section": "1.297",
+          "heading": "strings",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/strings",
+          "term": "strings"
+        },
+        {
+          "section": "1.298",
+          "heading": "strong beat",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/strong-beat",
+          "term": "strongBeat"
+        },
+        {
+          "section": "1.299",
+          "heading": "subdominant",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/subdominant",
+          "term": "subdominant"
+        },
+        {
+          "section": "1.300",
+          "heading": "submediant",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/submediant",
+          "term": "submediant"
+        },
+        {
+          "section": "1.301",
+          "heading": "subtonic",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/subtonic",
+          "term": "subtonic"
+        },
+        {
+          "section": "1.302",
+          "heading": "sul G",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/sul-g",
+          "term": "sulG"
+        },
+        {
+          "section": "1.303",
+          "heading": "superdominant",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/superdominant",
+          "term": "submediant"
+        },
+        {
+          "section": "1.304",
+          "heading": "supertonic",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/supertonic",
+          "term": "supertonic"
+        },
+        {
+          "section": "1.305",
+          "heading": "symphony",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/symphony",
+          "term": "symphony"
+        },
+        {
+          "section": "1.306",
+          "heading": "syncopation",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/syncopation",
+          "term": "syncopation"
+        },
+        {
+          "section": "1.307",
+          "heading": "syntonic comma",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/syntonic-comma",
+          "term": "syntonicComma"
+        },
+        {
+          "section": "1.308",
+          "heading": "system",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/system",
+          "term": "system"
+        },
+        {
+          "section": "1.309",
+          "heading": "temperament",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/temperament",
+          "term": "temperament"
+        },
+        {
+          "section": "1.310",
+          "heading": "tempo indication",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/tempo-indication",
+          "term": "tempoIndication"
+        },
+        {
+          "section": "1.311",
+          "heading": "tenor",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/tenor",
+          "term": "tenor"
+        },
+        {
+          "section": "1.312",
+          "heading": "tenth",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/tenth",
+          "term": "tenth"
+        },
+        {
+          "section": "1.313",
+          "heading": "tenuto",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/tenuto",
+          "term": "tenuto"
+        },
+        {
+          "section": "1.314",
+          "heading": "third",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/third",
+          "term": "third"
+        },
+        {
+          "section": "1.315",
+          "heading": "thirty-second note",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/thirty_002dsecond-note",
+          "term": "thirtySecondNote"
+        },
+        {
+          "section": "1.316",
+          "heading": "thirty-second rest",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/thirty_002dsecond-rest",
+          "term": "thirtySecondRest"
+        },
+        {
+          "section": "1.317",
+          "heading": "thorough bass",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/thorough-bass",
+          "term": "figuredBass"
+        },
+        {
+          "section": "1.318",
+          "heading": "tie",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/tie",
+          "term": "tie"
+        },
+        {
+          "section": "1.319",
+          "heading": "time",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/time",
+          "term": "meter"
+        },
+        {
+          "section": "1.320",
+          "heading": "time signature",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/time-signature",
+          "term": "timeSignature"
+        },
+        {
+          "section": "1.321",
+          "heading": "tone",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/tone",
+          "term": "musicalTone"
+        },
+        {
+          "section": "1.322",
+          "heading": "tonic",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/tonic",
+          "term": "tonic"
+        },
+        {
+          "section": "1.323",
+          "heading": "transposing instrument",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/transposing-instrument",
+          "term": "transposingInstrument"
+        },
+        {
+          "section": "1.324",
+          "heading": "transposition",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/transposition",
+          "term": "transposition"
+        },
+        {
+          "section": "1.325",
+          "heading": "treble clef",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/treble-clef",
+          "term": "gClef"
+        },
+        {
+          "section": "1.326",
+          "heading": "tremolo",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/tremolo",
+          "term": "tremolo"
+        },
+        {
+          "section": "1.327",
+          "heading": "triad",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/triad",
+          "term": "triad"
+        },
+        {
+          "section": "1.328",
+          "heading": "trill",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/trill",
+          "term": "trill"
+        },
+        {
+          "section": "1.329",
+          "heading": "triple meter",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/triple-meter",
+          "term": "tripleMeter"
+        },
+        {
+          "section": "1.330",
+          "heading": "triplet",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/triplet",
+          "term": "triplet"
+        },
+        {
+          "section": "1.331",
+          "heading": "tritone",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/tritone",
+          "term": "tritone"
+        },
+        {
+          "section": "1.332",
+          "heading": "tuning fork",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/tuning-fork",
+          "term": "tuningFork"
+        },
+        {
+          "section": "1.333",
+          "heading": "tuplet",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/tuplet",
+          "term": "tuplet"
+        },
+        {
+          "section": "1.334",
+          "heading": "turn",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/turn",
+          "term": "turn"
+        },
+        {
+          "section": "1.335",
+          "heading": "unison",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/unison",
+          "term": "unisonDoubling"
+        },
+        {
+          "section": "1.336",
+          "heading": "upbeat",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/upbeat",
+          "term": "upbeat"
+        },
+        {
+          "section": "1.337",
+          "heading": "voice",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/voice",
+          "term": "voice"
+        },
+        {
+          "section": "1.338",
+          "heading": "volta",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/volta",
+          "term": "volta"
+        },
+        {
+          "section": "1.339",
+          "heading": "vowel transition",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/vowel-transition",
+          "term": "vowelTransition"
+        },
+        {
+          "section": "1.340",
+          "heading": "weak beat",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/weak-beat",
+          "term": "weakBeat"
+        },
+        {
+          "section": "1.341",
+          "heading": "whole note",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/whole-note",
+          "term": "wholeNote"
+        },
+        {
+          "section": "1.342",
+          "heading": "whole rest",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/whole-rest",
+          "term": "wholeRest"
+        },
+        {
+          "section": "1.343",
+          "heading": "whole tone",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/whole-tone",
+          "term": "wholeTone"
+        },
+        {
+          "section": "1.344",
+          "heading": "woodwind",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/woodwind",
+          "term": "woodwind"
+        },
+        {
+          "section": "4.1",
+          "heading": "bayati",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/bayati",
+          "term": "bayati"
+        },
+        {
+          "section": "4.2",
+          "heading": "iraq",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/iraq",
+          "term": "iraq"
+        },
+        {
+          "section": "4.3",
+          "heading": "kurd",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/kurd",
+          "term": "kurd"
+        },
+        {
+          "section": "4.4",
+          "heading": "makam",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/makam",
+          "term": "makam"
+        },
+        {
+          "section": "4.5",
+          "heading": "makamlar",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/makamlar",
+          "term": "makam"
+        },
+        {
+          "section": "4.6",
+          "heading": "maqam",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/maqam",
+          "term": "maqam"
+        },
+        {
+          "section": "4.7",
+          "heading": "rast",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/rast",
+          "term": "rast"
+        },
+        {
+          "section": "4.8",
+          "heading": "semai",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/semai",
+          "term": "semai"
+        },
+        {
+          "section": "4.9",
+          "heading": "sikah",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/sikah",
+          "term": "sikah"
+        },
+        {
+          "section": "4.10",
+          "heading": "taqasim",
+          "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/taqasim",
+          "term": "taqasim"
+        }
+      ]
+    }
+  ],
+  "canonicalConceptCount": 792,
+  "supplementalReferences": [
+    {
+      "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/beat",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/counterpoint",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/enharmonic",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/key",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/meter",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/motif",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/phrase",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/pitch",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/rhythm",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/scale",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/sonata-form",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/temperament",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/tempo-indication",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/transposition",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://lilypond.org/doc/v2.26/Documentation/music-glossary/voice",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://mimo-international.com/documents/Hornbostel%20Sachs.pdf",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://music-encoding.org/guidelines/v5/content/analysisharm.html",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://www.maqamworld.com/en/iqaa.php",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://www.maqamworld.com/en/jins.php",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://www.maqamworld.com/en/maqam.php",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://www.sfu.ca/sonic-studio-webdav/handbook/Timbre.html",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://www.sfu.ca/sonic-studio-webdav/handbook/index.html",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://www.w3.org/2021/06/musicxml40/listings/sounds.xml/",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/kind-value/",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/articulations/",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/dynamics/",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/ensemble/",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/identification/",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/lyric/",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/notations/",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/ornaments/",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/other-play/",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/part-group/",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/score-instrument/",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/string-mute/",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/technical/",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    },
+    {
+      "url": "https://www.w3.org/2021/06/musicxml40/musicxml-reference/elements/words/",
+      "coverage": "Selected relevant concepts; category references are not claims that every supplemental label occurs verbatim or that the source catalog is exhaustively covered."
+    }
+  ]
+}

@@ -2,6 +2,12 @@
 
 The domain has one direction in each sense: `Score → MusicalScene → Score`. A generator also constructs an authored `CompositionPlan` directly. The scene contains that executable plan, explicit event identity/performance residuals, and a graph of musical interpretations or authored placements. Composition is the sole note-emitting algebra. Good generated music is the product goal; analysis must improve reusable structure and musical edits rather than become a separate classifier product.
 
+## Current representation foundation
+
+The current requested step is the [musical ontology](ontology.md), before further composition work. Its Rust entities combine independent pitch, rhythm, harmonic, performance, instrumentation, timbral, structural and notational components. Typed relationships preserve overlapping memberships, succession and directional correspondence; component-level provenance distinguishes observations, authored choices and revisioned hypotheses. The finite glossary coverage target and its source inventory are independently audited.
+
+This representation layer adds no note emitter or inference model. Optional revision-checked addresses connect it to the existing composition algebra. Named techniques and transformations remain declarations until future work explicitly lowers them through that compiler. Keep generation, audition, the composition timeline and MIDI selection usable. Chord-classifier calibration is deferred; it is not the current product objective.
+
 ## Scene and ownership
 
 Observed notes are immutable evidence. Part routing, attack/release coordinates, native pitch/gain curves and MIDI attachments survive reconstruction. Analytical groups may overlap; executable owners partition the notes exactly once. Selected pitch relations close over their anchors into one material, independently of spatial boxes or source parts. Remaining support/complement candidates compete by observed recurrence; unclaimed events use spatial fallback groups. This bounded ownership policy is not an optimal musical parse. BSP nodes no longer wrap independent owners in executable nesting. Shared normalized materials use placements and definitions; a box never implies membership of every enclosed note.
@@ -60,7 +66,7 @@ Rust owns score/MIDI, scene encoding, compositional decoding, comparison and per
 
 A fresh score starts one complete-source scene job. Replacement terminates old work. The UI contains import/reference, independent playback, overview/timeline, a scene navigator and selected evidence. A seek ruler and draggable playhead control transport; overview and roll gestures control only the viewport. Bar/beat markers come from the same Rust meter parser as analysis, including signature changes and exact fractional spacing. Unknown/conflicting signatures use explicit quarter coordinates. Initial downbeats and numbering remain assumptions when MIDI supplies no pickup information. Source and decoded views use the same coordinates. Selection/filtering is inspection, not a new inference run. Budget/unsupported diagnostics remain visible; no silently truncated input.
 
-## Next inference boundary
+## Retained inference boundary
 
 The anchored-pitch vertical passes a narrow exact reconstruction and counterfactual gate. The native contextual-root model reaches 63.04% / 55.93% Mozart K330-I/K331-I joint reference-root pitch-class/core agreement; this is development calibration, with no evaluation of Roman degree, key or spelling. Compare learned contextual proposals under the same strict metric and executable representation. Do not introduce a second DSL, decoder or generic graph framework.
 

@@ -2,6 +2,8 @@
 
 A music generator and codec: **ideas → editable composition program → score**, and **score → inferred relationships + program → score**.
 
+The current foundation is a [typed musical ontology](docs/research/ontology.md): ECS-style entities compose pitch, rhythm, harmony, voice, instrumentation, timbre, performance, form and notation, with explicit relationships and evidence. Its glossary audit covers the complete indexed LilyPond vocabulary plus additional composition and performance terms. This is representation work; new techniques become audible only when deliberately implemented through the existing compiler.
+
 The workspace shows source notes, global chord/color windows, executable pitch dependencies and the decoded result. Harmonic palettes, rhythmic materials and shared pitch lattices have independent bindings. Anchor paths can recompute a passing or neighboring pitch from events or shared harmonic values. Doubled performances can retain separate events while sharing a pitch relationship. Every decoded note has one owner; spatial groups and overlapping interpretations do not emit extra copies.
 
 ## Run
@@ -19,6 +21,7 @@ Open MIDI or choose a local reference to infer a scene from observations. Analys
 
 ## Code
 
+- `crates/muzak-core/src/ontology/`: composable Rust musical nouns, typed components and relationships, glossary coverage and validation.
 - `crates/muzak-core/src/scene.rs`: encoder, standalone scene decoding and shared/local edits.
 - `generator.rs`: seeded themes, melody-aware harmonic routes, voicing and arrangement through the same composition algebra.
 - `harmony.rs`, `harmony_context.rs`: global metrical-window hypotheses, separate realized core/color and witnessed functional-root proposals.

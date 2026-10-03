@@ -1,130 +1,71 @@
 {
   "schemaVersion": 1,
   "updatedDate": "2026-10-03",
-  "objective": "Generate musically coherent, controllable compositions through one editable Rust program algebra; infer that same structure from scores, preserving exact observations and reusable musical relationships.",
+  "objective": "Generate musically compelling, controllable music through one Rust composition algebra. Establish a comprehensive composable musical ontology first, before extending composition or inference.",
   "checkpoint": {
-    "summary": "Seeded Rust generation is usable in the workspace through the same composition algebra as the codec. Authored scenes retain motifs, rhythms, palettes and dependent pitch bindings through sequential structural edits; original realizations remain available for comparison. The next inverse target is a complete editable Dire opening, not further chord-classifier calibration. Shipped Mozart joint agreement remains 63.04% / 55.93%; retained offline development comparator remains 93.51% / 94.27%, with teacher-training overlap. Requested 100% remains unmet; no designated holdout has been parsed.",
+    "summary": "The current unit is ontology only: typed musical entities, independent components, exact values, explicit relationships, provenance and an audited glossary inventory. Existing generation, audition, structural edits and MIDI interchange retain their compiler. Representation coverage does not imply executable techniques or musical quality. Classifier calibration is deferred.",
     "nextActions": [
-      "Judge generated passages by listening and useful structural edits: preserve recognizable themes, vary continuations and orchestration independently, and keep cadence, register and voice leading under control. Extend this bounded generator only where a musical comparison demonstrates a gap.",
-      "Recover repeated lower support and upper rhythm in the complete Dire opening, preserving doubled emissions and local reattacks. The G-to-F support change leaves the upper melody unchanged; do not force chord-root transposition.",
-      "Propose melody/harmony relationships and event-addressed octave dependencies with explicit alternatives. Prove a nonliteral edit against independently authored expectations and show its anchors, dependents, shared/local scope and changed notes.",
-      "Evaluate exact reconstruction, complete program cost, interpretation and musical editing separately. Directly authored programs demonstrate forward capability, not automatic inverse discovery.",
-      "Keep the retained Mozart comparator as a diagnostic. Resume classifier research only when an executable structural hypothesis needs that comparison; no further calibration sweep."
+      "Review the ontology as a vocabulary for musical intent: pitch and tuning, rhythm and meter, chord and voicing, voices and phrases, orchestration, timbre, techniques, expression, form and notation.",
+      "Keep all indexed LilyPond glossary headwords mapped, canonical aliases inspectable, cultural extensions qualified and parameterized concepts distinct from names.",
+      "When composition work is requested, lower a small useful set of these components through CompositionPlan and prove shared/local edits on complete passages.",
+      "Judge later progress by audition and useful composition across varied musical languages. Artist references guide musical goals, never hard-coded identities or fixed phrase lengths."
     ]
   },
   "tasks": [
     {
-      "id": "executable-relations",
-      "title": "Extend and evaluate executable pitch relations",
-      "status": "in_progress",
+      "id": "ontology-review",
+      "title": "Review composable musical vocabulary and relationships",
+      "status": "planned",
       "owner": null,
       "dependsOn": [],
       "evidence": [
+        "crates/muzak-core/src/ontology/",
+        "docs/research/ontology.md",
+        "docs/research/music-vocabulary.json"
+      ],
+      "nextAction": "Review the represented nouns and parameter boundaries with the user. Add or refine concepts where musical intent cannot be stated without stringly typed or conflated values; preserve exact member correspondence and explicit unknowns."
+    },
+    {
+      "id": "composition-lowering",
+      "title": "Make chosen musical intentions executable",
+      "status": "planned",
+      "owner": null,
+      "dependsOn": ["ontology-review"],
+      "evidence": [
+        "crates/muzak-core/src/ontology/",
         "crates/muzak-core/src/composition.rs",
-        "crates/muzak-core/src/pitch_relations.rs",
-        "crates/muzak-core/src/scene_relations.rs",
-        "crates/muzak-core/src/scene.rs",
-        "tests/score-relations.test.ts",
-        "docs/research/structure-inference.md"
+        "crates/muzak-core/src/generator.rs",
+        "crates/muzak-core/src/performance.rs"
       ],
-      "nextAction": "Extend the authoritative scene/program path with source-discovered shared rhythm and pitch relationships for a complete Dire passage. Preserve ambiguity, original evidence and sequential edit behavior. Use the generator as a forward control, not inferred ground truth."
+      "nextAction": "After the ontology step, choose a bounded combination of rhythmic material, pitch binding, voicing and expressive technique. Lower through the existing compiler and fail explicitly for unsupported realization; add no parallel decoder."
     },
     {
-      "id": "contextual-comparison",
-      "title": "Establish honest contextual model comparisons",
+      "id": "passage-quality",
+      "title": "Develop and audition complete editable passages",
       "status": "planned",
       "owner": null,
-      "dependsOn": [],
-      "evidence": [
-        "scripts/compare-rnbert.ts",
-        "scripts/research/rnbert.py",
-        "scripts/research/rnbert-sources.json",
-        "scripts/evaluate-harmony.ts",
-        "docs/research/structure-inference.md",
-        "crates/muzak-core/examples/harmony-context.rs",
-        ".audit/score/segmental-surface-evaluation.json",
-        ".audit/score/member-resolution-context-training-evaluate.json",
-        ".audit/score/member-event-inverse-gate-manifest.json",
-        ".audit/score/root-initial-evaluate.json",
-        ".audit/score/segmental-context-evaluation.json",
-        ".audit/score/segmental-scalar-capacity.json",
-        ".audit/score/candidate-context-evaluation.json",
-        ".audit/score/candidate-context-validation-diagnostic.json",
-        ".audit/score/semantic-context-admission.json",
-        ".audit/score/semantic-context-validation-diagnostic.json",
-        ".audit/score/semantic-context-development-evaluation.json"
-      ],
-      "nextAction": "Retain the frozen 93.51% / 94.27% offline comparator and strict evaluation contract. Both contextual candidate variants regress on Mozart. Stop calibration work until a concrete executable structural change needs comparison."
-    },
-    {
-      "id": "bounded-inverse-search",
-      "title": "Select competing executable explanations",
-      "status": "in_progress",
-      "owner": null,
-      "dependsOn": [],
-      "evidence": [
-        "crates/muzak-core/src/scene.rs",
-        "crates/muzak-core/src/pitch_relations.rs",
-        "crates/muzak-core/src/paired_pitch.rs",
-        "tests/score-relations.test.ts",
-        "crates/muzak-core/src/harmony.rs",
-        "crates/muzak-core/src/partition.rs"
-      ],
-      "nextAction": "Discover reusable note relationships in the actual Dire passage, not only supplied-context probes. Distinguish shared rhythm, invariant upper pitches, harmony-conditioned variation and event-addressed octave links. Do not force a unique interpretation where observations admit alternatives."
-    },
-    {
-      "id": "joint-contextual-inference",
-      "title": "Learn contextual ranking only after representation works",
-      "status": "planned",
-      "owner": null,
-      "dependsOn": [
-        "bounded-inverse-search",
-        "contextual-comparison"
-      ],
-      "evidence": [
-        "crates/muzak-core/src/harmony.rs",
-        "scripts/evaluate-harmony.ts",
-        "tests/score-harmony-benchmark.test.ts"
-      ],
-      "nextAction": "Replace flat pitch-class scoring with learned contextual potentials only after separating key/function, realization and elaboration candidates in the existing exact algebra. The contextual comparator shows a large ranking gap; fixed-window and vocabulary oracles isolate remaining representation/search limits. Use one global development configuration, retain raw and refined outputs, and preserve whole-work holdouts."
-    },
-    {
-      "id": "reusable-structure",
-      "title": "Recover compositional reuse and phrase relationships",
-      "status": "in_progress",
-      "owner": null,
-      "dependsOn": [
-        "executable-relations",
-        "bounded-inverse-search"
-      ],
+      "dependsOn": ["composition-lowering"],
       "evidence": [
         "crates/muzak-core/src/generator.rs",
-        "crates/muzak-core/src/generator_tests.rs",
         "crates/muzak-core/src/scene.rs",
-        "src/score/workbench.ts",
-        "tests/score-core-parity.test.ts",
-        "scripts/evaluate-patterns.ts",
-        "scripts/evaluate-boundaries.ts",
-        ".audit/score/docks-opening-source-audit.json"
-      ],
-      "nextAction": "Use the restored generator for audition and structural editing. Compare motif identity, harmonic support, density and variation across seeds; recover corresponding reusable structures from real source passages with explicit boundaries and ambiguity."
-    },
-    {
-      "id": "codec-transfer",
-      "title": "Validate semantic edits and transfer",
-      "status": "planned",
-      "owner": null,
-      "dependsOn": [
-        "joint-contextual-inference",
-        "reusable-structure"
-      ],
-      "evidence": [
-        "docs/research/corpus-candidates.json",
-        "scripts/audit-output.ts",
-        "src/score/scene-inspector.ts",
         "src/score/workbench.ts"
       ],
-      "nextAction": "After freezing model choices, evaluate designated holdouts once under a declared protocol. Report exact reconstruction, independent interpretation, complete program/residual cost, useful edits, listening and runtime separately. Evaluate the existing anchor/dependent inspector on broader scenes; keep full-source analysis and independent navigation/playback."
+      "nextAction": "Demonstrate recognizable ideas, contrasting continuations, independent orchestration and useful shared/local edits. Evaluate listening quality separately from exact reconstruction and ontology coverage."
+    },
+    {
+      "id": "codec-relations",
+      "title": "Infer reusable structure when composition needs it",
+      "status": "planned",
+      "owner": null,
+      "dependsOn": ["composition-lowering"],
+      "evidence": [
+        "crates/muzak-core/src/pitch_relations.rs",
+        "crates/muzak-core/src/paired_pitch.rs",
+        "crates/muzak-core/src/scene.rs",
+        "docs/research/structure-inference.md",
+        "docs/research/corpus-candidates.json"
+      ],
+      "nextAction": "Use executable forward structures to frame complete-passage inverse tests with exact observations, explicit alternatives and counterfactual edits. Retain harmony benchmarks as diagnostics; resume calibration only when a concrete composition capability needs it. Preserve whole-work holdouts."
     }
   ]
 }

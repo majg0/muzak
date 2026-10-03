@@ -13,6 +13,7 @@ pub mod member_transform;
 pub mod midi;
 pub mod model;
 pub mod operations;
+pub mod ontology;
 pub mod paired_pitch;
 pub mod partition;
 pub mod performance;

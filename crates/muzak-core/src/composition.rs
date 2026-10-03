@@ -40,7 +40,7 @@ pub struct PitchLattice {
     pub period_millicents: i64,
 }
 impl PitchLattice {
-    fn validate(&self) -> CoreResult<()> {
+    pub(crate) fn validate(&self) -> CoreResult<()> {
         if self.id.is_empty()
             || self.origin_millicents.unsigned_abs() > MAX_SAFE
             || self.period_millicents <= 0
