@@ -11,6 +11,7 @@ pub mod meter;
 pub mod midi;
 pub mod model;
 pub mod operations;
+pub mod paired_pitch;
 pub mod partition;
 pub mod performance;
 pub mod pitch_relations;

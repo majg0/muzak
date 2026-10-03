@@ -7,7 +7,7 @@
     "nextActions": [
       "Close realized-core and boundary errors jointly. Atomic source frames plus explicit pitched-silence holds can represent 100% of supported reference timing; this oracle says nothing about selecting labels. Remaining surface errors include absent suspended-third vocabulary and poorly ranked implied/seventh members. Do not freeze the decoder's selected windows or alter the strict denominator.",
       "Retain the reproducible four-work pretrained quality-readout control. Joint degree/quality correction, direct function supervision and the six-work quality fit underperform; no per-work oracle selection or further blind head sweeps. K283-III improves both works but repairs none of their I(64) replacements. More examples alone do not resolve this output-structure gap.",
-      "Fix relationship supervision and fallback semantics before fitting another operation head. Exact compiled-candidate/support interactions can rank a sustained replacement, but the fitted contextual fallback still explains over95% of its selected-core probability. A training-only five-coefficient convergence check improves ranking without solving that gate. Distinguish unsupported syntax, wrong proposed parent and genuinely unexplained notes. Preserve ambiguous structural depths; correct sounding cores through a literal baseline do not prove recovered relationships.",
+      "Evaluate the five-coefficient physical proposer under a separately fitted surface selector. It passes sustained/broken replacement, KEEP and changed-parent controls, and selected operations compile exact originals plus changed-domain realizations. Parent/key/quality priors stay fixed; incompatible parents and unsupported syntax remain unlabelled for operations. Fit surface selection against actual training core likelihood, preserving UNKNOWN and strict denominators; never interpret that selector as relationship confidence.",
       "Use the maintained --function-spans research condition for bounded continuation. Source/capture-admitted selected numeric inversion, identical intermediate realizations, observed bass and a native proof on the explicit endpoint pair are all required. Keep original immediate proofs and independent surfaces intact; direct-to-tonic and changing-bass cases remain unresolved.",
       "Require continuity, independent seventh, ambiguity and track-repartition controls when changing scoring. Missing members can be implied by surrounding harmony; passing/neighbor motion can be structurally chordal. These musical distinctions constrain any learned or hand-written proposal.",
       "Preserve an edited composition program independently of reanalysis. Keep source observations, authored parameters and inferred evidence distinct; a new inverse reading must not erase an authored dependency.",
@@ -45,7 +45,7 @@
         "docs/research/structure-inference.md",
         "crates/muzak-core/examples/harmony-context.rs"
       ],
-      "nextAction": "Reproduce the accepted93.03% /93.75% condition through maintained capture/fit/decode/evaluate with --function-spans. Keep independent source/capture hashes, compact selected numeric evidence, local/global proof scope and strict denominators. Diagnose relationship/fallback targets before another learned scorer; do not adopt a higher core score when its prescribed musical relationship still fails."
+      "nextAction": "Retain the reproducible 93.03% / 93.75% condition with --function-spans. Freeze the seven-parameter surface selector trained on all representable training overlaps, then compare its physical-operation expert with matched and disabled baselines under the same strict metric. Keep original function evidence immutable and surface agreement separate from the already verified conditional executable relationships."
     },
     {
       "id": "bounded-inverse-search",
@@ -56,11 +56,12 @@
       "evidence": [
         "crates/muzak-core/src/scene.rs",
         "crates/muzak-core/src/pitch_relations.rs",
+        "crates/muzak-core/src/paired_pitch.rs",
         "tests/score-relations.test.ts",
         "crates/muzak-core/src/harmony.rs",
         "crates/muzak-core/src/partition.rs"
       ],
-      "nextAction": "Compare executable bindings against literal fallback under explicit parent/domain conditions. Compiled-candidate support interactions are necessary but do not repair contextual fallback supervision. Separate genuine unexplained content from incompatible analyst/source premises. Use shared-program realizations under held-out parameter edits to distinguish relational bindings from literal copying; retain multiple equivalent single-observation explanations."
+      "nextAction": "Use the native paired inverse to evaluate proposal recall separately from ranking. Its supplied correspondence/context controls retain shared bindings and ambiguous edit behavior; they do not establish automatic parent or boundary discovery. Connect independently selected operations to actual emitted notes and verify changed-domain compilation. Measure complete candidate-program cost against literals before claiming abstraction or choosing an ownership policy."
     },
     {
       "id": "joint-contextual-inference",
