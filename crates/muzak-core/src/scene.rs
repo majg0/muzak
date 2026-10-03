@@ -127,10 +127,23 @@ pub struct SceneVerification {
     pub exact_context: bool,
     pub exact_identities: bool,
 }
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "kebab-case")]
+pub enum SceneOrigin {
+    #[default]
+    Inferred,
+    Authored,
+}
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct MusicalScene {
     pub version: u8,
+    #[serde(default)]
+    pub origin: SceneOrigin,
+    /// The executable program revision. Analysis fields retain the evidence
+    /// collected from the original observations; editing does not re-infer it.
+    #[serde(default)]
+    pub program_revision: u64,
     pub parameters: SceneOptions,
     pub roots: Vec<String>,
     pub nodes: Vec<SceneNode>,
@@ -856,7 +869,7 @@ pub fn encode_score(score: &Score, options: &SceneOptions) -> CoreResult<Musical
         pitch_binding_json_bytes: serde_json::to_vec(&bindings)?.len(),
         pitch_lattice_json_bytes: serde_json::to_vec(&program.pitch_lattices)?.len(),
     };
-    let mut scene=MusicalScene{version:2,pitch_relations:relations.records,harmony:global_harmony,parameters:SceneOptions{relations:Some(relation_options),pitch_period_millicents:Some(pitch_period),max_pitch_classes:Some(max_pitch_classes),partition:Some(options.partition.clone().unwrap_or_default()),support:Some(options.support.clone().unwrap_or_default()),harmony:Some(options.harmony.clone().unwrap_or_default()),max_notes:Some(max_notes),max_region_members:Some(max_members)},roots,nodes:e.nodes,note_weights:weights,regions:e.regions,program,identities,velocity_residuals:residuals,costs,issues,limitations:vec!["Analytical regions overlap. Only dictionary-owner placements emit notes; every note has one owner.".into(),"Support and melody labels are bounded hypotheses. Weighted groups are not established phrases; exact reuse is not proof of thematic function.".into(),"Rhythm materials have neutral attack pitch and relative native curves. Independent pitch bindings use harmonic core/color palettes when selected, or exact literal residuals otherwise. Drum keys remain literal; velocity changes are explicit residuals.".into(),"Literal prototypes, expression knots, identities and opaque MIDI/context events are retained and charged. This is lossless reconstruction, not a claim of compression or recovered compositional intent.".into()],verification:SceneVerification{exact_notes:false,exact_context:false,exact_identities:false}};
+    let mut scene=MusicalScene{version:2,origin:SceneOrigin::Inferred,program_revision:0,pitch_relations:relations.records,harmony:global_harmony,parameters:SceneOptions{relations:Some(relation_options),pitch_period_millicents:Some(pitch_period),max_pitch_classes:Some(max_pitch_classes),partition:Some(options.partition.clone().unwrap_or_default()),support:Some(options.support.clone().unwrap_or_default()),harmony:Some(options.harmony.clone().unwrap_or_default()),max_notes:Some(max_notes),max_region_members:Some(max_members)},roots,nodes:e.nodes,note_weights:weights,regions:e.regions,program,identities,velocity_residuals:residuals,costs,issues,limitations:vec!["Analytical regions overlap. Only dictionary-owner placements emit notes; every note has one owner.".into(),"Support and melody labels are bounded hypotheses. Weighted groups are not established phrases; exact reuse is not proof of thematic function.".into(),"Rhythm materials have neutral attack pitch and relative native curves. Independent pitch bindings use harmonic core/color palettes when selected, or exact literal residuals otherwise. Drum keys remain literal; velocity changes are explicit residuals.".into(),"Literal prototypes, expression knots, identities and opaque MIDI/context events are retained and charged. This is lossless reconstruction, not a claim of compression or recovered compositional intent.".into()],verification:SceneVerification{exact_notes:false,exact_context:false,exact_identities:false}};
     scene.limitations.extend(relations.limitations);
     let decoded = decode_scene(&scene)?;
     if decoded != *score {
@@ -870,22 +883,157 @@ pub fn encode_score(score: &Score, options: &SceneOptions) -> CoreResult<Musical
     Ok(scene)
 }
 
+/// Load an authored composition as an editable scene without inferring a new
+/// program from its rendering. Graph membership follows executable placements;
+/// harmonic membership follows bindings, including dependent event anchors.
+pub fn scene_from_program(plan: &CompositionPlan) -> CoreResult<MusicalScene> {
+    let score = compile_composition(plan, &CompositionLimits {
+        max_depth: Some(64), max_expanded_notes: Some(1_000_000),
+        max_expanded_placements: Some(100_000),
+    })?;
+    let materials: HashMap<_, _> = plan.materials.iter().map(|m| (m.id.as_str(), m)).collect();
+    let definitions: HashMap<_, _> = plan.definitions.iter().flatten().map(|d| (d.id.as_str(), d)).collect();
+    let palette_ids: HashSet<_> = plan.harmonies.iter().flatten().map(|h| h.id.as_str()).collect();
+    let mut prefix = "composition:".to_string();
+    while palette_ids.iter().any(|id| id.starts_with(&prefix)) { prefix.push(':'); }
+    let mut nodes: Vec<SceneNode> = vec![];
+    let mut uses: BTreeMap<String, Vec<usize>> = BTreeMap::new();
+    let mut palette_members: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    let mut stack: Vec<_> = plan.placements.iter().enumerate()
+        .map(|(i, p)| (p, i.to_string(), None::<usize>)).rev().collect();
+    let mut membership_count = 0usize;
+    let mut charge = |count: usize| -> CoreResult<()> {
+        membership_count = membership_count.checked_add(count).filter(|&n| n <= 10_000_000)
+            .ok_or_else(|| budget("Authored scene membership budget exceeded."))?;
+        Ok(())
+    };
+    while let Some((p, path, parent)) = stack.pop() {
+        let id = format!("{prefix}placement:{path}");
+        let index = nodes.len();
+        let parents = parent.map(|i| vec![nodes[i].id.clone()]).unwrap_or_default();
+        nodes.push(node(id.clone(), SceneKind::Partition, format!("Placement · {}", p.material),
+            vec![], parents, vec!["Authored composition placement; no inferred musical role is claimed.".into()]));
+        if let Some(i) = parent { nodes[i].children.push(id); }
+        if let Some(d) = definitions.get(p.material.as_str()) {
+            for (i, child) in d.placements.iter().enumerate().rev() {
+                stack.push((child, format!("{path}.{i}"), Some(index)));
+            }
+        } else {
+            let material = materials[p.material.as_str()];
+            let ids: Vec<_> = (0..material.notes.len()).map(|i| format!("placement-{path}:{}:{i}", material.id)).collect();
+            charge(ids.len())?;
+            nodes[index].note_ids = ids.clone();
+            if !ids.is_empty() {
+                nodes[index].material_id = Some(material.id.clone());
+                nodes[index].placement_path = Some(path);
+                uses.entry(material.id.clone()).or_default().push(index);
+            }
+            if let Some(bindings) = &p.pitch_bindings {
+                // The compiler already validates indices and cycles. This is
+                // graph reachability only, not a second pitch resolver.
+                let mut palettes = vec![HashSet::<String>::new(); bindings.len()];
+                let mut dependencies = vec![HashSet::<usize>::new(); bindings.len()];
+                let mut dependents = vec![vec![]; bindings.len()];
+                for (i, binding) in bindings.iter().enumerate() {
+                    match binding {
+                        PitchBinding::Literal { .. } => {},
+                        PitchBinding::Harmony { harmony, .. } => { palettes[i].insert(harmony.clone()); },
+                        PitchBinding::LatticePath { from, to, .. } => for anchor in [from, to] {
+                            match anchor {
+                                PitchAnchor::Harmony { harmony, .. } => { palettes[i].insert(harmony.clone()); },
+                                PitchAnchor::Event { index } => { dependencies[i].insert(*index); },
+                            }
+                        },
+                    }
+                }
+                for (i, deps) in dependencies.iter().enumerate() {
+                    for &dep in deps { dependents[dep].push(i); }
+                }
+                let mut pending: Vec<_> = dependencies.iter().map(HashSet::len).collect();
+                let mut ready: Vec<_> = pending.iter().enumerate().filter_map(|(i, &n)| (n == 0).then_some(i)).collect();
+                while let Some(i) = ready.pop() {
+                    charge(palettes[i].len())?;
+                    for h in &palettes[i] { palette_members.entry(h.clone()).or_default().push(ids[i].clone()); }
+                    for &dependent in &dependents[i] {
+                        let inherited = palettes[i].clone();
+                        palettes[dependent].extend(inherited);
+                        pending[dependent] -= 1;
+                        if pending[dependent] == 0 { ready.push(dependent); }
+                    }
+                }
+            }
+        }
+    }
+    // Parents contain the union of their executable children, with distinct
+    // occurrences retained even when they share one dictionary material.
+    let indices: HashMap<_, _> = nodes.iter().enumerate().map(|(i, n)| (n.id.clone(), i)).collect();
+    for i in (0..nodes.len()).rev() {
+        if !nodes[i].children.is_empty() {
+            let ids: Vec<_> = nodes[i].children.iter().flat_map(|id| nodes[indices[id]].note_ids.clone()).collect();
+            charge(ids.len())?;
+            nodes[i].note_ids = ids;
+        }
+    }
+    for (material, owners) in uses.iter().filter(|(_, owners)| owners.len() > 1) {
+        let id = format!("{prefix}material:{material}");
+        let ids: Vec<_> = owners.iter().flat_map(|&i| nodes[i].note_ids.clone()).collect();
+        charge(ids.len())?;
+        let mut shared = node(id.clone(), SceneKind::Rhythm, format!("Shared material · {} placements", owners.len()),
+            ids, vec![], vec!["Authored dictionary reuse; rhythm, expression and bindings remain separate program values.".into()]);
+        shared.material_id = Some(material.clone());
+        for &i in owners { shared.children.push(nodes[i].id.clone()); nodes[i].parent_ids.push(id.clone()); }
+        nodes.push(shared);
+    }
+    for h in plan.harmonies.iter().flatten() {
+        nodes.push(node(h.id.clone(), SceneKind::Harmony, harmony::palette_label(h.root_millicents, &h.intervals),
+            palette_members.remove(&h.id).unwrap_or_default(), vec![],
+            vec!["Authored executable palette; membership includes dependent pitch bindings, not an inferred harmonic hypothesis.".into()]));
+    }
+    let regions = nodes.iter().map(|n| StructureRegionInput {
+        id: n.id.clone(), label: n.label.clone(), kind: kind_name(n.kind), note_ids: n.note_ids.clone(),
+        parameters: vec![], parent_ids: Some(n.parent_ids.clone()),
+    }).collect();
+    let identities: Vec<_> = score.notes.iter().enumerate().map(|(order, n)| SceneIdentity {
+        emitted_id: n.id.clone(), id: n.id.clone(), order, source: n.source.clone(),
+    }).collect();
+    let bindings: Vec<_> = plan.placements.iter().chain(plan.definitions.iter().flatten().flat_map(|d| &d.placements))
+        .flat_map(|p| p.pitch_bindings.iter().flatten()).collect();
+    let costs = SceneCosts {
+        source_note_count: score.notes.len(), material_note_count: plan.materials.iter().map(|m| m.notes.len()).sum(),
+        material_count: plan.materials.len(), placement_count: uses.values().map(Vec::len).sum(),
+        reused_material_count: uses.values().filter(|v| v.len() > 1).count(),
+        literal_material_count: uses.values().filter(|v| v.len() == 1).count(),
+        identity_record_count: identities.len(), velocity_residual_count: 0,
+        program_json_bytes: serde_json::to_vec(plan)?.len(), identity_json_bytes: serde_json::to_vec(&identities)?.len(),
+        residual_json_bytes: 2, relational_binding_count: bindings.iter().filter(|b| matches!(b, PitchBinding::LatticePath { .. })).count(),
+        pitch_binding_json_bytes: serde_json::to_vec(&bindings)?.len(), pitch_lattice_json_bytes: serde_json::to_vec(&plan.pitch_lattices)?.len(),
+    };
+    let scene = MusicalScene { version: 2, origin: SceneOrigin::Authored, program_revision: 0,
+        parameters: SceneOptions::default(), roots: nodes.iter().filter(|n| n.parent_ids.is_empty()).map(|n| n.id.clone()).collect(),
+        nodes, regions, note_weights: vec![], program: plan.clone(), identities, velocity_residuals: vec![], costs,
+        issues: vec![], limitations: vec!["This is an authored executable program, not an inferred explanation of observations.".into()],
+        verification: SceneVerification { exact_notes: true, exact_context: true, exact_identities: true },
+        pitch_relations: vec![], harmony: None,
+    };
+    if decode_scene(&scene)? != score { return Err(invalid("Authored scene changed its composition rendering.")); }
+    Ok(scene)
+}
+
 pub fn change_scene_harmony(
     scene: &MusicalScene,
     window_id: &str,
     root_millicents: i64,
     core_intervals: Option<&[i64]>,
-) -> CoreResult<Score> {
-    decode_scene(scene)?;
-    let window = scene
-        .harmony
-        .as_ref()
-        .and_then(|a| a.windows.iter().find(|w| w.id == window_id))
-        .ok_or_else(|| invalid("Unknown scene harmony window."))?;
-    let hypothesis = window
-        .selected
-        .and_then(|i| window.alternatives.get(i))
-        .ok_or_else(|| invalid("Ambiguous harmony has no selected executable palette."))?;
+) -> CoreResult<MusicalScene> {
+    let previous = decode_scene(scene)?;
+    let core_count = if scene.origin == SceneOrigin::Inferred {
+        let window = scene.harmony.as_ref()
+            .and_then(|a| a.windows.iter().find(|w| w.id == window_id))
+            .ok_or_else(|| invalid("Unknown scene harmony window."))?;
+        Some(window.selected.and_then(|i| window.alternatives.get(i))
+            .ok_or_else(|| invalid("Ambiguous harmony has no selected executable palette."))?
+            .core_intervals.len())
+    } else { None };
     let mut edited = scene.clone();
     let frame = edited
         .program
@@ -896,7 +1044,7 @@ pub fn change_scene_harmony(
         .ok_or_else(|| invalid("Missing executable harmonic palette."))?;
     frame.root_millicents = root_millicents;
     if let Some(core) = core_intervals {
-        if core.len() != hypothesis.core_intervals.len() {
+        if core.len() != core_count.unwrap_or(frame.intervals.len()) {
             return Err(invalid(
                 "Changing harmonic cardinality requires explicit reassignment of tone bindings.",
             ));
@@ -906,7 +1054,49 @@ pub fn change_scene_harmony(
         })?;
         target.copy_from_slice(core);
     }
-    decode_scene(&edited)
+    finish_scene_edit(scene, edited, &previous)
+}
+
+/// Validate the edited program without treating its original analysis as new
+/// observations. The caller may compare the returned decode with the immutable
+/// source; this scene alone cannot prove that an inverse edit restores it.
+fn finish_scene_edit(
+    original: &MusicalScene,
+    mut edited: MusicalScene,
+    previous: &Score,
+) -> CoreResult<MusicalScene> {
+    let decoded = decode_scene(&edited)?;
+    let program_bytes = serde_json::to_vec(&edited.program)?;
+    if program_bytes == serde_json::to_vec(&original.program)? {
+        return Ok(edited);
+    }
+    edited.program_revision = original.program_revision.checked_add(1)
+        .filter(|&revision| revision <= MAX_SAFE)
+        .ok_or_else(|| invalid("Scene program revision exceeds exact integer range."))?;
+    edited.verification = SceneVerification {
+        exact_notes: false,
+        exact_context: original.verification.exact_context
+            && ScoreContext::from(&decoded) == ScoreContext::from(previous),
+        exact_identities: original.verification.exact_identities
+            && decoded.notes.iter().map(|n| (&n.id, &n.source))
+                .eq(previous.notes.iter().map(|n| (&n.id, &n.source))),
+    };
+    let bindings: Vec<_> = edited.program.placements.iter()
+        .chain(edited.program.definitions.iter().flatten().flat_map(|d| &d.placements))
+        .flat_map(|p| p.pitch_bindings.iter().flatten()).collect();
+    edited.costs.program_json_bytes = program_bytes.len();
+    edited.costs.relational_binding_count = bindings.iter()
+        .filter(|binding| matches!(binding, PitchBinding::LatticePath { .. })).count();
+    edited.costs.pitch_binding_json_bytes = serde_json::to_vec(&bindings)?.len();
+    edited.costs.pitch_lattice_json_bytes = serde_json::to_vec(&edited.program.pitch_lattices)?.len();
+    if edited.origin == SceneOrigin::Authored {
+        for frame in edited.program.harmonies.iter().flatten() {
+            let label = harmony::palette_label(frame.root_millicents, &frame.intervals);
+            if let Some(node) = edited.nodes.iter_mut().find(|node| node.id == frame.id) { node.label = label.clone(); }
+            if let Some(region) = edited.regions.iter_mut().find(|region| region.id == frame.id) { region.label = label; }
+        }
+    }
+    Ok(edited)
 }
 
 #[cfg(test)]
@@ -994,7 +1184,7 @@ mod functional_root_validation_tests {
 }
 
 pub fn decode_scene(scene: &MusicalScene) -> CoreResult<Score> {
-    if scene.version != 2 || scene.identities.len() > 1000000 {
+    if scene.version != 2 || scene.program_revision > MAX_SAFE || scene.identities.len() > 1000000 {
         return Err(invalid("Unsupported scene version or identity budget."));
     }
     validate_scene_graph(scene)?;
@@ -1048,6 +1238,10 @@ pub fn decode_scene(scene: &MusicalScene) -> CoreResult<Score> {
     }
     restored.sort_by_key(|(order, _)| *order);
     score.notes = restored.into_iter().map(|(_, note)| note).collect();
+    if scene.origin == SceneOrigin::Authored {
+        validate_score(&score)?;
+        return Ok(score);
+    }
     // Group spans are analytical supports, not new silent-score endings. The
     // context owns original silence; edited sounding tails may extend it.
     let factor = score.ppq / scene.program.context.ppq;
@@ -1085,7 +1279,14 @@ pub fn decode_scene(scene: &MusicalScene) -> CoreResult<Score> {
 }
 
 fn validate_scene_graph(scene: &MusicalScene) -> CoreResult<()> {
-    validate_scene_relations(&scene.pitch_relations, &scene.program, &scene.identities)?;
+    match scene.origin {
+        SceneOrigin::Inferred => validate_scene_relations(&scene.pitch_relations, &scene.program, &scene.identities)?,
+        SceneOrigin::Authored => {
+            if scene.harmony.is_some() || !scene.pitch_relations.is_empty() || !scene.note_weights.is_empty() {
+                return Err(invalid("Authored scenes cannot claim inferred harmony or pitch-relation evidence."));
+            }
+        }
+    }
     if scene.nodes.len() > 100000 || scene.regions.len() != scene.nodes.len() {
         return Err(invalid("Invalid scene analytical graph size."));
     }
@@ -1327,7 +1528,13 @@ fn validate_scene_graph(scene: &MusicalScene) -> CoreResult<()> {
             }
         }
     }
-    if harmonic_ids.len()
+    if scene.origin == SceneOrigin::Authored {
+        let palette_ids: HashSet<_> = scene.program.harmonies.iter().flatten().map(|h| h.id.as_str()).collect();
+        let node_ids: HashSet<_> = scene.nodes.iter().filter(|n| n.kind == SceneKind::Harmony).map(|n| n.id.as_str()).collect();
+        if palette_ids != node_ids {
+            return Err(invalid("Authored harmony nodes must identify the executable palettes."));
+        }
+    } else if harmonic_ids.len()
         != scene
             .nodes
             .iter()
@@ -1398,16 +1605,17 @@ fn validate_scene_graph(scene: &MusicalScene) -> CoreResult<()> {
 }
 
 /// Local occurrence edits and shared dictionary edits use the same compiler.
-/// Returns new observations: callers re-encode rather than retain stale analysis.
+/// The returned scene retains its authored dependencies and original evidence.
 pub fn transpose_scene(
     scene: &MusicalScene,
     scope: SceneEditScope,
     target: &str,
     millicents: i64,
-) -> CoreResult<Score> {
+) -> CoreResult<MusicalScene> {
     if millicents.unsigned_abs() > MAX_SAFE {
         return Err(invalid("Invalid scene transposition."));
     }
+    let previous = decode_scene(scene)?;
     let mut edited = scene.clone();
     match scope {
         SceneEditScope::Material => {
@@ -1485,5 +1693,109 @@ pub fn transpose_scene(
             )?;
         }
     }
-    decode_scene(&edited)
+    finish_scene_edit(scene, edited, &previous)
+}
+
+#[cfg(test)]
+mod authoritative_edit_tests {
+    use super::*;
+    use serde_json::json;
+
+    fn plan() -> CompositionPlan {
+        let notes = (0..3).map(|i| json!({
+            "id":format!("n{i}"),"part":"p","onset":i*4,"duration":4,
+            "pitch":{"millicents":0},"velocity":75+i,"releaseVelocity":31,
+            "pitchEnvelope":[{"tick":0,"pitch":{"millicents":0}},{"tick":1,"pitch":{"millicents":1250}}],
+            "gainEnvelope":[{"tick":0,"gain":0.8},{"tick":4,"gain":0.3}]
+        })).collect::<Vec<_>>();
+        let bindings = |h: &str| json!([
+            {"kind":"harmony","harmony":h,"tone":1,"octave":5,"residualMillicents":0},
+            {"kind":"latticePath","lattice":"white","from":{"kind":"event","index":0},
+             "to":{"kind":"event","index":2},"numerator":1,"denominator":2,"degreeOffset":0,"residualMillicents":0},
+            {"kind":"harmony","harmony":h,"tone":2,"octave":5,"residualMillicents":0}
+        ]);
+        serde_json::from_value(json!({
+            "context":{"ppq":4,"duration":24,"trackEnds":[24],"attachments":[],
+                "parts":[{"id":"p","name":"","track":0,"channel":0,"percussion":false}]},
+            "materials":[{"id":"motif","span":12,"notes":notes}],
+            "definitions":[{"id":"phrase","span":48,"placements":[
+                {"material":"motif","onset":0,"pitchBindings":bindings("c")},
+                {"material":"motif","onset":24,"pitchBindings":bindings("g")}]}],
+            "placements":[{"material":"phrase","onset":0}],
+            "harmonies":[{"id":"c","rootMillicents":0,"intervals":[0,400000,700000]},
+                {"id":"g","rootMillicents":700000,"intervals":[0,400000,700000]}],
+            "pitchLattices":[{"id":"white","originMillicents":0,"periodMillicents":1200000,
+                "intervals":[0,200000,400000,500000,700000,900000,1100000]}]
+        })).unwrap()
+    }
+
+    #[test]
+    fn authored_program_survives_shared_local_harmony_and_inverse_edits() {
+        let plan = plan();
+        let expected = compile_composition(&plan, &CompositionLimits::default()).unwrap();
+        let scene = scene_from_program(&plan).unwrap();
+        assert_eq!(serde_json::to_value(&scene.program).unwrap(), serde_json::to_value(&plan).unwrap());
+        assert_eq!(decode_scene(&scene).unwrap(), expected);
+        assert_eq!(expected.duration, 48, "Authored nominal silence is not inferred support extent.");
+        assert_eq!(scene.origin, SceneOrigin::Authored);
+        assert!(scene.harmony.is_none() && scene.pitch_relations.is_empty());
+        assert_eq!(scene.nodes.iter().find(|n| n.id == "c").unwrap().note_ids.len(), 3);
+        let edited = change_scene_harmony(&scene, "c", 500_000, Some(&[0,400_000,700_000])).unwrap();
+        let rendered = decode_scene(&edited).unwrap();
+        assert_eq!(rendered.notes[..3].iter().map(|n| n.pitch.millicents).collect::<Vec<_>>(), [6_900_000,7_100_000,7_200_000]);
+        assert_eq!(&rendered.notes[3..], &expected.notes[3..]);
+        assert!(!edited.verification.exact_notes);
+        assert!(edited.verification.exact_context && edited.verification.exact_identities);
+        let saved: MusicalScene = serde_json::from_slice(&serde_json::to_vec(&edited).unwrap()).unwrap();
+        let shared = transpose_scene(&saved, SceneEditScope::Material, "motif", 37).unwrap();
+        let local = transpose_scene(&shared, SceneEditScope::Occurrence, "0.0", 13).unwrap();
+        for (i, (a, b)) in decode_scene(&local).unwrap().notes.iter().zip(&rendered.notes).enumerate() {
+            assert_eq!(a.pitch.millicents - b.pitch.millicents, if i < 3 {50} else {37});
+            assert_eq!(a.pitch_envelope.as_ref().unwrap()[1].pitch.millicents - b.pitch_envelope.as_ref().unwrap()[1].pitch.millicents, if i < 3 {50} else {37});
+            assert_eq!((a.onset,a.duration,a.velocity,a.release_velocity,&a.gain_envelope,&a.part),
+                (b.onset,b.duration,b.velocity,b.release_velocity,&b.gain_envelope,&b.part));
+        }
+        assert_eq!(local.costs.program_json_bytes, serde_json::to_vec(&local.program).unwrap().len());
+        let back = transpose_scene(&local, SceneEditScope::Occurrence, "0.0", -13).unwrap();
+        let back = transpose_scene(&back, SceneEditScope::Material, "motif", -37).unwrap();
+        let back = change_scene_harmony(&back, "c", 0, Some(&[0,400_000,700_000])).unwrap();
+        assert_eq!(decode_scene(&back).unwrap(), expected);
+        assert_eq!(back.program_revision, 6);
+        assert_eq!(back.program.pitch_lattices, scene.program.pitch_lattices);
+        let mut corrupt = scene.clone();
+        corrupt.harmony = Some(harmony::infer_global_harmony(&expected, &HarmonyOptions::default()).unwrap());
+        assert!(decode_scene(&corrupt).unwrap_err().message.contains("Authored scenes"));
+    }
+
+    #[test]
+    fn inferred_dependency_remains_editable_after_palette_change_and_serialization() {
+        let mut source = compile_composition(&plan(), &CompositionLimits::default()).unwrap();
+        // Independent context supplies the observed vocabulary and core anchors.
+        for (section, root) in [4_800_000,5_500_000].into_iter().enumerate() {
+            for (i, offset) in [0,400_000,700_000].into_iter().enumerate() {
+                source.notes.push(serde_json::from_value(json!({"id":format!("support-{section}-{i}"),"part":"p",
+                    "onset":section*24,"duration":12,"pitch":{"millicents":root+offset},"velocity":80,"releaseVelocity":31})).unwrap());
+            }
+        }
+        source.notes.push(serde_json::from_value(json!({"id":"independent-A","part":"p","onset":40,"duration":4,
+            "pitch":{"millicents":6_900_000},"velocity":61,"releaseVelocity":11})).unwrap());
+        // Geometric inference operates on constant attacks; native expression
+        // preservation is exercised by the authored control above.
+        for note in &mut source.notes { note.pitch_envelope = None; }
+        let scene = encode_score(&source, &SceneOptions::default()).unwrap();
+        assert!(scene.pitch_relations.iter().any(|r| r.selected));
+        let window = scene.harmony.as_ref().unwrap().windows.iter().find(|w| w.start_tick == 0).unwrap();
+        let original_palette = scene.program.harmonies.as_ref().unwrap().iter().find(|h| h.id == window.id).unwrap();
+        let edited = change_scene_harmony(&scene, &window.id, 500_000, Some(&[0,400_000,700_000])).unwrap();
+        assert_eq!(serde_json::to_value(&scene.harmony).unwrap(), serde_json::to_value(&edited.harmony).unwrap());
+        let saved: MusicalScene = serde_json::from_slice(&serde_json::to_vec(&edited).unwrap()).unwrap();
+        let again = change_scene_harmony(&saved, &window.id, 900_000, Some(&[0,300_000,700_000])).unwrap();
+        let restored = change_scene_harmony(&again, &window.id, original_palette.root_millicents,
+            Some(&original_palette.intervals[..3])).unwrap();
+        assert_eq!(decode_scene(&restored).unwrap(), source);
+        assert_eq!(serde_json::to_value(&scene.pitch_relations).unwrap(), serde_json::to_value(&restored.pitch_relations).unwrap());
+        assert_eq!(serde_json::to_value(&saved.harmony).unwrap(), serde_json::to_value(&restored.harmony).unwrap());
+        assert_eq!(scene.program.pitch_lattices, restored.program.pitch_lattices);
+        assert_eq!(restored.program_revision, 3);
+    }
 }

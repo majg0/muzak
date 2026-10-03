@@ -11,12 +11,12 @@ export function mountSceneInspector(host: HTMLElement, options: {
   transpose(scope: 'material' | 'occurrence', target: string, millicents: number): Promise<void>;
   changeHarmony(windowId: string, rootMillicents: number, coreIntervals?: number[]): Promise<void>;
 }) {
-  let scene: MusicalScene | undefined, score: Score | undefined, selected: SceneNode | undefined;
+  let scene: MusicalScene | undefined, score: Score | undefined, decoded: Score | undefined, selected: SceneNode | undefined;
   let memberIds: readonly string[] = [];
   const nodes = new Map<string, SceneNode>(), buttons = new Map<string, HTMLButtonElement[]>(), labels = new Map<string, string>();
   host.innerHTML = `<div class="sw-scene-heading"><div><span class="eyebrow">MUSICAL SCENE</span><h2>Ideas, evidence, and executable parts</h2></div><p data-scene="status">Import a score to build its scene.</p></div>
     <div class="sw-scene-layout"><nav class="sw-scene-tree" data-scene="tree" aria-label="Musical scene hierarchy"></nav><section class="sw-scene-detail" aria-label="Selected scene node"><span class="sw-node-kind" data-scene="kind"></span><h3 data-scene="title">No node selected</h3><p data-scene="membership"></p><p data-scene="codec"></p><div class="sw-actions"><button class="button quiet" data-scene="fit" disabled>Fit node</button><button class="button quiet" data-scene="audition" disabled>Audition node</button></div>
-      <div class="sw-scene-edit" data-scene="edit" hidden><label data-scene="scope-label">Change<select data-scene="edit-scope"><option value="occurrence">This occurrence</option><option value="material">Every use of this material</option></select></label><label><span data-scene="pitch-label">Pitch shift · semitones</span><input data-scene="semitones" type="number" step="0.01" value="0"/></label><label data-scene="interval-label" hidden>Core intervals · semitones above root<input data-scene="intervals" type="text" spellcheck="false" placeholder="Comma-separated intervals"/></label><button class="button" data-scene="apply">Apply to scene</button><p data-scene="edit-status">The composition compiler applies the change; the resulting score is encoded again.</p></div>
+      <div class="sw-scene-edit" data-scene="edit" hidden><label data-scene="scope-label">Change<select data-scene="edit-scope"><option value="occurrence">This occurrence</option><option value="material">Every use of this material</option></select></label><label><span data-scene="pitch-label">Pitch shift · semitones</span><input data-scene="semitones" type="number" step="0.01" value="0"/></label><label data-scene="interval-label" hidden>Palette intervals · semitones above root<input data-scene="intervals" type="text" spellcheck="false" placeholder="Comma-separated intervals"/></label><button class="button" data-scene="apply">Apply to program</button><p data-scene="edit-status">The compiler decodes the changed program. Original observations remain unchanged.</p></div>
       <div class="sw-harmony-evidence" data-scene="harmony" hidden></div><div class="sw-relation-evidence" data-scene="relations" hidden></div><ul class="sw-evidence" data-scene="evidence"></ul><dl class="sw-scene-parameters" data-scene="parameters"></dl><label class="sw-note-picker" data-scene="note-label" hidden>Inspect a member note<select data-scene="note"></select></label><div class="sw-note-evidence" data-scene="note-evidence"></div></section></div>
     <details class="sw-codec-limits"><summary>Codec accounting and interpretation limits</summary><dl data-scene="costs"></dl><div data-scene="limits"></div><details><summary>Recorded encoder settings · experimental</summary><dl data-scene="settings"></dl></details></details>`;
   const get = <T extends HTMLElement>(name: string) => host.querySelector<T>(`[data-scene="${name}"]`)!;
@@ -27,7 +27,12 @@ export function mountSceneInspector(host: HTMLElement, options: {
     return Number.isInteger(key) ? `${['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'][((key % 12) + 12) % 12]}${Math.floor(key / 12) - 1}` : `key ${key}`;
   };
   const harmonyWindow = () => scene?.harmony?.windows.find(window => window.id === selected?.id);
-  const harmonyFrame = () => { const window = harmonyWindow(); return window && window.selected !== null ? scene?.program.harmonies?.find(frame => frame.id === window.id) : undefined; };
+  const harmonyFrame = () => scene?.program.harmonies?.find(frame => frame.id === selected?.id);
+  const editableIntervals = () => {
+    const frame = harmonyFrame(), window = harmonyWindow();
+    const coreCount = window && window.selected !== null ? window.alternatives[window.selected].coreIntervals.length : frame?.intervals.length ?? 0;
+    return frame?.intervals.slice(0, coreCount) ?? [];
+  };
   const noteLabel = (id: string) => { const note = score?.notes.find(item => item.id === id); return note && score ? `${pitchLabel(note.pitch.millicents)} at q${fmt(note.onset / score.ppq)}` : id; };
   const routeLabel = (id: string) => { const part = score?.notes.find(note => note.id === id)?.part; return score?.parts.find(item => item.id === part)?.name || part || id; };
   function renderRelations(noteId?: string): void {
@@ -82,7 +87,7 @@ export function mountSceneInspector(host: HTMLElement, options: {
     const currentScore = score, selectedHypothesis = window.selected === null ? undefined : window.alternatives[window.selected];
     const sourceNotes = new Map(score.notes.map(note => [note.id, note])), relations = new Map(window.roles.map(relation => [relation.noteId, relation]));
     const summary = document.createElement('p');
-    summary.textContent = `Across instruments · quarter positions ${fmt(window.startTick / score.ppq)}–${fmt(window.endTick / score.ppq)}. ${window.rest ? 'Rest window.' : selectedHypothesis ? `${selectedHypothesis.label} is the selected realization.` : 'No chord selected; alternatives remain unresolved.'}${window.functionalRoot ? ` Functional-root proposal: pitch class ${fmt(window.functionalRoot.rootMillicents / 100000)} semitones, supported by the same bass and resolution in the next window.${window.functionalRoot.evidence.resolutionAlternativeIndex === undefined ? ' Resolution tones are observed.' : ' Some resolution tones are implied by the next selected chord; this proposal depends on that interpretation.'} Key is not inferred; this alone does not establish a cadence. Core and color intervals remain relative to the realization root.` : ''} Role highlighting and audition stop at this window’s boundaries.`;
+    summary.textContent = `Original source evidence · quarter positions ${fmt(window.startTick / score.ppq)}–${fmt(window.endTick / score.ppq)}. ${window.rest ? 'Rest window.' : selectedHypothesis ? `${selectedHypothesis.label} was the inferred realization.` : 'No chord selected; alternatives remain unresolved.'}${window.functionalRoot ? ` Functional-root proposal: pitch class ${fmt(window.functionalRoot.rootMillicents / 100000)} semitones, supported by the same bass and resolution in the next window.${window.functionalRoot.evidence.resolutionAlternativeIndex === undefined ? ' Resolution tones are observed.' : ' Some resolution tones are implied by the next selected chord; this proposal depends on that interpretation.'} Key is not inferred; this alone does not establish a cadence. Core and color intervals remain relative to the realization root.` : ''} ${scene?.programRevision ? 'Roles and hypotheses describe the original source, not a new analysis of the edited program.' : 'Role highlighting and audition stop at this window’s boundaries.'}`;
     const label = document.createElement('label'), roles = document.createElement('select');
     label.className = 'sw-harmony-role'; label.append('Highlight and audition ', roles); roles.setAttribute('aria-label', 'Harmonic note role');
     const memberships: Array<[string, readonly string[]]> = [['All notes', window.noteIds], ['Core', window.coreNoteIds], ['Color', window.colorNoteIds], ['Residual', window.residualNoteIds], ['Unsupported', window.unsupportedNoteIds], ['Percussion', window.percussionNoteIds]];
@@ -132,7 +137,9 @@ export function mountSceneInspector(host: HTMLElement, options: {
     const note = score.notes.find(item => item.id === id), cue = scene.noteWeights.find(item => item.noteId === id), target = get('note-evidence');
     target.replaceChildren(); if (!note) return;
     const add = (text: string) => { const line = document.createElement('p'); line.textContent = text; target.append(line); };
-    add(`Quarter position ${fmt(note.onset / score.ppq)} · MIDI-key coordinate ${fmt(note.pitch.millicents / 100000)} · duration ${fmt(note.duration / score.ppq)} quarters · attack velocity ${note.velocity}/127.`);
+    add(`Original note · quarter position ${fmt(note.onset / score.ppq)} · MIDI-key coordinate ${fmt(note.pitch.millicents / 100000)} · duration ${fmt(note.duration / score.ppq)} quarters · attack velocity ${note.velocity}/127.`);
+    const currentNote = decoded?.notes.find(item => item.id === id);
+    if (scene.programRevision > 0 && currentNote) add(`Current program · ${pitchLabel(currentNote.pitch.millicents)} · MIDI-key coordinate ${fmt(currentNote.pitch.millicents / 100000)}${currentNote.pitch.millicents !== note.pitch.millicents ? ` · changed by ${fmt((currentNote.pitch.millicents - note.pitch.millicents) / 100000)} semitones` : ' · attack pitch unchanged'}. Native expression curves are decoded by the compiler.`);
     const window = harmonyWindow(), relation = window?.roles.find(item => item.noteId === id);
     if (window && relation) add(`This harmonic window: ${relation.role}${relation.interval === null ? '' : ` · relative pitch class ${fmt(relation.interval / 100000)} semitones (${relation.interval} millicents)`}. The role applies only inside the selected window.`);
     for (const dependency of scene.pitchRelations ?? []) {
@@ -153,7 +160,7 @@ export function mountSceneInspector(host: HTMLElement, options: {
   function choose(id: string, noteId?: string): void {
     selected = nodes.get(id); if (!selected || !score) return;
     for (const [key, values] of buttons) for (const button of values) button.setAttribute('aria-pressed', String(key === id));
-    get('kind').textContent = human(selected.kind) + (['part', 'partition'].includes(selected.kind) ? '' : ' hypothesis');
+    get('kind').textContent = human(selected.kind) + (scene?.origin === 'authored' ? ' · authored' : ['part', 'partition'].includes(selected.kind) ? '' : ' · source hypothesis');
     get('title').textContent = labels.get(id) ?? selected.label;
     get('membership').textContent = `${selected.noteIds.length} actual member notes · ${selected.children.length} child nodes. Enclosed background notes are not members.`;
     const frame = harmonyFrame();
@@ -162,11 +169,11 @@ export function mountSceneInspector(host: HTMLElement, options: {
     get('edit').hidden = !selected.materialId && !frame;
     get('scope-label').hidden = !!frame; get('pitch-label').textContent = frame ? 'Harmony root shift · semitones' : 'Pitch shift · semitones';
     get('interval-label').hidden = !frame;
-    const window = harmonyWindow(), hypothesis = window && window.selected !== null ? window.alternatives[window.selected] : undefined;
-    get<HTMLInputElement>('intervals').value = hypothesis?.coreIntervals.map(value => value / 100000).join(', ') ?? '';
+    const intervals = editableIntervals();
+    get<HTMLInputElement>('intervals').value = intervals.map(value => value / 100000).join(', ');
     get<HTMLInputElement>('semitones').value = '0';
-    get('apply').textContent = frame ? 'Apply harmony change' : 'Apply to scene';
-    get('edit-status').textContent = frame ? `Root ${frame.rootMillicents / 100000} semitones. Keep ${hypothesis?.coreIntervals.length ?? 0} core intervals in their binding order; commas separate values. Bound attacks and their executable pitch dependencies follow the change. Rhythm is retained; literal pitches remain literal. The compiler validates the edit before re-encoding.` : 'The composition compiler applies the change; the resulting score is encoded again.';
+    get('apply').textContent = frame ? 'Apply harmony change' : 'Apply to program';
+    get('edit-status').textContent = frame ? `Current program root ${frame.rootMillicents / 100000} semitones. Keep ${intervals.length} intervals in binding order; commas separate values. Bound attacks and executable dependencies follow the edit. The compiler validates and retains this program.` : 'The compiler changes the current program and retains its bindings. Original observations remain unchanged.';
     const scope = get<HTMLSelectElement>('edit-scope'); scope.options[0].disabled = !selected.placementPath; scope.value = selected.placementPath ? 'occurrence' : 'material';
     const evidence = document.createDocumentFragment();
     for (const text of selected.evidence) { const item = document.createElement('li'); item.textContent = text; evidence.append(item); }
@@ -210,6 +217,7 @@ export function mountSceneInspector(host: HTMLElement, options: {
   get('fit').onclick = options.fit; get('audition').onclick = options.audition;
   get<HTMLSelectElement>('note').onchange = () => showNote(get<HTMLSelectElement>('note').value);
   get('apply').onclick = async () => {
+    const originalSource = score;
     const frame = harmonyFrame(); if (!selected?.materialId && !frame) return;
     const scope = get<HTMLSelectElement>('edit-scope').value as 'material' | 'occurrence', target = scope === 'material' ? selected?.materialId : selected?.placementPath;
     const value = get<HTMLInputElement>('semitones').valueAsNumber, millicents = Math.round(value * 100000);
@@ -217,13 +225,14 @@ export function mountSceneInspector(host: HTMLElement, options: {
     const intervalText = get<HTMLInputElement>('intervals').value.trim(), coreIntervals = frame && intervalText ? intervalText.split(/[\s,]+/).filter(Boolean).map(token => Math.round(Number(token) * 100000)) : undefined;
     if (frame && (!coreIntervals?.length || coreIntervals.some(value => !Number.isSafeInteger(value)))) { get('edit-status').textContent = 'Enter core intervals as finite numbers separated by commas, in semitones above the root.'; return; }
     get<HTMLButtonElement>('apply').disabled = true; get('edit-status').textContent = 'Applying the executable change…';
-    try { if (frame) await options.changeHarmony(frame.id, frame.rootMillicents + millicents, coreIntervals); else await options.transpose(scope, target!, millicents); get('edit-status').textContent = 'Change applied. The new score is being encoded.'; }
-    catch (error) { get('edit-status').textContent = `Change unavailable: ${error instanceof Error ? error.message : String(error)}`; }
+    try { if (frame) await options.changeHarmony(frame.id, frame.rootMillicents + millicents, coreIntervals); else await options.transpose(scope, target!, millicents); if (score === originalSource) get('edit-status').textContent = 'Change applied to the retained program. The next edit starts from these parameters; original source evidence is unchanged.'; }
+    catch (error) { if (score === originalSource) get('edit-status').textContent = `Change unavailable: ${error instanceof Error ? error.message : String(error)}`; }
     finally { get<HTMLButtonElement>('apply').disabled = false; }
   };
   return {
-    setScene(value: Score, result?: MusicalScene): void {
-      score = value; scene = result; nodes.clear(); buttons.clear(); labels.clear(); selected = undefined; memberIds = [];
+    setScene(value: Score, result?: MusicalScene, realization?: Score): void {
+      const previousId = score === value ? selected?.id : undefined, previousNote = score === value ? get<HTMLSelectElement>('note').value : undefined;
+      score = value; scene = result; decoded = realization; nodes.clear(); buttons.clear(); labels.clear(); selected = undefined; memberIds = [];
       get('tree').replaceChildren(); get('note-evidence').replaceChildren(); get('evidence').replaceChildren(); get('parameters').replaceChildren(); get('note-label').hidden = true;
       get('edit').hidden = true;
       renderHarmony();
@@ -264,13 +273,13 @@ export function mountSceneInspector(host: HTMLElement, options: {
         };
         get('tree').append(disclosure);
       }
-      for (const [title, groupedRoots] of [['Harmony sequence', harmonyRoots], ['Reused materials', reusedRoots]] as const) if (groupedRoots.length) {
+      for (const [title, groupedRoots] of [[result.origin === 'authored' ? 'Program palettes' : 'Source harmony sequence', harmonyRoots], ['Reused materials', reusedRoots]] as const) if (groupedRoots.length) {
         const disclosure = document.createElement('details'), summary = document.createElement('summary'), list = document.createElement('ul');
         disclosure.className = 'sw-reused-roots'; summary.textContent = `${title} (${groupedRoots.length})`; disclosure.append(summary, list);
         let populated = false; disclosure.ontoggle = () => { if (disclosure.open && !populated) { populated = true; groupedRoots.forEach(id => list.append(branch(id, new Set()))); } };
         get('tree').append(disclosure);
       }
-      get('status').textContent = `${result.nodes.length} nodes. Executable containment and overlapping musical hypotheses remain distinct.`;
+      get('status').textContent = `${result.origin === 'authored' ? 'Authored composition' : 'Inferred scene'} · program revision ${result.programRevision} · ${result.nodes.length} nodes.${result.programRevision ? ' Edits retain executable bindings; original evidence is unchanged.' : ' Select a palette or material to edit.'}`;
       const costs = document.createDocumentFragment();
       for (const [key, value] of Object.entries(result.costs)) { const term = document.createElement('dt'), detail = document.createElement('dd'); term.textContent = human(key); detail.textContent = String(value); costs.append(term, detail); }
       get('costs').append(costs);
@@ -282,7 +291,7 @@ export function mountSceneInspector(host: HTMLElement, options: {
       addSettings(result.parameters); get('settings').append(settings);
       const harmonyLimits = result.harmony ? [`Global harmony: ${result.harmony.offGridNoteIds.length} off-grid notes, ${result.harmony.unsupportedNoteIds.length} unsupported notes, ${result.harmony.percussionNoteIds.length} percussion notes. Exact source events are retained.`, ...result.harmony.diagnostics, ...result.harmony.limitations].map(text => `Harmony · ${text}`) : [];
       for (const text of [...result.limitations, ...harmonyLimits, ...result.issues.map(issue => `${issue.stage}${issue.part ? ` (${issue.part})` : ''}: ${issue.message}`)]) { const paragraph = document.createElement('p'); paragraph.textContent = text; get('limits').append(paragraph); }
-      const first = ordinaryRoots[0] ?? harmonyRoots[0] ?? reusedRoots[0]; if (first) choose(first);
+      const first = previousId && nodes.has(previousId) ? previousId : ordinaryRoots[0] ?? harmonyRoots[0] ?? reusedRoots[0]; if (first) choose(first, previousNote);
     },
     selectNode(id: string): void { choose(id); },
     selectNote: chooseNote,

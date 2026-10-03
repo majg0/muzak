@@ -1,16 +1,15 @@
 {
   "schemaVersion": 1,
   "updatedDate": "2026-10-03",
-  "objective": "Infer compact executable musical relationships through the existing exact Rust codec; preserve observations while recovering useful harmony, voice-leading, rhythm and reusable structure.",
+  "objective": "Generate musically coherent, controllable compositions through one editable Rust program algebra; infer that same structure from scores, preserving exact observations and reusable musical relationships.",
   "checkpoint": {
-    "summary": "Shipped Mozart K330-I/K331-I strict joint root/core agreement remains 63.04% / 55.93%. The maintained four-work quality readout with witnessed function spans reaches 93.03% / 93.75%; the frozen duration-integrated operation/surface-selector extension reaches 93.51% / 94.27% joint and 94.29% / 94.78% core. Sources, function proofs and strict denominators remain unchanged. All nine conditional musical controls and five selected-program exact/edit controls pass. Teacher training overlaps these Mozart works, so results are development diagnostics, not shipped inference or independent validation. Requested 100% remains unmet; no holdout is parsed.",
+    "summary": "Seeded Rust generation is usable in the workspace through the same composition algebra as the codec. Authored scenes retain motifs, rhythms, palettes and dependent pitch bindings through sequential structural edits; original realizations remain available for comparison. The next inverse target is a complete editable Dire opening, not further chord-classifier calibration. Shipped Mozart joint agreement remains 63.04% / 55.93%; retained offline development comparator remains 93.51% / 94.27%, with teacher-training overlap. Requested 100% remains unmet; no designated holdout has been parsed.",
     "nextActions": [
-      "Improve contextual program selection. Every remaining development core-error interval is expressible by existing surface or operation candidates. The relation marginal puts truth among tied maxima on 31.25 of 66.5 error quarters (uniquely first on 27.25), but the mixture on only 2.67; final temporal decoding accounts for 2.625 and frame averaging .0417. Preserve immutable sources, strict denominators and distinct functional errors.",
-      "Retain the four-work quality readout and frozen segmental selector pending strict comparison. Raw contextual candidate scoring regresses on K331 and all three reserved adaptation works. A frozen 130-parameter quality-subspace scorer conditioned on original realized-root uncertainty improves K279/K282/K284 source-cell core accuracy from 80.41% to 80.86%, positive on each work. Evaluate it on Mozart with unchanged decoding and musical controls.",
-      "Stop tuning the two-feature restoration branch: context-scoped predictor-KL fitting reaches only 85.94% captured training pair-posterior agreement and still fails K280 V(64). It rewards correspondence coverage instead of restoration direction. The residue-level scorer does not assign individual events to members or anchors. Infer exact event-addressed direct, event-only and shared-parent alternatives through the existing compiler; verify endpoint/parent edits before another ranking experiment.",
-      "Require continuity, independent seventh, ambiguity and track-repartition controls when changing scoring. Missing members can be implied by surrounding harmony; passing/neighbor motion can be structurally chordal. These musical distinctions constrain any learned or hand-written proposal.",
-      "Preserve an edited composition program independently of reanalysis. Keep source observations, authored parameters and inferred evidence distinct; a new inverse reading must not erase an authored dependency.",
-      "After representation/ranking choices are frozen, evaluate held-out work lineages once, alongside exact reconstruction, useful edits, runtime and explanatory cost."
+      "Judge generated passages by listening and useful structural edits: preserve recognizable themes, vary continuations and orchestration independently, and keep cadence, register and voice leading under control. Extend this bounded generator only where a musical comparison demonstrates a gap.",
+      "Recover repeated lower support and upper rhythm in the complete Dire opening, preserving doubled emissions and local reattacks. The G-to-F support change leaves the upper melody unchanged; do not force chord-root transposition.",
+      "Propose melody/harmony relationships and event-addressed octave dependencies with explicit alternatives. Prove a nonliteral edit against independently authored expectations and show its anchors, dependents, shared/local scope and changed notes.",
+      "Evaluate exact reconstruction, complete program cost, interpretation and musical editing separately. Directly authored programs demonstrate forward capability, not automatic inverse discovery.",
+      "Keep the retained Mozart comparator as a diagnostic. Resume classifier research only when an executable structural hypothesis needs that comparison; no further calibration sweep."
     ]
   },
   "tasks": [
@@ -28,13 +27,13 @@
         "tests/score-relations.test.ts",
         "docs/research/structure-inference.md"
       ],
-      "nextAction": "First retain authoritative edited programs separately from reanalysis; a correct changed-anchor realization must not lose its explicit dependency merely because a new harmonic reading differs. Then challenge crossings, temporal gaps, ambiguous/missing domains and delayed resolution with independent expected edits. Preserve exact native events and unrelated voices; distinguish compiler capacity from the narrower inferred subset."
+      "nextAction": "Extend the authoritative scene/program path with source-discovered shared rhythm and pitch relationships for a complete Dire passage. Preserve ambiguity, original evidence and sequential edit behavior. Use the generator as a forward control, not inferred ground truth."
     },
     {
       "id": "contextual-comparison",
       "title": "Establish honest contextual model comparisons",
-      "status": "in_progress",
-      "owner": "/root",
+      "status": "planned",
+      "owner": null,
       "dependsOn": [],
       "evidence": [
         "scripts/compare-rnbert.ts",
@@ -52,15 +51,16 @@
         ".audit/score/candidate-context-evaluation.json",
         ".audit/score/candidate-context-validation-diagnostic.json",
         ".audit/score/semantic-context-admission.json",
-        ".audit/score/semantic-context-validation-diagnostic.json"
+        ".audit/score/semantic-context-validation-diagnostic.json",
+        ".audit/score/semantic-context-development-evaluation.json"
       ],
-      "nextAction": "Evaluate the frozen semantic model 1e122bbc on Mozart after its positive three-work validation. Preserve exact zero replay, source geometry, strict denominators, decoder, function proofs and the independent-seventh control. A source-only counterexample proves additive membership cannot change a four-template odds ratio; six generic interval-class pair counts add nonredundant capacity, but no extension is fitted or promoted yet. Keep event ownership separate."
+      "nextAction": "Retain the frozen 93.51% / 94.27% offline comparator and strict evaluation contract. Both contextual candidate variants regress on Mozart. Stop calibration work until a concrete executable structural change needs comparison."
     },
     {
       "id": "bounded-inverse-search",
       "title": "Select competing executable explanations",
       "status": "in_progress",
-      "owner": "/root",
+      "owner": null,
       "dependsOn": [],
       "evidence": [
         "crates/muzak-core/src/scene.rs",
@@ -70,7 +70,7 @@
         "crates/muzak-core/src/harmony.rs",
         "crates/muzak-core/src/partition.rs"
       ],
-      "nextAction": "The supplied-context member-event inverse gate passes: eight immutable events yield seven exact alternatives in four families, with distinct endpoint/parent/domain edits and endpoint aliases. Next make event ownership and compatible binding patches explicit in candidate scoring; no pitch-residue count may substitute for event ownership. Retain supplied correspondence as a premise until automatic matching is independently evaluated. Charge complete programs against literals."
+      "nextAction": "Discover reusable note relationships in the actual Dire passage, not only supplied-context probes. Distinguish shared rhythm, invariant upper pitches, harmony-conditioned variation and event-addressed octave links. Do not force a unique interpretation where observations admit alternatives."
     },
     {
       "id": "joint-contextual-inference",
@@ -91,18 +91,23 @@
     {
       "id": "reusable-structure",
       "title": "Recover compositional reuse and phrase relationships",
-      "status": "planned",
+      "status": "in_progress",
       "owner": null,
       "dependsOn": [
         "executable-relations",
         "bounded-inverse-search"
       ],
       "evidence": [
+        "crates/muzak-core/src/generator.rs",
+        "crates/muzak-core/src/generator_tests.rs",
         "crates/muzak-core/src/scene.rs",
+        "src/score/workbench.ts",
+        "tests/score-core-parity.test.ts",
         "scripts/evaluate-patterns.ts",
-        "scripts/evaluate-boundaries.ts"
+        "scripts/evaluate-boundaries.ts",
+        ".audit/score/docks-opening-source-audit.json"
       ],
-      "nextAction": "Recover independent rhythm, melody-to-harmony relations, spread/arpeggio and transformed material in the Dire vertical plus controlled variations. Charge all melody bindings and exceptions. Build overlapping phrase candidates from harmonic, melodic and repetition evidence; compare independent membership/boundary annotations. This work need not wait for perfect Mozart labels."
+      "nextAction": "Use the restored generator for audition and structural editing. Compare motif identity, harmonic support, density and variation across seeds; recover corresponding reusable structures from real source passages with explicit boundaries and ambiguity."
     },
     {
       "id": "codec-transfer",

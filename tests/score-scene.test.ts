@@ -89,11 +89,16 @@ test('a translated content dictionary drives genuinely shared and occurrence-loc
   const local=call('transposeScene',{scene,scope:'occurrence',target:owner.placementPath,millicents:37});
   const shared=call('transposeScene',{scene,scope:'material',target:theme.materialId,millicents:37});
   const changed=(score:Score)=>score.notes.filter((n,i)=>n.pitch.millicents!==source.notes[i].pitch.millicents).map(n=>n.id).sort();
-  assert.deepEqual(changed(local),[...owner.noteIds].sort());
-  assert.deepEqual(changed(shared),[...theme.noteIds].sort());
+  assert.deepEqual(changed(call('decodeScene',{scene:local})),[...owner.noteIds].sort());
+  assert.deepEqual(changed(call('decodeScene',{scene:shared})),[...theme.noteIds].sort());
   const edited=structuredClone(scene),material=edited.program.materials.find(m=>m.id===theme.materialId)!;
   for(const n of material.notes)n.pitch.millicents+=37;
-  assert.deepEqual(call('transposeScene',{scene:edited,scope:'material',target:theme.materialId,millicents:-37}),source);
+  assert.deepEqual(call('decodeScene',{scene:call('transposeScene',{scene:edited,scope:'material',target:theme.materialId,millicents:-37})}),source);
+  const restored=call('transposeScene',{scene:shared,scope:'material',target:theme.materialId,millicents:-37});
+  assert.deepEqual(call('decodeScene',{scene:restored}),source);
+  assert.equal(shared.programRevision,1);assert.equal(restored.programRevision,2);
+  assert.equal(shared.verification.exactNotes,false);
+  assert.equal(local.costs.programJsonBytes,Buffer.byteLength(JSON.stringify(local.program)));
   assert.deepEqual(call('decodeScene',{scene}),source);
 });
 

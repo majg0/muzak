@@ -22,7 +22,8 @@ test('global harmonic palettes bind attacks across instruments and revoice indep
   const window=scene.harmony.windows.find(w=>w.selected!==null && w.coreNoteIds.includes('0-0'));
   assert(window);assert(window.coreNoteIds.some(id=>source.notes.find(n=>n.id===id)!.part==='third'));
   const frame=scene.program.harmonies!.find(h=>h.id===window.id)!;assert(frame);
-  const changed=call('changeSceneHarmony',{scene,windowId:window.id,rootMillicents:frame.rootMillicents+100000});
+  const changedScene=call('changeSceneHarmony',{scene,windowId:window.id,rootMillicents:frame.rootMillicents+100000});
+  const changed=call('decodeScene',{scene:changedScene});
   const bound=new Set([...window.coreNoteIds,...window.colorNoteIds].filter(id=>{
     const note=source.notes.find(n=>n.id===id)!;return note.onset>=window.startTick&&note.onset<window.endTick;
   }));

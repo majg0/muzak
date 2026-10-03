@@ -42,7 +42,8 @@ test('native and Wasm share exact scene encoding, standalone decoding and local 
   assert.deepEqual(decoded,score);
   const owner=scene.nodes.find((node:{placementPath?:string})=>node.placementPath!==undefined);
   assert.ok(owner);
-  const changed=parity([{op:'transposeScene',input:{scene,scope:'occurrence',target:owner.placementPath,millicents:31250}}])[0].response.output as Score;
+  const changedScene=parity([{op:'transposeScene',input:{scene,scope:'occurrence',target:owner.placementPath,millicents:31250}}])[0].response.output;
+  const changed=parity([{op:'decodeScene',input:{scene:changedScene}}])[0].response.output as Score;
   const members=new Set(owner.noteIds);
   for(const note of changed.notes) {
     const original=score.notes.find(source=>source.id===note.id)!;
@@ -58,6 +59,35 @@ test('native and Wasm reject unsafe coordinates and malformed codec ownership', 
   scene.identities.push({...scene.identities[0]});
   const replies=parity([{op:'validateScore',input:{score:malformed}},{op:'decodeScene',input:{scene}}]);
   assert.ok(replies.every(reply=>reply.error?.code==='invalid-input'));
+});
+
+test('native and Wasm generate one authored program with an exact MIDI-realizable rendering', () => {
+  const scene=parity([{op:'generateComposition',input:{options:{seed:19,phrases:2,barsPerPhrase:3,beatsPerBar:3,density:.8}}}])[0].response.output;
+  assert.equal(scene.origin,'authored');assert.equal(scene.programRevision,0);
+  assert.equal(scene.harmony,undefined);assert.deepEqual(scene.pitchRelations,[]);
+  const results=parity([
+    {op:'decodeScene',input:{scene:JSON.parse(JSON.stringify(scene))}},
+    {op:'compileComposition',input:{plan:scene.program}},
+  ]);
+  const score=results[0].response.output as Score;
+  assert.deepEqual(score,results[1].response.output);
+  assert.equal(score.duration/score.ppq,18);
+  const bytes=parity([{op:'exportScoreMidi',input:{score}}])[0].response.output;
+  const imported=parity([{op:'importMidi',input:{bytes}}])[0].response.output;
+  assert.deepEqual(imported.issues,[]);
+  assert.equal(imported.score.ppq,score.ppq);assert.equal(imported.score.duration,score.duration);
+  assert.deepEqual(imported.score.trackEnds,score.trackEnds);
+  // MIDI regenerates event/part IDs. Compare the exact supported musical data
+  // and route coordinates, rather than claiming source-identity persistence.
+  const events=(s:Score)=>s.notes.map(n=>{
+    const p=s.parts.find(p=>p.id===n.part)!;
+    return [p.track,p.channel,n.onset,n.duration,n.pitch.millicents,n.velocity,n.releaseVelocity];
+  }).map(row=>JSON.stringify(row)).sort();
+  assert.deepEqual(events(imported.score),events(score));
+  const endOfTrack=(a:Score['attachments'][number])=>a.bytes.length===3&&a.bytes[0]===255&&a.bytes[1]===47&&a.bytes[2]===0;
+  assert.deepEqual(imported.score.attachments.filter((a:Score['attachments'][number])=>!endOfTrack(a)),score.attachments);
+  assert.deepEqual(imported.score.attachments.filter(endOfTrack).map((a:Score['attachments'][number])=>[a.track,a.tick]),
+    score.trackEnds.map((tick,track)=>[track,tick]),'MIDI adds one explicit ending per retained track.');
 });
 
 test('misspelled operation inputs cannot silently run with default analysis settings',()=>{

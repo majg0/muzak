@@ -456,8 +456,9 @@ test('source-only scene encoding infers both dependent notes and a domain-sensit
   const window = scene.harmony!.windows.find(w => w.startTick === 0)!;
   assert.notEqual(window.selected, null);
   assert.equal(window.alternatives[window.selected!].rootMillicents, 0);
-  const changed = callCoreSync('changeSceneHarmony', { scene, windowId: window.id,
+  const changedScene = callCoreSync('changeSceneHarmony', { scene, windowId: window.id,
     rootMillicents: 500000, coreIntervals: [0, 400000, 700000] });
+  const changed = callCoreSync('decodeScene', {scene: changedScene});
   const upperPitches = (s: Score) => [0, 1, 2].map(i => s.notes.find(n => n.id === `upper-0-${i}`)!.pitch.millicents / 100000);
   assert.deepEqual(upperPitches(changed), [69, 71, 72]);
   assert.deepEqual(changed.notes.filter(n => n.onset >= 48), score.notes.filter(n => n.onset >= 48));
@@ -469,8 +470,9 @@ test('source-only scene encoding infers both dependent notes and a domain-sensit
   assert.deepEqual(paletteOnly.pitchRelations, []);
   assert.deepEqual(callCoreSync('decodeScene', { scene: paletteOnly }), score);
   const paletteWindow = paletteOnly.harmony!.windows.find(w => w.startTick === 0)!;
-  const paletteEdit = callCoreSync('changeSceneHarmony', { scene: paletteOnly, windowId: paletteWindow.id,
+  const paletteEditScene = callCoreSync('changeSceneHarmony', { scene: paletteOnly, windowId: paletteWindow.id,
     rootMillicents: 500000, coreIntervals: [0, 400000, 700000] });
+  const paletteEdit = callCoreSync('decodeScene', {scene: paletteEditScene});
   assert.deepEqual(upperPitches(paletteEdit), [69, 70, 72], 'A frozen chord-relative color produces B-flat instead of the anchor-dependent B.');
   for (const candidate of [scene, paletteOnly]) {
     assert.equal(candidate.costs.programJsonBytes, Buffer.byteLength(JSON.stringify(candidate.program)));
@@ -516,8 +518,9 @@ test('source-only doubled scene keeps every emission and validates every declare
     assert.deepEqual([...relation.toNoteIds].sort(), ['double-upper-0-2', 'upper-0-2']);
   }
   const window = scene.harmony!.windows.find(w => w.startTick === 0)!;
-  const edited = callCoreSync('changeSceneHarmony', { scene, windowId: window.id,
+  const editedScene = callCoreSync('changeSceneHarmony', { scene, windowId: window.id,
     rootMillicents: 500000, coreIntervals: [0, 400000, 700000] });
+  const edited = callCoreSync('decodeScene', {scene: editedScene});
   for (const prefix of ['upper-0-', 'double-upper-0-']) {
     assert.deepEqual([0, 1, 2].map(i => edited.notes.find(n => n.id === `${prefix}${i}`)!.pitch.millicents / 100000), [69, 71, 72]);
   }

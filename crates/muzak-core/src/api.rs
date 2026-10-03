@@ -22,6 +22,11 @@ use ts_rs::TS;
     rename_all_fields = "camelCase"
 )]
 pub enum CoreRequest {
+    GenerateComposition {
+        #[serde(default)]
+        #[ts(optional, type = "Partial<import('./GeneratorOptions').GeneratorOptions>")]
+        options: crate::generator::GeneratorOptions,
+    },
     InferPitchRelations {
         material: composition::ScoreMaterial,
         bindings: Vec<composition::PitchBinding>,
@@ -67,6 +72,9 @@ pub enum CoreRequest {
     },
     DecodeScene {
         scene: scene::MusicalScene,
+    },
+    SceneFromComposition {
+        plan: composition::CompositionPlan,
     },
     TransposeScene {
         scene: scene::MusicalScene,
@@ -170,7 +178,6 @@ pub enum CoreRequest {
         #[ts(optional)]
         limits: Option<composition::CompositionLimits>,
     },
-    DemonstrationPlan {},
     CompilePerformance {
         score: Score,
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -219,14 +226,16 @@ pub enum CoreRequest {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(tag = "op", content = "output", rename_all = "camelCase")]
 pub enum CoreResponse {
+    GenerateComposition(scene::MusicalScene),
     InferPitchRelations(pitch_relations::PitchRelationAnalysis),
     ObservedPitchDomain(Option<pitch_relations::PitchRelationDomain>),
     ScoreMeter(meter::ScoreMeterMap),
     InferGlobalHarmony(harmony::GlobalHarmonyAnalysis),
-    ChangeSceneHarmony(Score),
+    ChangeSceneHarmony(scene::MusicalScene),
     EncodeScore(scene::MusicalScene),
     DecodeScene(Score),
-    TransposeScene(Score),
+    SceneFromComposition(scene::MusicalScene),
+    TransposeScene(scene::MusicalScene),
     ValidateScore(()),
     ValidateNoteTrajectories(()),
     SelectNotes(Vec<ScoreNote>),
@@ -249,7 +258,6 @@ pub enum CoreResponse {
     CropNoteTrajectories(ops::CroppedTrajectories),
     NoteTimes(Vec<u64>),
     CompileComposition(Score),
-    DemonstrationPlan(composition::CompositionPlan),
     CompilePerformance(perf::CompiledPerformance),
     TempoMap(Vec<perf::TempoPoint>),
     TickToSeconds(f64),
@@ -267,6 +275,9 @@ pub enum CoreReply {
 
 pub fn dispatch(request: CoreRequest) -> CoreResult<CoreResponse> {
     Ok(match request {
+        CoreRequest::GenerateComposition { options } => CoreResponse::GenerateComposition(
+            scene::scene_from_program(&crate::generator::generate_plan(&options)?)?
+        ),
         CoreRequest::InferPitchRelations { material, bindings, harmonies, domains, anchor_indices, options } =>
             CoreResponse::InferPitchRelations(pitch_relations::infer_pitch_relations(
                 &material, &bindings, &harmonies, &domains, &anchor_indices, &options.unwrap_or_default())?),
@@ -295,6 +306,9 @@ pub fn dispatch(request: CoreRequest) -> CoreResult<CoreResponse> {
         }
         CoreRequest::DecodeScene { scene } => {
             CoreResponse::DecodeScene(scene::decode_scene(&scene)?)
+        }
+        CoreRequest::SceneFromComposition { plan } => {
+            CoreResponse::SceneFromComposition(scene::scene_from_program(&plan)?)
         }
         CoreRequest::TransposeScene {
             scene,
@@ -402,9 +416,6 @@ pub fn dispatch(request: CoreRequest) -> CoreResult<CoreResponse> {
         CoreRequest::CompileComposition { plan, limits } => CoreResponse::CompileComposition(
             composition::compile_composition(&plan, &limits.unwrap_or_default())?,
         ),
-        CoreRequest::DemonstrationPlan {} => {
-            CoreResponse::DemonstrationPlan(composition::demonstration_plan())
-        }
         CoreRequest::CompilePerformance { score, options } => CoreResponse::CompilePerformance(
             perf::compile_performance(&score, &options.unwrap_or_default())?,
         ),

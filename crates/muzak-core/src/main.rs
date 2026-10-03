@@ -13,6 +13,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .map_or("src/core/generated", String::as_str),
             );
         CoreRequest::export_all(&config)?;
+        muzak_core::generator::GeneratorOptions::export_all(&config)?;
         CoreResponse::export_all(&config)?;
         CoreReply::export_all(&config)?;
         return Ok(());

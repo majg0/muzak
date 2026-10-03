@@ -34,6 +34,19 @@ const PITCH_NAMES: [&str; 12] = [
     "B",
 ];
 
+/// Name an explicitly authored palette using the existing template vocabulary.
+/// This formats a parameter value; it does not infer harmony from observations.
+pub fn palette_label(root: i64, intervals: &[i64]) -> String {
+    let pc = root.rem_euclid(OCTAVE);
+    let name = if pc % SEMITONE == 0 { PITCH_NAMES[(pc / SEMITONE) as usize].to_string() }
+        else { format!("{} st", pc as f64 / SEMITONE as f64) };
+    let core: BTreeSet<_> = intervals.iter().map(|p| p.rem_euclid(OCTAVE)).collect();
+    match HarmonyOptions::default().templates.iter().find(|t| t.core_intervals.iter().copied().collect::<BTreeSet<_>>() == core) {
+        Some(template) => format!("{name} {}", template.label),
+        None => format!("{name} · {{{}}}", intervals.iter().map(|p| (p.to_owned() as f64 / SEMITONE as f64).to_string()).collect::<Vec<_>>().join(", ")),
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct HarmonyTemplate {

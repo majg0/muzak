@@ -5,6 +5,7 @@ pub mod composition;
 pub mod error;
 pub mod evaluation;
 pub mod harmonic;
+pub mod generator;
 pub mod harmony;
 pub mod harmony_context;
 pub mod meter;

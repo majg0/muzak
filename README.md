@@ -1,6 +1,6 @@
 # Continuum
 
-A musical codec: **score → musical relationships + composition program → score**.
+A music generator and codec: **ideas → editable composition program → score**, and **score → inferred relationships + program → score**.
 
 The workspace shows source notes, global chord/color windows, executable pitch dependencies and the decoded result. Harmonic palettes, rhythmic materials and shared pitch lattices have independent bindings. Anchor paths can recompute a passing or neighboring pitch from events or shared harmonic values. Doubled performances can retain separate events while sharing a pitch relationship. Every decoded note has one owner; spatial groups and overlapping interpretations do not emit extra copies.
 
@@ -13,11 +13,14 @@ npm ci
 npm run dev
 ```
 
-Open MIDI or choose a local reference. Analysis covers the whole score automatically. Drag/resize the overview window to navigate; seek with the timeline ruler or playhead. Bar lines follow recorded meter changes; missing meter uses marked quarter coordinates. Select nodes to inspect memberships, anchors and dependent notes. Edit a harmonic root and its core intervals, or transpose one occurrence/shared material, then inspect the re-encoded score. Browser sound is an audition instrument, not a recording reconstruction.
+Generate a seeded composition, play it, edit its harmonic palettes or shared/local materials, and export MIDI. Tempo, meter, mode, density, variation and color are controllable. Generated phrases retain their authored bindings; edits compile directly and never re-infer away the program. Browser sound is an audition instrument, not a finished production.
+
+Open MIDI or choose a local reference to infer a scene from observations. Analysis covers the whole score automatically. Drag/resize the overview window to navigate; seek with the timeline ruler or playhead. Bar lines follow recorded meter changes; missing meter uses marked quarter coordinates. Source observations remain available beside the decoded edited program.
 
 ## Code
 
 - `crates/muzak-core/src/scene.rs`: encoder, standalone scene decoding and shared/local edits.
+- `generator.rs`: seeded themes, melody-aware harmonic routes, voicing and arrangement through the same composition algebra.
 - `harmony.rs`, `harmony_context.rs`: global metrical-window hypotheses, separate realized core/color and witnessed functional-root proposals.
 - `pitch_relations.rs`, `scene_relations.rs`: bounded anchor-path proposals and executable dependency closure.
 - `paired_pitch.rs`: bounded shared-binding candidates across two supplied realizations, retaining ambiguity and edit behavior.

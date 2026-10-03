@@ -20,7 +20,7 @@ const message = (error: unknown) => error instanceof Error ? error.message : Str
 export function mountScoreWorkbench(container: HTMLElement): () => void {
   const abort = new AbortController(), player = new ScorePlayer();
   let source: Score = {ppq: 480, duration: 0, notes: [], parts: [], attachments: [], trackEnds: []};
-  let title = 'A returning line', result: ScoreCodecResult | undefined, view: 'source' | 'decoded' = 'source';
+  let title = 'Composition', result: ScoreCodecResult | undefined, view: 'source' | 'decoded' = 'source';
   let issues: ScoreIssue[] = [], provenance: LocalReference | undefined, sourceSha256: string | undefined;
   let selectedIds = new Set<string>(), selectedNote = '', selectedNode: SceneNode | undefined;
   let notesById = new Map<string, ScoreNote>(), partColors = new Map<string, string>();
@@ -30,12 +30,14 @@ export function mountScoreWorkbench(container: HTMLElement): () => void {
   let downloadUrl: string | undefined, warnings: string[] = [], drawnNotes: DrawnNote[] = [];
   let drag: {id: number; x: number; view: ScoreViewport} | undefined, suppressClick = false;
   let scrub: {id: number; target: HTMLElement; resume: boolean} | undefined;
+  let pendingProgramTitle: string | undefined;
   container.classList.add('score-workbench');
-  container.innerHTML = `<header class="sw-heading"><h1>Musical codec</h1><div class="sw-actions"><label class="button primary sw-open">Open MIDI<input data-sw="file" type="file" accept=".mid,.midi,audio/midi,audio/x-midi" aria-label="Open a local MIDI file"/></label><button class="button quiet" data-sw="demo">Original example</button><label class="sw-reference-picker" data-sw="reference-picker" hidden>Local references<select data-sw="reference"><option value="">Choose a reference…</option></select></label></div></header>
+  container.innerHTML = `<header class="sw-heading"><h1>Musical codec</h1><div class="sw-actions"><label class="button primary sw-open">Open MIDI<input data-sw="file" type="file" accept=".mid,.midi,audio/midi,audio/x-midi" aria-label="Open a local MIDI file"/></label><label class="sw-reference-picker" data-sw="reference-picker" hidden>Local references<select data-sw="reference"><option value="">Choose a reference…</option></select></label></div></header>
+    <form class="sw-generator" data-sw="generator"><label>Seed<input data-sw="seed" type="number" min="0" max="4294967295" step="1" value="1" required/></label><label>Tempo<input data-sw="tempo" type="number" min="40" max="240" value="104" required/></label><label>Density<input data-sw="density" type="range" min="0" max="1" step="0.05" value="0.6"/></label><label>Variation<input data-sw="variation" type="range" min="0" max="1" step="0.05" value="0.35"/></label><button class="button primary" data-sw="generate" type="submit">Generate</button><button class="button quiet" data-sw="new-seed" type="button">New seed</button><details><summary>Composition</summary><div class="sw-generator-more"><label>Phrases<input data-sw="phrases" type="number" min="1" max="16" value="4" required/></label><label>Bars per phrase<input data-sw="bars" type="number" min="2" max="8" value="4" required/></label><label>Beats per bar<input data-sw="beats" type="number" min="2" max="9" value="4" required/></label><label>Tonic<select data-sw="tonic">${['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'].map((name, value) => `<option value="${value}"${value === 2 ? ' selected' : ''}>${name}</option>`).join('')}</select></label><label>Mode<select data-sw="mode"><option value="major">Major</option><option value="minor">Minor</option><option value="dorian" selected>Dorian</option><option value="lydian">Lydian</option></select></label><label>Color<input data-sw="color" type="range" min="0" max="1" step="0.05" value="0.6"/></label></div></details></form>
     <p class="sw-status" data-sw="status" role="status" aria-live="polite">Loading the musical core…</p><a class="button" data-sw="download-ready" hidden>Save file</a>
     <section class="panel sw-score-panel"><div class="sw-score-heading"><div><h2 data-sw="title"></h2><p class="subtle" data-sw="inventory"></p></div><div class="sw-actions"><button class="button quiet" data-sw="rewind" aria-label="Return playback to start">↤</button><button class="button primary" data-sw="play" disabled>Play</button><button class="button quiet" data-sw="stop" disabled>Pause</button><output class="sw-position" data-sw="transport-label" aria-label="Playback location">—</output><button class="button quiet" data-sw="export" disabled>Export MIDI</button><button class="button quiet" data-sw="save-scene" disabled>Save scene</button></div></div>
       <div class="sw-codec-status" data-sw="codec" role="status">Waiting for a score.</div>
-      <div class="sw-timeline-tools"><fieldset class="sw-views"><legend class="sw-sr-only">Score view</legend><label><input type="radio" name="score-view" value="source" checked/>Source</label><label><input type="radio" name="score-view" value="decoded" disabled/>Decoded</label></fieldset><label class="sw-inline-check"><input data-sw="regions" type="checkbox" checked/>Child regions</label></div>
+      <div class="sw-timeline-tools"><fieldset class="sw-views"><legend class="sw-sr-only">Score view</legend><label><input type="radio" name="score-view" value="source" checked/>Original source</label><label><input type="radio" name="score-view" value="decoded" disabled/><span data-sw="decoded-label">Decoded program</span></label></fieldset><label class="sw-inline-check"><input data-sw="regions" type="checkbox" checked/>Child regions</label></div>
       <div class="sw-navigator" data-sw="navigator"></div><div class="sw-timeline-heading"><strong>Timeline</strong><span>Ruler seeks · drag notes to pan · wheel zooms</span></div><div class="sw-harmony-band-heading"><span data-sw="harmony-label">Global harmony · waiting for the scene</span><span>Chord / color hypotheses</span></div><div class="sw-harmony-band" data-sw="harmony-band" role="group" aria-label="Global harmony sequence in the current viewport"></div><div class="sw-roll"><div class="sw-ruler" data-sw="ruler" tabindex="0" role="slider" aria-label="Playback position" aria-orientation="horizontal" aria-describedby="sw-seek-help"><canvas data-sw="ruler-canvas" aria-hidden="true"></canvas></div><canvas data-sw="roll" tabindex="0" role="img" aria-label="Score timeline"></canvas><div class="sw-playhead" data-sw="playhead" hidden><span class="sw-playhead-cap" data-sw="playhead-cap" aria-hidden="true" title="Drag to seek"></span></div></div><span class="sw-sr-only" id="sw-seek-help">Drag the ruler or playhead to seek. Left and right move by beat; Shift moves by bar. Home and End move to score boundaries. Space plays or pauses.</span><p class="sw-selection" data-sw="selection">Select a scene node or note.</p></section>
     <section class="panel sw-scene-panel" data-sw="scene"></section><details class="sw-details"><summary>Source and audition limits</summary><div data-sw="limits"></div></details>`;
   const get = <T extends HTMLElement>(name: string) => container.querySelector<T>(`[data-sw="${name}"]`)!;
@@ -66,35 +68,37 @@ export function mountScoreWorkbench(container: HTMLElement): () => void {
     fit: () => { const selection = selectionRange(); if (selection) navigator.setViewport(selection); },
     audition: () => { void play(true); },
     transpose: async (scope, target, millicents) => {
-      if (!result) throw new Error('No executable scene is available.');
-      const scene = result.scene, version = ++loadVersion, previousTitle = title, reference = provenance;
-      stop(); const changed = await callCore('transposeScene', {scene, scope, target, millicents});
-      if (disposed || version !== loadVersion) return;
-      load(changed, `${previousTitle.replace(/ · edited$/, '')} · edited`, [], reference);
-      status(`Applied ${millicents / 100000} semitones to ${scope === 'material' ? 'every use of the material' : 'one occurrence'}. Encoding the changed score.`);
+      stop(); await controller.edit({op: 'transposeScene', input: {scope, target, millicents}});
     },
     changeHarmony: async (windowId, rootMillicents, coreIntervals) => {
-      if (!result) throw new Error('No executable scene is available.');
-      const scene = result.scene, version = ++loadVersion, previousTitle = title, reference = provenance;
-      stop(); const changed = await callCore('changeSceneHarmony', {scene, windowId, rootMillicents, ...(coreIntervals ? {coreIntervals} : {})});
-      if (disposed || version !== loadVersion) return;
-      load(changed, `${previousTitle.replace(/ · edited$/, '')} · edited`, [], reference);
-      status('Applied the harmonic palette change. Encoding the changed score.');
+      stop(); await controller.edit({op: 'changeSceneHarmony', input: {windowId, rootMillicents, ...(coreIntervals ? {coreIntervals} : {})}});
     },
   });
   const controller = createScoreCodecController({onSnapshot: snapshot => {
     if (disposed) return;
     const codec = get('codec'); codec.classList.toggle('sw-error', snapshot.status === 'error');
     if (snapshot.status === 'ready') {
-      result = snapshot.result; harmonyById = new Map(result.scene.harmony?.windows.map(window => [window.id, window]) ?? []); bandKey = ''; inspector.setScene(source, result.scene);
-      status('Scene ready. Select a region or note to inspect its structure.');
-      codec.textContent = `${result.comparison.equal ? 'Exact note reconstruction' : 'Reconstruction differs'} · ${result.comparison.missing.length} missing · ${result.comparison.extra.length} extra · context ${result.scene.verification.exactContext ? 'preserved' : 'differs'} · identities ${result.scene.verification.exactIdentities ? 'preserved' : 'differ'}`;
+      if (pendingProgramTitle !== undefined) { const name = pendingProgramTitle; pendingProgramTitle = undefined; load(snapshot.result.source, name, [], undefined, undefined, false); }
+      result = snapshot.result; codecFailure = false;
+      const edited = result.scene.programRevision > 0;
+      if (edited || result.scene.origin === 'authored') view = 'decoded';
+      harmonyById = new Map(result.scene.harmony?.windows.map(window => [window.id, window]) ?? []); bandKey = ''; inspector.setScene(source, result.scene, result.decoded);
+      status(edited ? 'Edited program ready. Playback and export follow the selected score view; Original source is unchanged.' : result.scene.origin === 'authored' ? 'Generated program ready. Play it, edit a palette or material, or export MIDI.' : 'Scene ready. Select a region or note to inspect its structure.');
+      codec.textContent = edited ? `Edited program · revision ${result.scene.programRevision} · ${result.comparison.equal ? 'notes match the original source' : `${result.comparison.missing.length} source notes changed or absent · ${result.comparison.extra.length} changed or additional decoded notes`}. Source analysis remains evidence.` : result.scene.origin === 'authored' ? 'Authored program · original realization preserved · bindings remain authoritative.' : `${result.comparison.equal ? 'Exact note reconstruction' : 'Reconstruction differs'} · ${result.comparison.missing.length} missing · ${result.comparison.extra.length} extra · context ${result.scene.verification.exactContext ? 'preserved' : 'differs'} · identities ${result.scene.verification.exactIdentities ? 'preserved' : 'differ'}`;
+      get('decoded-label').textContent = edited ? 'Edited program' : 'Decoded program';
       get<HTMLInputElement>('save-scene').disabled = false;
-      container.querySelector<HTMLInputElement>('input[value="decoded"]')!.disabled = false;
-      renderLimits(); requestDraw();
-    } else if (snapshot.status === 'error') { codecFailure = true; bandKey = ''; codec.textContent = `Scene unavailable: ${snapshot.error}. The source remains playable.`; requestDraw(); }
-    else codec.textContent = ({encoding: 'Encoding the complete score into a musical scene…', decoding: 'Decoding the scene through the composition compiler…', verifying: 'Comparing reconstructed note events with the source…'}[snapshot.status]);
+      container.querySelectorAll<HTMLInputElement>('.sw-views input').forEach(input => { input.disabled = false; input.checked = input.value === view; });
+      refreshView(); renderLimits();
+    } else if (snapshot.status === 'error') { codecFailure = !result; pendingProgramTitle = undefined; bandKey = ''; codec.textContent = `${result ? 'Change not applied; previous program retained' : 'Scene unavailable'}: ${snapshot.error}.`; requestDraw(); }
+    else codec.textContent = ({encoding: 'Encoding the complete score into a musical scene…', editing: 'Applying the change to the current program…', decoding: 'Decoding the scene through the composition compiler…', verifying: 'Comparing decoded note events with the immutable original source…'}[snapshot.status]);
   }});
+  function refreshView(): void {
+    const viewport = navigator.getViewport(), score = activeScore();
+    notesById = new Map(score.notes.map(note => [note.id, note]));
+    navigator.setScore(score); navigator.setViewport(viewport); navigator.setCursor(cursor);
+    get('play').title = get('export').title = `Uses ${view === 'source' ? 'original source' : 'current program'}`;
+    requestDraw();
+  }
   function renderTransport(): void {
     const {from, to} = navigator.getViewport(), head = get('playhead');
     head.hidden = cursor < from || cursor > to || to <= from;
@@ -127,10 +131,28 @@ export function mountScoreWorkbench(container: HTMLElement): () => void {
     catch (error) { if (!disposed && ticket === playbackVersion) { stop(); status(`Playback failed: ${message(error)}`, true); } }
   }
   function renderHarmonyBand(from: number, to: number): void {
-    const band = get('harmony-band'), key = `${from}:${to}`;
+    const band = get('harmony-band'), key = `${view}:${from}:${to}`;
     if (bandKey !== key) {
       bandKey = key;
       const fragment = document.createDocumentFragment(), windows = [...harmonyById.values()].filter(window => window.startTick < to && window.endTick > from);
+      const authored = result?.scene.origin === 'authored';
+      const palettes = authored ? result?.scene.nodes.filter(node => node.kind === 'harmony') ?? [] : [];
+      let visiblePalettes = 0;
+      for (const node of palettes) {
+        let start = Infinity, end = -Infinity;
+        for (const id of node.noteIds) {
+          const note = notesById.get(id); if (!note) continue;
+          start = Math.min(start, note.onset); end = Math.max(end, note.onset + note.duration);
+        }
+        if (start >= to || end <= from) continue;
+        visiblePalettes++;
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'sw-harmony-window'; button.dataset.window = node.id;
+        button.style.left = `${(Math.max(from, start) - from) / Math.max(1, to - from) * 100}%`;
+        button.style.width = `${(Math.min(to, end) - Math.max(from, start)) / Math.max(1, to - from) * 100}%`;
+        const text = `${node.label} · authored palette members · ${positionLabel(start)}–${positionLabel(end)}`;
+        button.textContent = node.label; button.title = text; button.setAttribute('aria-label', text);
+        button.onclick = () => inspector.selectNode(node.id); fragment.append(button);
+      }
       for (const window of windows) {
         const button = document.createElement('button'); button.type = 'button'; button.className = 'sw-harmony-window'; button.dataset.window = window.id;
         button.classList.toggle('sw-harmony-rest', window.rest); button.classList.toggle('sw-harmony-ambiguous', !window.rest && window.selected === null);
@@ -139,9 +161,10 @@ export function mountScoreWorkbench(container: HTMLElement): () => void {
         const text = `${window.label} · ${positionLabel(window.startTick)}–${positionLabel(window.endTick)}`;
         button.textContent = window.label; button.title = text; button.setAttribute('aria-label', text); button.onclick = () => inspector.selectNode(window.id); fragment.append(button);
       }
-      if (!windows.length) { const empty = document.createElement('span'); empty.className = 'sw-harmony-empty'; empty.textContent = codecFailure ? 'Scene encoding failed; see codec status.' : result ? 'No harmonic windows available here.' : 'The whole score is being encoded…'; fragment.append(empty); }
+      if (!windows.length && !visiblePalettes) { const empty = document.createElement('span'); empty.className = 'sw-harmony-empty'; empty.textContent = codecFailure ? 'Scene encoding failed; see codec status.' : authored ? 'No authored palette members in this view.' : result ? 'No source harmonic windows available here.' : 'Building the musical scene…'; fragment.append(empty); }
       band.replaceChildren(fragment);
-      get('harmony-label').textContent = codecFailure ? 'Global harmony · unavailable' : result ? `Global harmony · ${windows.length} of ${harmonyById.size} windows visible` : 'Global harmony · waiting for the scene';
+      get('harmony-label').textContent = codecFailure ? 'Source harmony · unavailable' : authored ? `Authored palettes · ${visiblePalettes} of ${palettes.length} visible` : result ? `Source harmony evidence · ${windows.length} of ${harmonyById.size} windows visible` : 'Global harmony · waiting for the scene';
+      band.previousElementSibling!.lastElementChild!.textContent = authored ? 'Select a palette to edit' : 'Chord / color hypotheses';
     }
     band.querySelectorAll<HTMLButtonElement>('button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.window === selectedNode?.id)));
   }
@@ -275,7 +298,7 @@ export function mountScoreWorkbench(container: HTMLElement): () => void {
     for (const text of [...issues.map(issue => issue.message), ...warnings, ...meter?.diagnostics ?? [], ...(meterError ? [meterError] : [])]) add(text);
     if (provenance) { add(`${provenance.artist} · ${provenance.work}. ${provenance.edition}`); for (const value of provenance.sourceUrls) { try { const url = new URL(value); if (!['http:', 'https:'].includes(url.protocol)) continue; const link = document.createElement('a'); link.href = url.href; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.textContent = `Source: ${url.hostname}${url.pathname}`; host.append(link); } catch { /* Invalid provenance URL is not linked. */ } } }
   }
-  function load(score: Score, name: string, importIssues: ScoreIssue[], reference?: LocalReference, hash?: string): void {
+  function load(score: Score, name: string, importIssues: ScoreIssue[], reference?: LocalReference, hash?: string, analyze = true): void {
     stop(); cancelScrub(); const pointer = drag?.id; drag = undefined; suppressClick = pointer !== undefined;
     if (pointer !== undefined && timeline.hasPointerCapture(pointer)) timeline.releasePointerCapture(pointer);
     source = score; title = name; issues = importIssues; provenance = reference; sourceSha256 = hash; result = undefined; view = 'source'; cursor = 0; warnings = []; meter = undefined; meterError = ''; barMarkers = [];
@@ -285,7 +308,8 @@ export function mountScoreWorkbench(container: HTMLElement): () => void {
     container.querySelectorAll<HTMLInputElement>('.sw-views input').forEach(input => { input.checked = input.value === 'source'; input.disabled = input.value === 'decoded'; });
     get<HTMLButtonElement>('export').disabled = score.trackEnds.length === 0; get<HTMLButtonElement>('save-scene').disabled = true;
     if (downloadUrl) URL.revokeObjectURL(downloadUrl); downloadUrl = undefined; get('download-ready').hidden = true;
-    navigator.setScore(score); inspector.setScene(score); renderLimits(); controller.setSource(score); requestDraw();
+    get('decoded-label').textContent = 'Decoded program';
+    navigator.setScore(score); inspector.setScene(score); renderLimits(); if (analyze) { pendingProgramTitle = undefined; controller.setSource(score); } requestDraw();
     const version = loadVersion;
     void callCore('scoreMeter', {score}).then(map => { if (!disposed && version === loadVersion) { meter = map; barMarkers = map.markers.filter(marker => marker.kind === 'bar'); bandKey = ''; navigator.refresh(); renderLimits(); requestDraw(); } }).catch(error => { if (!disposed && version === loadVersion) { meterError = `Score meter unavailable: ${message(error)}`; renderLimits(); requestDraw(); } });
     void callCore('compilePerformance', {score}).then(performance => { if (!disposed && version === loadVersion) { warnings = performance.warnings; renderLimits(); } }).catch(error => { if (!disposed && version === loadVersion) { warnings = [`Audition unavailable: ${message(error)}`]; renderLimits(); } });
@@ -302,12 +326,17 @@ export function mountScoreWorkbench(container: HTMLElement): () => void {
     try { if (file.size > 10 * 1024 * 1024) throw new Error('Choose a MIDI file smaller than 10 MB.'); await openBytes(new Uint8Array(await file.arrayBuffer()), file.name.replace(/\.midi?$/i, ''), version); }
     catch (error) { if (!disposed && version === loadVersion) status(`Could not open the file: ${message(error)}`, true); } finally { input.value = ''; }
   });
-  async function demo(): Promise<void> {
-    const version = ++loadVersion; stop(); status('Creating the original example…');
-    try { const plan = await callCore('demonstrationPlan', {}), score = await callCore('compileComposition', {plan}); if (!disposed && version === loadVersion) { load(score, 'A returning line', []); status('Original example loaded. Encoding its complete score.'); } }
-    catch (error) { if (!disposed && version === loadVersion) status(`Could not load the example: ${message(error)}`, true); }
+  async function generate(): Promise<void> {
+    if (!get<HTMLFormElement>('generator').reportValidity()) return;
+    const number = (name: string) => Number(get<HTMLInputElement>(name).value);
+    const options = {seed: number('seed'), tempo: number('tempo'), phrases: number('phrases'), barsPerPhrase: number('bars'), beatsPerBar: number('beats'), density: number('density'), variation: number('variation'), color: number('color'), tonic: number('tonic'), mode: get<HTMLSelectElement>('mode').value as 'major' | 'minor' | 'dorian' | 'lydian'};
+    const version = ++loadVersion; stop(); status('Generating an executable composition…'); get<HTMLButtonElement>('generate').disabled = true;
+    try { const scene = await callCore('generateComposition', {options}); if (!disposed && version === loadVersion) { pendingProgramTitle = `Composition · seed ${options.seed}`; controller.setProgram(scene); } }
+    catch (error) { if (!disposed && version === loadVersion) status(`Could not generate: ${message(error)}`, true); }
+    finally { if (!disposed) get<HTMLButtonElement>('generate').disabled = false; }
   }
-  on(get('demo'), 'click', () => { void demo(); });
+  on(get('generator'), 'submit', event => { event.preventDefault(); void generate(); });
+  on(get('new-seed'), 'click', () => { get<HTMLInputElement>('seed').value = String(crypto.getRandomValues(new Uint32Array(1))[0]); void generate(); });
   on(get('play'), 'click', () => { void play(); });
   on(get('stop'), 'click', stop); on(container, 'score-workbench-stop', stop); on(get('rewind'), 'click', () => seek(0));
   on(get('regions'), 'change', requestDraw);
@@ -335,7 +364,7 @@ export function mountScoreWorkbench(container: HTMLElement): () => void {
     if (!markers.length) return;
     seek(adjacentMarkerTick(markers, cursor, key.key === 'ArrowLeft' || key.key === 'ArrowDown' ? -1 : 1, source.duration));
   });
-  container.querySelectorAll<HTMLInputElement>('.sw-views input').forEach(input => on(input, 'change', () => { stop(); view = input.value as typeof view; requestDraw(); }));
+  container.querySelectorAll<HTMLInputElement>('.sw-views input').forEach(input => on(input, 'change', () => { stop(); view = input.value as typeof view; refreshView(); }));
   on(timeline, 'pointerdown', event => { const pointer = event as PointerEvent; if (pointer.button !== 0) return; drag = {id: pointer.pointerId, x: pointer.clientX, view: navigator.getViewport()}; suppressClick = false; timeline.setPointerCapture(pointer.pointerId); });
   on(timeline, 'pointermove', event => { const pointer = event as PointerEvent; if (!drag || pointer.pointerId !== drag.id) return; const dx = pointer.clientX - drag.x; if (Math.abs(dx) < 3 && !suppressClick) return; suppressClick = true; const delta = -dx / Math.max(1, timeline.clientWidth - 53) * (drag.view.to - drag.view.from); navigator.setViewport({from: drag.view.from + delta, to: drag.view.to + delta}); });
   for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) on(timeline, event, () => { drag = undefined; });
@@ -346,7 +375,7 @@ export function mountScoreWorkbench(container: HTMLElement): () => void {
   function download(blob: Blob, suffix: string): void { if (downloadUrl) URL.revokeObjectURL(downloadUrl); downloadUrl = URL.createObjectURL(blob); const link = get<HTMLAnchorElement>('download-ready'); link.href = downloadUrl; link.download = `${title.replace(/[^a-z0-9_-]/gi, '-').slice(0, 80) || 'score'}-${suffix}`; link.textContent = `Save ${link.download}`; link.hidden = false; link.click(); }
   on(get('export'), 'click', async () => { const version = loadVersion, current = activeScore(), label = view; try { const bytes = await callCore('exportScoreMidi', {score: current}); if (!disposed && version === loadVersion) download(new Blob([Uint8Array.from(bytes).buffer], {type: 'audio/midi'}), `${label}.mid`); } catch (error) { if (!disposed && version === loadVersion) status(`MIDI export unavailable: ${message(error)}`, true); } });
   on(get('save-scene'), 'click', () => { if (!result) return; download(new Blob([JSON.stringify({scene: result.scene, provenance: provenance ?? null, sourceSha256: sourceSha256 ?? null, comparison: result.comparison}, null, 2) + '\n'], {type: 'application/json'}), 'scene.json'); status('Scene ready to save. Its executable materials contain retained source music.'); });
-  const resize = new ResizeObserver(requestDraw); resize.observe(timeline); navigator.setScore(source); void demo();
+  const resize = new ResizeObserver(requestDraw); resize.observe(timeline); navigator.setScore(source); void generate();
   if ((import.meta as ImportMeta & {env: {DEV: boolean}}).env.DEV) void fetch('./__references', {signal: abort.signal}).then(async response => {
     if (!response.ok) return; const data: unknown = await response.json(); if (!Array.isArray(data) || disposed) return;
     const references = data.filter((item): item is LocalReference => item && ['id', 'artist', 'work', 'edition'].every(key => typeof item[key] === 'string') && Array.isArray(item.sourceUrls) && item.sourceUrls.every((value: unknown) => typeof value === 'string'));
