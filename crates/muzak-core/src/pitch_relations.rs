@@ -99,6 +99,8 @@ pub struct PitchRelationCandidate {
     pub witness_note_ids: Vec<String>,
     pub exact_match: bool,
     pub unique_successors: bool,
+    /// Expanded evidence retains an alternative, never an automatic rewrite.
+    pub proposal_only: bool,
 }
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -235,6 +237,124 @@ fn nearest(slot: &mut Option<Nearest>, distance: u128, class: usize) {
         _ => (),
     }
 }
+fn connected_notes(a: &crate::model::ScoreNote, b: &crate::model::ScoreNote, max_gap: u64) -> bool {
+    a.onset < b.onset
+        && a.onset + a.duration <= b.onset
+        && b.onset - (a.onset + a.duration) <= max_gap
+}
+
+/// One reciprocal-nearest calculation for either temporal adjacency relation.
+/// Unsupported observations compete at their attack pitch but cannot be links.
+/// A pair shared by both geometries is one edge, with conservative tie evidence.
+struct GeometricLinks<'a> {
+    notes: &'a [crate::model::ScoreNote],
+    pitches: &'a [i64],
+    classes: &'a [usize],
+    eligible: &'a [bool],
+    options: &'a PitchRelationOptions,
+    work: &'a mut PitchRelationWork,
+    links: BTreeMap<(usize, usize), (PitchRelationLink, bool)>,
+    ambiguous: HashSet<usize>,
+}
+impl GeometricLinks<'_> {
+    fn connected(&self, from: usize, to: usize) -> bool {
+        connected_notes(
+            &self.notes[from],
+            &self.notes[to],
+            self.options.max_gap_ticks,
+        )
+    }
+    fn group(&mut self, left: &[usize], right: &[usize], conservative: bool) -> CoreResult<()> {
+        let mut successors = vec![None; left.len()];
+        let mut predecessors = vec![None; right.len()];
+        for (a, &i) in left.iter().enumerate() {
+            for (b, &j) in right.iter().enumerate() {
+                charge(
+                    &mut self.work.link_comparisons,
+                    self.options.max_link_comparisons,
+                    "Pitch-relation link budget exceeded.",
+                )?;
+                if !self.connected(i, j) {
+                    continue;
+                }
+                let distance =
+                    (i128::from(self.pitches[i]) - i128::from(self.pitches[j])).unsigned_abs();
+                nearest(&mut successors[a], distance, self.classes[j]);
+                nearest(&mut predecessors[b], distance, self.classes[i]);
+            }
+        }
+        for (a, &i) in left.iter().enumerate() {
+            if successors[a].is_some_and(|v| v.tied) {
+                self.ambiguous.insert(i);
+            }
+            for (b, &j) in right.iter().enumerate() {
+                charge(
+                    &mut self.work.link_comparisons,
+                    self.options.max_link_comparisons,
+                    "Pitch-relation link budget exceeded.",
+                )?;
+                if predecessors[b].is_some_and(|v| v.tied) {
+                    self.ambiguous.insert(j);
+                }
+                let (Some(next), Some(previous)) = (successors[a], predecessors[b]) else {
+                    continue;
+                };
+                if !self.connected(i, j) {
+                    continue;
+                }
+                let distance =
+                    (i128::from(self.pitches[i]) - i128::from(self.pitches[j])).unsigned_abs();
+                if !self.eligible[i]
+                    || !self.eligible[j]
+                    || distance != next.distance
+                    || distance != previous.distance
+                {
+                    // Absence of reciprocal support is also evidence. A link
+                    // admitted by the other geometry remains an alternative,
+                    // but a closer unsupported co-release must block selection.
+                    if let Some((edge, _)) = self.links.get_mut(&(i, j)) {
+                        edge.unique = false;
+                        edge.unique_value = false;
+                    }
+                    continue;
+                }
+                let unique = !next.tied && !previous.tied;
+                let unique_value = !next.value_tied && !previous.value_tied;
+                if let Some((edge, old_conservative)) = self.links.get_mut(&(i, j)) {
+                    edge.unique &= unique;
+                    edge.unique_value &= unique_value;
+                    *old_conservative |= conservative;
+                    if conservative {
+                        edge.evidence = "geometric-reciprocal-nearest".into();
+                    }
+                } else {
+                    if self.links.len() >= self.options.max_links {
+                        return Err(budget("Pitch-relation link storage budget exceeded."));
+                    }
+                    self.links.insert(
+                        (i, j),
+                        (
+                            PitchRelationLink {
+                                from: i,
+                                to: j,
+                                evidence: if conservative {
+                                    "geometric-reciprocal-nearest"
+                                } else {
+                                    "release-attack-reciprocal-nearest"
+                                }
+                                .into(),
+                                unique,
+                                unique_value,
+                            },
+                            conservative,
+                        ),
+                    );
+                }
+            }
+        }
+        Ok(())
+    }
+}
 
 /// All admitted candidates are retained before conservative selection. Multiple
 /// domain hypotheses remain alternatives; a complete result is never truncated.
@@ -363,16 +483,18 @@ pub fn infer_pitch_relations(
         })
         .collect();
     let connected = |a: usize, b: usize| {
-        let (a, b) = (&material.notes[a], &material.notes[b]);
-        a.onset < b.onset
-            && a.onset + a.duration <= b.onset
-            && b.onset - (a.onset + a.duration) <= options.max_gap_ticks
+        connected_notes(
+            &material.notes[a],
+            &material.notes[b],
+            options.max_gap_ticks,
+        )
     };
     let mut work = PitchRelationWork {
         unsupported_notes: eligible.iter().filter(|&&v| !v).count(),
         ..Default::default()
     };
     let mut links = vec![];
+    let mut conservative_links = HashSet::new();
     let mut ambiguous = HashSet::new();
     if let Some(edges) = &options.successors {
         if edges.len() > options.max_link_comparisons {
@@ -405,75 +527,53 @@ pub fn infer_pitch_relations(
                     unique: true,
                     unique_value: true,
                 });
+                conservative_links.insert((edge.from, edge.to));
             }
         }
     } else {
         let mut groups: BTreeMap<u64, Vec<usize>> = BTreeMap::new();
+        let mut releases: BTreeMap<u64, Vec<usize>> = BTreeMap::new();
         for (i, note) in material.notes.iter().enumerate() {
             // Unsupported observations remain onset barriers and attack-pitch
             // competitors. Only an explicit scope exclusion removes evidence.
             if !excluded.contains(&i) {
                 groups.entry(note.onset).or_default().push(i);
+                releases
+                    .entry(note.onset + note.duration)
+                    .or_default()
+                    .push(i);
             }
         }
-        let groups: Vec<_> = groups.into_values().collect();
-        for pair in groups.windows(2) {
-            let (left, right) = (&pair[0], &pair[1]);
-            let mut successors = vec![None; left.len()];
-            let mut predecessors = vec![None; right.len()];
-            for (a, &i) in left.iter().enumerate() {
-                for (b, &j) in right.iter().enumerate() {
-                    charge(
-                        &mut work.link_comparisons,
-                        options.max_link_comparisons,
-                        "Pitch-relation link budget exceeded.",
-                    )?;
-                    if !connected(i, j) {
-                        continue;
-                    }
-                    let distance = (i128::from(pitches[i]) - i128::from(pitches[j])).unsigned_abs();
-                    nearest(&mut successors[a], distance, classes[j]);
-                    nearest(&mut predecessors[b], distance, classes[i]);
+        let mut geometry = GeometricLinks {
+            notes: &material.notes,
+            pitches: &pitches,
+            classes: &classes,
+            eligible: &eligible,
+            options,
+            work: &mut work,
+            links: BTreeMap::new(),
+            ambiguous: HashSet::new(),
+        };
+        let mut previous: Option<&Vec<usize>> = None;
+        for (tick, right) in &groups {
+            if let Some(left) = previous {
+                geometry.group(left, right, true)?;
+            }
+            // A held predecessor may end here despite an intervening attack
+            // in another voice. This expands proposals, not rewrite evidence.
+            if let Some(left) = releases.get(tick) {
+                if previous != Some(left) {
+                    geometry.group(left, right, false)?;
                 }
             }
-            for (a, &i) in left.iter().enumerate() {
-                if successors[a].is_some_and(|v| v.tied) {
-                    ambiguous.insert(i);
-                }
-                for (b, &j) in right.iter().enumerate() {
-                    charge(
-                        &mut work.link_comparisons,
-                        options.max_link_comparisons,
-                        "Pitch-relation link budget exceeded.",
-                    )?;
-                    if predecessors[b].is_some_and(|v| v.tied) {
-                        ambiguous.insert(j);
-                    }
-                    let (Some(next), Some(previous)) = (successors[a], predecessors[b]) else {
-                        continue;
-                    };
-                    if !connected(i, j) {
-                        continue;
-                    }
-                    let distance = (i128::from(pitches[i]) - i128::from(pitches[j])).unsigned_abs();
-                    if eligible[i]
-                        && eligible[j]
-                        && distance == next.distance
-                        && distance == previous.distance
-                    {
-                        if links.len() >= options.max_links {
-                            return Err(budget("Pitch-relation link storage budget exceeded."));
-                        }
-                        links.push(PitchRelationLink {
-                            from: i,
-                            to: j,
-                            evidence: "geometric-reciprocal-nearest".into(),
-                            unique: !next.tied && !previous.tied,
-                            unique_value: !next.value_tied && !previous.value_tied,
-                        });
-                    }
-                }
+            previous = Some(right);
+        }
+        ambiguous = geometry.ambiguous;
+        for (pair, (edge, conservative)) in geometry.links {
+            if conservative {
+                conservative_links.insert(pair);
             }
+            links.push(edge);
         }
     }
     links.sort_by_key(|e| (e.from, e.to));
@@ -511,8 +611,7 @@ pub fn infer_pitch_relations(
     work.ambiguous_link_notes = ambiguous.len();
     let mut candidates = vec![];
     for middle in 0..n {
-        if anchors.contains(&middle) || matches!(bindings[middle], PitchBinding::LatticePath { .. })
-        {
+        if matches!(bindings[middle], PitchBinding::LatticePath { .. }) {
             continue;
         }
         let mut left_classes: BTreeMap<usize, Vec<usize>> = BTreeMap::new();
@@ -551,14 +650,17 @@ pub fn infer_pitch_relations(
                     });
                     let unique = indices.len() == group.len()
                         && group.iter().all(|&i| links[i].unique_value);
-                    (indices, anchor, unique)
+                    let conservative = group
+                        .iter()
+                        .all(|&i| conservative_links.contains(&(links[i].from, links[i].to)));
+                    (indices, anchor, unique, conservative)
                 })
                 .collect::<Vec<_>>()
         };
         let left_groups = prepare(&left_classes, true);
         let right_groups = prepare(&right_classes, false);
-        for (from_indices, from_anchor, left_unique) in &left_groups {
-            for (to_indices, to_anchor, right_unique) in &right_groups {
+        for (from_indices, from_anchor, left_unique, left_conservative) in &left_groups {
+            for (to_indices, to_anchor, right_unique, right_conservative) in &right_groups {
                 charge(
                     &mut work.triple_checks,
                     options.max_triple_checks,
@@ -680,6 +782,9 @@ pub fn infer_pitch_relations(
                             .collect(),
                         exact_match: true,
                         unique_successors,
+                        proposal_only: anchors.contains(&middle)
+                            || !left_conservative
+                            || !right_conservative,
                     });
                 }
             }
@@ -694,7 +799,7 @@ pub fn infer_pitch_relations(
         }
         for indices in by_note.values().filter(|v| v.len() == 1) {
             let i = indices[0];
-            if candidates[i].unique_successors {
+            if candidates[i].unique_successors && !candidates[i].proposal_only {
                 rewritten[candidates[i].note_index] = candidates[i].binding.clone();
                 selected.push(i);
             }
@@ -729,9 +834,9 @@ pub fn infer_pitch_relations(
     };
     Ok(PitchRelationAnalysis {parameters:options.clone(),domains:domains.to_vec(),links,candidates,selected_candidate_indices:selected,bindings:rewritten,work,costs,
         limitations:vec![
-            "Geometric reciprocal-nearest successors use consecutive observed onset groups within the explicit exclusion scope and declared gap/step bounds; they are not true voice identification. Unsupported observations remain onset barriers and attack-pitch competitors. Unequal direct-binding or trajectory alternatives remain unresolved; routing does not select a voice.".into(),
+            "Consecutive observed onset groups provide conservative reciprocal-nearest successors within the explicit scope and gap/step bounds. Exact release-to-attack adjacency adds proposals across intervening onsets, not automatic rewrite evidence. Unsupported observations remain attack-pitch competitors in both geometries. Unequal direct-binding or trajectory alternatives remain unresolved; routing does not select a voice.".into(),
             "Exact timing, relative native curves and direct pitch-binding expressions define value equivalence, not voice ownership. Duplicate harmonic endpoint classes use shared harmonic value anchors; every endpoint witness and dependent event is retained. Equal current pitches from different palette IDs are not equivalent. Dynamics/routing remain per event.".into(),
-            "Only flat-pitch, positive-duration triples with two admitted direct harmonic anchors are admitted. Their palette IDs may differ; each endpoint retains its independent binding, without establishing harmonic function. Middles cannot be anchors: selected rewrites never form relation chains. No domain or multiple domain hypotheses means no automatic rewrite.".into(),
+            "Only flat-pitch, positive-duration triples with two admitted direct harmonic anchors are admitted. Their palette IDs may differ; each endpoint retains its independent binding, without establishing harmonic function. A chord-core middle or a path requiring release-only adjacency is retained as proposal-only alongside its original binding. These alternatives cannot auto-rewrite; selected rewrites never form relation chains. No domain or multiple domain hypotheses means no automatic rewrite.".into(),
             "Observed vocabulary includes only observed attack residues; it is not inferred key, spelling, or a complete scale. New anchors outside the domain must fail explicitly.".into(),
             "Selection prefers a unique exact zero-residual relation, not byte compression. Original and rewritten binding/shared-lattice array bytes include every required lattice, even preexisting paths; unused domains are excluded. Complete program, source identity and residual costs remain the caller's responsibility.".into(),
         ]})
@@ -881,6 +986,254 @@ mod tests {
                 ..
             }
         ));
+    }
+    fn core_neighbor_fixture() -> (
+        ScoreMaterial,
+        Vec<PitchBinding>,
+        Vec<CompositionHarmony>,
+        Vec<PitchRelationDomain>,
+    ) {
+        let (mut m, mut b, mut h, mut d) = fixture();
+        h[0].intervals.extend([900_000, 1_000_000]);
+        d[0].lattice.intervals[6] = 1_000_000;
+        for (i, tone) in [3, 4, 3].into_iter().enumerate() {
+            b[i] = PitchBinding::Harmony {
+                harmony: "h".into(),
+                tone,
+                octave: 5,
+                residual_millicents: 0,
+            };
+        }
+        for (i, (onset, duration, pitch)) in [
+            (0, 6, 4_800_000),
+            (0, 6, 5_200_000),
+            (0, 6, 5_500_000),
+            (1, 1, 8_100_000),
+            (5, 1, 4_500_000),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let mut extra = m.notes[0].clone();
+            extra.id = format!("extra{i}");
+            extra.part = format!("route{i}");
+            extra.onset = onset;
+            extra.duration = duration;
+            m.notes.push(extra);
+            b.push(PitchBinding::Literal { millicents: pitch });
+        }
+        // An unrelated expressive attack at tick 1 remains an observed
+        // competitor but cannot erase the held A ending at tick 2.
+        m.notes[6].pitch_envelope = Some(vec![
+            PitchEnvelopePoint {
+                tick: 0,
+                pitch: Pitch { millicents: 0 },
+            },
+            PitchEnvelopePoint {
+                tick: 1,
+                pitch: Pitch { millicents: 3125 },
+            },
+        ]);
+        (m, b, h, d)
+    }
+    #[test]
+    fn core_neighbor_with_unrelated_attack_is_exact_alternative_not_rewrite() {
+        let (m, b, h, d) = core_neighbor_fixture();
+        let before = serde_json::to_string(&(&m, &b, &h, &d)).unwrap();
+        let result =
+            infer_pitch_relations(&m, &b, &h, &d, &[0, 1, 2], &Default::default()).unwrap();
+        assert_eq!(result.candidates.len(), 1);
+        let candidate = &result.candidates[0];
+        assert_eq!(candidate.note_index, 1);
+        assert_eq!(candidate.kind, PitchRelationKind::UpperNeighbor);
+        assert!(candidate.exact_match && candidate.unique_successors && candidate.proposal_only);
+        assert!(result.selected_candidate_indices.is_empty());
+        assert_eq!(result.bindings, b);
+        assert!(result.links.iter().any(|e| e.from == 0
+            && e.to == 1
+            && e.evidence == "release-attack-reciprocal-nearest"));
+        let mut competing = b.clone();
+        competing[1] = candidate.binding.clone();
+        let render = |bindings: &[PitchBinding]| {
+            resolve_material_pitches(&m.notes, bindings, &h, &[d[0].lattice.clone()]).unwrap()
+        };
+        assert_eq!(render(&competing), render(&b));
+        // Independent endpoint edits distinguish the retained explanations.
+        for i in [0, 2] {
+            competing[i] = PitchBinding::Harmony {
+                harmony: "h".into(),
+                tone: 2,
+                octave: 5,
+                residual_millicents: 0,
+            };
+        }
+        assert_eq!(render(&competing)[1], 6_900_000);
+        assert_eq!(render(&b)[1], 7_000_000);
+        assert_eq!(serde_json::to_string(&(&m, &b, &h, &d)).unwrap(), before);
+
+        // Repeated structural sevenths do not acquire a neighbor rewrite just
+        // because there is one exact geometric predecessor/successor pair.
+        let mut repeated = b.clone();
+        repeated[0] = b[1].clone();
+        repeated[2] = b[1].clone();
+        let held =
+            infer_pitch_relations(&m, &repeated, &h, &d, &[0, 1, 2], &Default::default()).unwrap();
+        assert!(held.candidates.is_empty());
+        assert_eq!(held.bindings, repeated);
+    }
+    #[test]
+    fn core_membership_and_release_only_evidence_independently_prevent_selection() {
+        let (m, b, h, d) = core_neighbor_fixture();
+        let scoped = PitchRelationOptions {
+            excluded_note_indices: vec![6, 7],
+            ..Default::default()
+        };
+        let core = infer_pitch_relations(&m, &b, &h, &d, &[0, 1, 2], &scoped).unwrap();
+        assert_eq!(core.candidates.len(), 1);
+        assert!(core.candidates[0].proposal_only);
+        assert!(core.selected_candidate_indices.is_empty());
+        let expanded = infer(&m, &b, &h, &d);
+        assert_eq!(expanded.candidates.len(), 1);
+        assert!(expanded.candidates[0].proposal_only);
+        assert!(expanded.selected_candidate_indices.is_empty());
+        let conservative = infer_pitch_relations(&m, &b, &h, &d, &[0, 2], &scoped).unwrap();
+        assert_eq!(conservative.selected_candidate_indices, vec![0]);
+        assert!(!conservative.candidates[0].proposal_only);
+    }
+    #[test]
+    fn release_proposals_preserve_routing_permutation_and_unsupported_competition() {
+        let (mut m, mut b, h, d) = core_neighbor_fixture();
+        let found = infer_pitch_relations(&m, &b, &h, &d, &[0, 1, 2], &Default::default()).unwrap();
+        m.notes.reverse();
+        b.reverse();
+        for (i, note) in m.notes.iter_mut().enumerate() {
+            note.part = format!("new-route-{i}");
+        }
+        let permuted =
+            infer_pitch_relations(&m, &b, &h, &d, &[7, 6, 5], &Default::default()).unwrap();
+        assert_eq!(permuted.candidates.len(), 1);
+        assert_eq!(
+            permuted.candidates[0].witness_note_ids,
+            found.candidates[0].witness_note_ids
+        );
+        assert!(permuted.candidates[0].proposal_only);
+        assert_eq!(permuted.bindings, b);
+
+        // A closer unsupported note at that same release remains evidence;
+        // it cannot be filtered away to manufacture reciprocal nearest motion.
+        b[1] = PitchBinding::Literal {
+            millicents: 7_000_000,
+        };
+        let blocked =
+            infer_pitch_relations(&m, &b, &h, &d, &[7, 6, 5], &Default::default()).unwrap();
+        assert!(blocked.candidates.is_empty());
+        assert!(!blocked.links.iter().any(|e| e.from == 7 && e.to == 6));
+    }
+    #[test]
+    fn common_edges_are_deduplicated_and_expanded_work_is_bounded() {
+        let (m, b, h, d) = fixture();
+        let simple = infer(&m, &b, &h, &d);
+        assert_eq!(simple.links.len(), 2);
+        assert_eq!(simple.work.link_comparisons, 4);
+        let (m, b, h, d) = core_neighbor_fixture();
+        let result = infer(&m, &b, &h, &d);
+        assert_eq!(
+            result.links.len(),
+            result
+                .links
+                .iter()
+                .map(|e| (e.from, e.to))
+                .collect::<HashSet<_>>()
+                .len()
+        );
+        let exact = PitchRelationOptions {
+            max_link_comparisons: result.work.link_comparisons,
+            max_links: result.links.len(),
+            ..Default::default()
+        };
+        assert!(infer_pitch_relations(&m, &b, &h, &d, &[0, 2], &exact).is_ok());
+        for limited in [
+            PitchRelationOptions {
+                max_link_comparisons: exact.max_link_comparisons - 1,
+                ..exact.clone()
+            },
+            PitchRelationOptions {
+                max_links: exact.max_links - 1,
+                ..exact.clone()
+            },
+        ] {
+            assert_eq!(
+                infer_pitch_relations(&m, &b, &h, &d, &[0, 2], &limited)
+                    .unwrap_err()
+                    .code,
+                "budget-exceeded"
+            );
+        }
+    }
+    #[test]
+    fn closer_unsupported_corelease_downgrades_an_existing_onset_link() {
+        let (mut m, mut b, h, d) = fixture();
+        for (i, note) in m.notes.iter_mut().enumerate() {
+            note.onset = i as u64 + 1;
+            note.duration = 1;
+        }
+        b[0] = PitchBinding::Harmony {
+            harmony: "h".into(),
+            tone: 0,
+            octave: 5,
+            residual_millicents: 0,
+        };
+        b[1] = PitchBinding::Literal {
+            millicents: 6_200_000,
+        };
+        b[2] = PitchBinding::Harmony {
+            harmony: "h".into(),
+            tone: 1,
+            octave: 5,
+            residual_millicents: 0,
+        };
+        let mut competitor = m.notes[0].clone();
+        competitor.id = "earlier-expressive".into();
+        competitor.onset = 0;
+        competitor.duration = 2;
+        competitor.pitch_envelope = Some(vec![
+            PitchEnvelopePoint {
+                tick: 0,
+                pitch: Pitch { millicents: 0 },
+            },
+            PitchEnvelopePoint {
+                tick: 1,
+                pitch: Pitch { millicents: 1 },
+            },
+        ]);
+        m.notes.push(competitor);
+        b.push(PitchBinding::Literal {
+            millicents: 6_100_000,
+        });
+        let found = infer(&m, &b, &h, &d);
+        assert_eq!(found.candidates.len(), 1);
+        assert!(!found.candidates[0].unique_successors);
+        assert!(found.selected_candidate_indices.is_empty());
+        assert_eq!(found.bindings, b);
+        let edge = found
+            .links
+            .iter()
+            .find(|e| e.from == 0 && e.to == 1)
+            .unwrap();
+        assert!(!edge.unique && !edge.unique_value);
+        let scoped = infer_pitch_relations(
+            &m,
+            &b,
+            &h,
+            &d,
+            &[0, 2],
+            &PitchRelationOptions {
+                excluded_note_indices: vec![3],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(scoped.selected_candidate_indices, vec![0]);
     }
     #[test]
     fn competing_domains_and_unknown_domain_keep_original_binding() {

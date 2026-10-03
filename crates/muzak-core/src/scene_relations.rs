@@ -197,6 +197,9 @@ pub fn infer_scene_relations(
             if accepted { "Unique admitted relation selected for executable editing, not for smaller serialized size." }
                 else { "Alternative retained without replacing the current pitch binding." }.into(),
         ];
+        if candidate.proposal_only {
+            evidence.push("Competing exact pitch dependency retained without rewriting: the middle may already be chord-core, or its temporal link is supported only by release-to-attack adjacency. Melodic dependence does not negate chord membership.".into());
+        }
         if candidate.from_indices.len() > 1 || candidate.to_indices.len() > 1 {
             evidence.push("Coincident anchor witnesses share the same executable harmonic value. All note events remain independent emissions; this equivalence does not identify a voice.".into());
         }
