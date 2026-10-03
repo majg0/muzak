@@ -1,4 +1,4 @@
-import { callCore } from '../core/client';
+import { callCore, type CoreCall } from '../core/client';
 import { compilePerformance, secondsToTick, tickToSeconds, type AutomationPoint, type CompiledPerformance, type PerformanceOptions, type PerformedNote } from './performance';
 import type { Score } from './score';
 
@@ -38,11 +38,13 @@ export class ScorePlayer {
   private noise?: AudioBuffer;
   warnings: string[] = [];
 
+  constructor(private readonly call: CoreCall = callCore) {}
+
   async play(score: Score, options: ScorePlaybackOptions = {}): Promise<void> {
     this.stop();
     const generation = this.generation;
     const { onPosition: _onPosition, onEnd: _onEnd, ...performanceOptions } = options;
-    const performance = await callCore('compilePerformance', { score, options: performanceOptions });
+    const performance = await this.call('compilePerformance', { score, options: performanceOptions });
     if (generation !== this.generation) return;
     this.warnings = performance.warnings;
     this.context ??= new AudioContext();

@@ -1,17 +1,27 @@
 {
   "schemaVersion": 1,
   "updatedDate": "2026-10-03",
-  "objective": "Generate musically compelling, controllable music through one Rust composition algebra. Establish a comprehensive composable musical ontology first, before extending composition or inference.",
+  "objective": "Generate musically compelling, controllable music through focused experiment labs sharing one Rust composition algebra and a composable musical ontology.",
   "checkpoint": {
-    "summary": "The ontology now separates arbitrary logarithmic pitch coordinates, basis, acoustic reference and optional repetition. Exact and approximate scalars are shared by tuning and independent spectra. Explicit scale-degree bindings and conditioned spectral correspondences preserve identity and context; a coordinated warp control establishes partial alignment without claiming a roughness optimum. This remains representation work with the existing compiler as sole note emitter.",
+    "summary": "A searchable lazy lab catalog now hosts Melody, Rhythm and the complete Composition workbench. Each session retains private draft/result data; only its active mount owns a cancellable core client, views and audio. One reusable scene-independent timeline serves all three. Small Rust generators produce the existing CompositionPlan; the ontology remains available for later richer musical work. Session retention is in memory, and simple generator controls do not establish long-form musical quality.",
     "nextActions": [
-      "Review the parameterized coordinate model and spectral correspondence on concrete musical examples. Retain arbitrary bases, independent reference Hz, optional periods, unsorted/unbounded coordinates and exact or approximate inputs without silent normalization.",
+      "Use the small melody/rhythm labs to assess the extension boundary. Add future experiments as isolated modules, opting into score views only when needed; avoid growing a central tool switch or shared mutable experiment state.",
+      "Explore generalized tuning/spectral correspondence in a future lab with an appropriate view. Retain arbitrary bases, independent reference Hz, optional periods and exact or approximate inputs without silent normalization.",
       "Keep all indexed LilyPond glossary headwords mapped, canonical aliases inspectable, cultural extensions qualified and parameterized concepts distinct from names.",
       "When composition work is requested, lower a small useful set of these components through CompositionPlan and prove shared/local edits on complete passages.",
       "Judge later progress by audition and useful composition across varied musical languages. Artist references guide musical goals, never hard-coded identities or fixed phrase lengths."
     ]
   },
   "tasks": [
+    {
+      "id": "labs-experiments",
+      "title": "Grow experiments through the isolated lab contract",
+      "status": "planned",
+      "owner": null,
+      "dependsOn": [],
+      "evidence": ["src/labs/", "src/score/timeline.ts", "crates/muzak-core/src/labs.rs", "docs/research/labs.md"],
+      "nextAction": "Choose the next musical experiment with the user. Exercise a non-score view when appropriate, keep private state/resources within its session, and add Rust musical operations through the existing contracts. Consider durable persistence only with an explicit storage/version contract."
+    },
     {
       "id": "ontology-review",
       "title": "Review composable musical vocabulary and relationships",

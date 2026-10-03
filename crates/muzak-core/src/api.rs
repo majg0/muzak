@@ -22,6 +22,17 @@ use ts_rs::TS;
     rename_all_fields = "camelCase"
 )]
 pub enum CoreRequest {
+    GetLabDefaults {},
+    GenerateMelodyLab {
+        #[serde(default)]
+        #[ts(optional, type = "Partial<import('./MelodyLabOptions').MelodyLabOptions>")]
+        options: crate::labs::MelodyLabOptions,
+    },
+    GenerateRhythmLab {
+        #[serde(default)]
+        #[ts(optional, type = "Partial<import('./RhythmLabOptions').RhythmLabOptions>")]
+        options: crate::labs::RhythmLabOptions,
+    },
     GenerateComposition {
         #[serde(default)]
         #[ts(optional, type = "Partial<import('./GeneratorOptions').GeneratorOptions>")]
@@ -226,6 +237,9 @@ pub enum CoreRequest {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(tag = "op", content = "output", rename_all = "camelCase")]
 pub enum CoreResponse {
+    GetLabDefaults(crate::labs::LabDefaults),
+    GenerateMelodyLab(composition::CompositionPlan),
+    GenerateRhythmLab(composition::CompositionPlan),
     GenerateComposition(scene::MusicalScene),
     InferPitchRelations(pitch_relations::PitchRelationAnalysis),
     ObservedPitchDomain(Option<pitch_relations::PitchRelationDomain>),
@@ -275,6 +289,9 @@ pub enum CoreReply {
 
 pub fn dispatch(request: CoreRequest) -> CoreResult<CoreResponse> {
     Ok(match request {
+        CoreRequest::GetLabDefaults {} => CoreResponse::GetLabDefaults(crate::labs::LabDefaults::default()),
+        CoreRequest::GenerateMelodyLab { options } => CoreResponse::GenerateMelodyLab(crate::labs::generate_melody(&options)?),
+        CoreRequest::GenerateRhythmLab { options } => CoreResponse::GenerateRhythmLab(crate::labs::generate_rhythm(&options)?),
         CoreRequest::GenerateComposition { options } => CoreResponse::GenerateComposition(
             scene::scene_from_program(&crate::generator::generate_plan(&options)?)?
         ),

@@ -134,6 +134,36 @@ test('loading an authored scene sends only that program and retains it for later
   workers[2].send({kind: 'ready', revision: request.revision, result}); await editing; controller.dispose();
 });
 
+test('a restored lab session keeps edited bindings and observations without invoking inference', async () => {
+  const {controller, workers} = setup();
+  const saved = structuredClone({...result, scene: {marker: 'accepted edited program'} as unknown as MusicalScene});
+  controller.restore(saved);
+  assert.equal(workers.length, 0, 'restoring accepted state must not launch a worker');
+  assert.equal(controller.snapshot()?.status, 'ready');
+  saved.source.notes[0].pitch.millicents = 999;
+  saved.scene = {marker: 'caller mutation'} as unknown as MusicalScene;
+  const editing = controller.edit({op: 'changeSceneHarmony', input: {windowId: 'palette', rootMillicents: 200000}});
+  const request = workers[0].messages[0]; assert.equal(request.kind, 'edit');
+  if (request.kind !== 'edit') throw new Error('Expected edit');
+  assert.deepEqual(request.score, score);
+  assert.deepEqual(request.scene, {marker: 'accepted edited program'});
+  workers[0].send({kind: 'ready', revision: request.revision, result}); await editing;
+  controller.dispose(); assert.throws(() => controller.restore(result), /disposed/);
+});
+
+test('restoring accepted state cancels a pending operation and rejects its stale result', async () => {
+  const {controller, workers} = setup(); controller.restore(result);
+  const editing = controller.edit({op: 'changeSceneHarmony', input: {windowId: 'palette', rootMillicents: 200000}});
+  const request = workers[0].messages[0], rejected = assert.rejects(editing, /score changed/);
+  const restored = {...result, scene: {marker: 'restored bindings'} as unknown as MusicalScene};
+  controller.restore(restored); await rejected;
+  assert.equal(workers[0].terminated, true);
+  workers[0].send({kind: 'ready', revision: request.revision, result});
+  const snapshot = controller.snapshot(); assert.equal(snapshot?.status, 'ready');
+  if (snapshot?.status !== 'ready') throw new Error('Expected restored result');
+  assert.deepEqual(snapshot.result.scene, restored.scene); controller.dispose();
+});
+
 test('decode failure never emits a successful comparison or a fallback literal reconstruction', async () => {
   const calls: string[] = [], messages: CodecWorkerMessage[] = [];
   await assert.rejects(runScoreCodec(score, 3, {call: async op => { calls.push(op); if (op === 'decodeScene') throw new Error('invalid scene'); return {}; }, emit: message => messages.push(message)}), /invalid scene/);

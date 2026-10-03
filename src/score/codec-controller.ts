@@ -61,6 +61,13 @@ export function createScoreCodecController(options: {
     } catch (error) { fail(ticket, error instanceof Error ? error.message : String(error)); }
   }
   return {
+    /** Restore a previously accepted in-memory session, without running the
+     * inverse codec again or losing the edited program's authoritative bindings. */
+    restore(result: ScoreCodecResult): void {
+      if (disposed) throw new Error('Score codec controller is disposed.');
+      cancel(); ++revision; accepted = structuredClone(result); source = accepted.source;
+      publish({revision, status: 'ready', result: accepted});
+    },
     setSource(score: Score): number {
       if (disposed) throw new Error('Score codec controller is disposed.');
       cancel(); source = structuredClone(score); accepted = undefined;
