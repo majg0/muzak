@@ -2,6 +2,12 @@ import type { LabDefinition } from './types';
 
 export const labs = [
   {
+    id: 'harmonic-motion', title: 'Harmonic motion', group: 'Compose & inspect',
+    description: 'Explore every chord-to-chord move in a finite catalog. Change the tonal frame, compare relationships and hear an editable passage.',
+    tags: ['harmony', 'tonic', 'modal', 'jazz', 'substitution', 'Tonnetz', 'Coltrane', 'xenharmonic', 'voice leading'],
+    load: () => import('./harmonic-motion'),
+  },
+  {
     id: 'melody', title: 'Melody', group: 'Generate',
     description: 'Explore a seeded melodic walk. Try different phrase lengths, step sizes and repetitions.',
     tags: ['pitch', 'seed', 'contour', 'piano roll'],

@@ -2,7 +2,7 @@
 
 A music generator and codec: **ideas → editable composition program → score**, and **score → inferred relationships + program → score**.
 
-The page is a growing collection of [independent experiment labs](docs/research/labs.md). Melody explores a seeded pitch walk; Rhythm distributes pulses across a cycle; Composition retains generation, MIDI import, structural editing and export. The searchable catalog loads one lab at a time. Each lab owns its draft and results, and can opt into the shared piano-roll view and audition controls.
+The page is a growing collection of [independent experiment labs](docs/research/labs.md). Harmonic Motion explores every ordered pair in a supplied chord catalog, their relationship to tonal centers and an editable passage. Melody explores a seeded pitch walk; Rhythm distributes pulses across a cycle; Composition retains generation, MIDI import, structural editing and export. The searchable catalog loads one lab at a time. Each lab owns its draft and results, and can opt into the shared piano-roll view and audition controls.
 
 The [typed musical ontology](docs/research/ontology.md) remains the representation foundation: ECS-style entities compose pitch, rhythm, harmony, voice, instrumentation, timbre, performance, form and notation, with explicit relationships and evidence. Its glossary audit covers the complete indexed LilyPond vocabulary plus additional composition and performance terms. Named techniques become audible only when deliberately implemented through the existing compiler.
 
@@ -19,6 +19,8 @@ npm run dev
 
 Choose Melody or Rhythm for a small generator experiment, or Composition for a complete passage and MIDI workflow. Inputs and accepted results survive switching labs within this page session; they are not persisted across reloads. Switching stops audio and releases the previous lab's workers and views. Browser sound is an audition instrument, not a finished production.
 
+Choose **Harmonic Motion** for classical and modal cadences, jazz substitutions, triadic transformations, symmetric cycles and arbitrary tuning studies. Compare exact member movement with tonic-relative effects and duration-weighted passage history, inspect every successor, then edit and audition a passage through the same composition compiler. Tonal frames and objective weights are explicit premises. Exhaustiveness covers the declared finite catalog; rankings are editable preferences, not learned probabilities or universal emotional laws. The [harmonic-motion foundation](docs/research/harmonic-motion.md) defines the theory, sources and evaluation boundary.
+
 In Composition, generate a seeded passage, play it, edit its harmonic palettes or shared/local materials, and export MIDI. Tempo, meter, mode, density, variation and color are controllable. Generated phrases retain their authored bindings; edits compile directly and never re-infer away the program.
 
 Open MIDI or choose a local reference to infer a scene from observations. Analysis covers the whole score automatically. Drag/resize the overview window to navigate; seek with the timeline ruler or playhead. Bar lines follow recorded meter changes; missing meter uses marked quarter coordinates. Source observations remain available beside the decoded edited program.
@@ -27,6 +29,7 @@ Open MIDI or choose a local reference to infer a scene from observations. Analys
 
 - `crates/muzak-core/src/ontology/`: composable Rust musical nouns, typed components and relationships, glossary coverage and validation.
 - `crates/muzak-core/src/labs.rs`: bounded melody/rhythm experiments producing the existing `CompositionPlan`.
+- `crates/muzak-core/src/harmonic_motion.rs`: exhaustive finite chord relations, tonic/context comparisons and passage realization through `CompositionPlan`.
 - `crates/muzak-core/src/scene.rs`: encoder, standalone scene decoding and shared/local edits.
 - `generator.rs`: seeded themes, melody-aware harmonic routes, voicing and arrangement through the same composition algebra.
 - `harmony.rs`, `harmony_context.rs`: global metrical-window hypotheses, separate realized core/color and witnessed functional-root proposals.

@@ -7,7 +7,7 @@ export function mountLabShell(container: HTMLElement): () => void {
   container.classList.add('lab-shell');
   container.innerHTML = `<header class="lab-topbar"><a class="lab-wordmark" href="#/labs">continuum<span>.</span></a><span class="lab-topbar-label">Music laboratory</span><span class="lab-topbar-note">Ideas worth listening to.</span></header>
     <div class="lab-layout"><aside class="lab-sidebar"><label class="lab-search-label">Find a lab<input type="search" data-shell="search" placeholder="Search experiments" autocomplete="off"/></label><nav data-shell="navigation" aria-label="Experiments"></nav><p class="lab-sidebar-note">One idea at a time.<br/>Your place to experiment.</p></aside>
-    <main class="lab-main"><header class="lab-page-heading"><p class="eyebrow" data-shell="eyebrow">THE LABORATORY</p><h1 data-shell="title" tabindex="-1">Music lab</h1><p data-shell="description">Start with a melody, a rhythm, or a complete passage.</p></header>
+    <main class="lab-main"><header class="lab-page-heading"><p class="eyebrow" data-shell="eyebrow">THE LABORATORY</p><h1 data-shell="title" tabindex="-1">Music lab</h1><p data-shell="description">Explore harmony, shape a melody or rhythm, and build a complete passage.</p></header>
       <section data-shell="library" aria-label="Available labs"><div class="lab-library-heading"><h2>Choose an experiment</h2><output data-shell="count" aria-live="polite"></output></div><div class="lab-cards" data-shell="cards"></div><p class="lab-empty" data-shell="empty" hidden>No labs match your search. Try a musical idea such as pitch, pulses or MIDI.</p></section>
       <div class="lab-load-status panel" data-shell="status" role="status" aria-live="polite" hidden><p data-shell="status-text"></p><button class="button" data-shell="retry" hidden>Try again</button></div><div data-shell="content"></div>
     </main></div>`;
@@ -63,7 +63,7 @@ export function mountLabShell(container: HTMLElement): () => void {
     get('library').hidden = next.kind !== 'library';
     get('eyebrow').textContent = lab ? `${lab.group.toUpperCase()} / LAB` : 'THE LABORATORY';
     get('title').textContent = lab?.title ?? (next.kind === 'library' ? 'Music lab' : 'Lab not found');
-    get('description').textContent = lab?.description ?? (next.kind === 'library' ? 'Start with a melody, a rhythm, or a complete passage.' : 'Choose an experiment from the sidebar or return to All labs.');
+    get('description').textContent = lab?.description ?? (next.kind === 'library' ? 'Explore harmony, shape a melody or rhythm, and build a complete passage.' : 'Choose an experiment from the sidebar or return to All labs.');
     document.title = `${lab?.title ?? 'Music lab'} · Continuum`;
     renderCatalog();
     if (lab) void host.open(lab.id);

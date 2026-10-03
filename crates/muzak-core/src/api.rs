@@ -22,6 +22,9 @@ use ts_rs::TS;
     rename_all_fields = "camelCase"
 )]
 pub enum CoreRequest {
+    GetHarmonicMotionPresets {},
+    AnalyzeHarmonicMotion { options: crate::harmonic_motion::HarmonicMotionOptions },
+    RealizeHarmonicMotion { options: crate::harmonic_motion::HarmonicMotionOptions },
     GetLabDefaults {},
     GenerateMelodyLab {
         #[serde(default)]
@@ -237,6 +240,9 @@ pub enum CoreRequest {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(tag = "op", content = "output", rename_all = "camelCase")]
 pub enum CoreResponse {
+    GetHarmonicMotionPresets(Vec<crate::harmonic_motion::HarmonicMotionPreset>),
+    AnalyzeHarmonicMotion(crate::harmonic_motion::HarmonicMotionAnalysis),
+    RealizeHarmonicMotion(composition::CompositionPlan),
     GetLabDefaults(crate::labs::LabDefaults),
     GenerateMelodyLab(composition::CompositionPlan),
     GenerateRhythmLab(composition::CompositionPlan),
@@ -289,6 +295,9 @@ pub enum CoreReply {
 
 pub fn dispatch(request: CoreRequest) -> CoreResult<CoreResponse> {
     Ok(match request {
+        CoreRequest::GetHarmonicMotionPresets {} => CoreResponse::GetHarmonicMotionPresets(crate::harmonic_motion::presets()),
+        CoreRequest::AnalyzeHarmonicMotion { options } => CoreResponse::AnalyzeHarmonicMotion(crate::harmonic_motion::analyze(&options)?),
+        CoreRequest::RealizeHarmonicMotion { options } => CoreResponse::RealizeHarmonicMotion(crate::harmonic_motion::realize(&options)?),
         CoreRequest::GetLabDefaults {} => CoreResponse::GetLabDefaults(crate::labs::LabDefaults::default()),
         CoreRequest::GenerateMelodyLab { options } => CoreResponse::GenerateMelodyLab(crate::labs::generate_melody(&options)?),
         CoreRequest::GenerateRhythmLab { options } => CoreResponse::GenerateRhythmLab(crate::labs::generate_rhythm(&options)?),

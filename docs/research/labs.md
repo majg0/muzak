@@ -18,7 +18,7 @@ The page has one catalog and one active experiment. Each lab owns its purpose, c
 
 The catalog contains metadata, not mounted views. The host lazily imports the selected module and creates a session once. Every activation gets fresh DOM and a new scoped core client. Navigation aborts listeners, disposes views and audio, terminates that worker and rejects its pending requests. Import/mount revision checks prevent an old completion from replacing the active lab. Register cleanup immediately with `context.onDispose`, before awaiting anything; registration after disposal releases the resource immediately.
 
-Sessions retain plain data across navigation, not active workers, DOM or audio. Melody/Rhythm retain raw form drafts and their last accepted plan, score and meter. Failed or superseded generation leaves the accepted output intact. Composition snapshots its source, accepted edited scene, controls and view; restoration hydrates the codec controller without inferring away authored edits. Pending generation/edits are cancelled, not silently accepted. This retention lasts only until page reload. Durable storage is not part of this contract, and no existing browser storage is erased.
+Sessions retain plain data across navigation, not active workers, DOM or audio. Melody/Rhythm retain raw form drafts and their last accepted plan, score and meter. Harmonic Motion retains its private catalog/context/passage draft and accepted analysis and audition. Failed or superseded generation leaves the accepted output intact. Composition snapshots its source, accepted edited scene, controls and view; restoration hydrates the codec controller without inferring away authored edits. Pending generation/edits are cancelled, not silently accepted. This retention lasts only until page reload. Durable storage is not part of this contract, and no existing browser storage is erased.
 
 ## Optional timeline
 
@@ -31,6 +31,12 @@ The view has no scene, classifier, generator, worker or audio dependency. Compos
 Melody is a bounded seeded walk over a supplied native `PitchLattice`; its small UI exposes seed, note count, maximum degree step, tempo and repetition. Rhythm spreads a chosen count of pulses over integer steps, with signed rotation, rational step duration and repetition. Zero pulses is explicit silence. The API also accepts arbitrary supported native pitch/lattice inputs. The UI does not invent musical defaults or run another music algorithm.
 
 Both Rust experiments return `CompositionPlan`: one reusable material and repeated placements, compiled by the existing `compile_composition`. These are small architecture exercises, not claims of new long-form musical quality or complete ontology lowering. No meter is inferred from the number of steps. MIDI export retains the existing strict loss checks.
+
+## Harmonic Motion
+
+One lab combines a finite all-pairs atlas, exact directional member correspondences, tonic-relative comparisons, a decomposed successor objective and an editable complete passage. Classical, modal, jazz, Tonnetz, symmetric-cycle and xenharmonic examples are authored inputs to the same Rust engine. An advanced JSON editor exposes the full finite premise, including optional period/root/center information. Read [the foundation and scope](harmonic-motion.md) before interpreting its rankings as musical evidence.
+
+Geometry is separate from the contextual objective. Global/local/comparison frames expose their influence; changing a center does not change the pair's pitches. The passage provides duration-weighted exposure and prefix comparisons. Selected-pair correspondence ties remain available, including exact register endpoints, arrivals and departures. The finite atlas includes every ordered pair rather than pruning to fashionable chord routes. The score preview auditions palette-bound notes through the existing compiler and retains strict MIDI loss checks for arbitrary native pitch.
 
 ## Adding an experiment
 
