@@ -89,15 +89,6 @@ pub struct HarmonicMotionOptions {
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
-pub struct HarmonicMotionPreset {
-    pub id: String,
-    pub name: String,
-    pub description: String,
-    pub options: HarmonicMotionOptions,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[serde(rename_all = "camelCase")]
 pub struct MotionMemberLink {
     pub from_member: usize,
     pub to_member: usize,
@@ -1081,298 +1072,361 @@ pub fn realize(options: &HarmonicMotionOptions) -> CoreResult<CompositionPlan> {
     Ok(plan)
 }
 
-fn chord(id: &str, name: &str, root: i64, pitches: &[i64]) -> MotionChord {
-    MotionChord {
-        id: id.into(),
-        name: name.into(),
-        root_millicents: Some(root * 100_000),
-        pitches_millicents: pitches.iter().map(|p| p * 100_000).collect(),
-    }
-}
-
-fn frame(
-    id: &str,
-    name: &str,
-    tonic: i64,
-    collection: &[i64],
-    target: &[i64],
-    weight: f64,
-) -> MotionFrame {
-    MotionFrame {
-        id: id.into(),
-        name: name.into(),
-        role: if weight > 0. {
-            MotionFrameRole::Global
-        } else {
-            MotionFrameRole::Alternative
-        },
-        tonic_millicents: tonic * 100_000,
-        collection_offsets_millicents: collection.iter().map(|x| x * 100_000).collect(),
-        target_offsets_millicents: target.iter().map(|x| x * 100_000).collect(),
-        weight,
-    }
-}
-
-fn path(ids: &[&str]) -> Vec<MotionStep> {
-    ids.iter()
-        .map(|id| MotionStep {
-            chord_id: (*id).into(),
-            duration: MotionDuration {
-                numerator: 2,
-                denominator: 1,
-            },
-        })
-        .collect()
-}
-
-fn options(
-    chords: Vec<MotionChord>,
-    frames: Vec<MotionFrame>,
-    history: &[&str],
-    from: &str,
-    to: &str,
-) -> HarmonicMotionOptions {
-    HarmonicMotionOptions {
-        period_millicents: Some(1_200_000),
-        chords,
-        frames,
-        history: path(history),
-        from_chord_id: from.into(),
-        to_chord_id: to.into(),
-        weights: MotionWeights {
-            motion: 1.,
-            unmatched: 1.5,
-            common_tones: 0.2,
-            collection_distance: 0.8,
-            target_distance: 0.4,
-            target_approach: 0.6,
-            history_distance: 0.2,
-            repetition: 0.5,
-        },
-        tempo: 104.,
-        arpeggiate: false,
-    }
-}
-
-/// Curated starting premises, never recognition rules. Catalogs and all context
-/// values can be replaced; named styles do not alter the general computation.
-pub fn presets() -> Vec<HarmonicMotionPreset> {
-    let major = [0, 2, 4, 5, 7, 9, 11];
-    let contexts = vec![
-        frame("c-major", "C major center", 60, &major, &[0, 4, 7], 1.),
-        frame("f-major", "F major center", 65, &major, &[0, 4, 7], 0.),
-        frame(
-            "a-aeolian",
-            "A Aeolian center",
-            57,
-            &[0, 2, 3, 5, 7, 8, 10],
-            &[0, 3, 7],
-            0.,
-        ),
-        frame(
-            "d-dorian",
-            "D Dorian center",
-            62,
-            &[0, 2, 3, 5, 7, 9, 10],
-            &[0, 3, 7],
-            0.,
-        ),
-        frame(
-            "g-mixolydian",
-            "G Mixolydian center",
-            55,
-            &[0, 2, 4, 5, 7, 9, 10],
-            &[0, 4, 7],
-            0.,
-        ),
-    ];
-    let diatonic = vec![
-        chord("C", "C", 48, &[48, 60, 64, 72]),
-        chord("Dm", "Dm", 50, &[50, 57, 65, 69]),
-        chord("Em", "Em", 52, &[52, 59, 64, 67]),
-        chord("F", "F", 53, &[53, 60, 65, 69]),
-        chord("G", "G", 55, &[55, 62, 67, 71]),
-        chord("G7", "G7", 55, &[55, 62, 65, 71]),
-        chord("Am", "Am", 45, &[45, 60, 64, 69]),
-        chord("Bdim", "B diminished", 47, &[47, 59, 62, 65]),
-        chord("Bb", "B♭", 46, &[46, 58, 62, 65]),
-        chord("Cm", "Cm", 48, &[48, 60, 63, 67]),
-        chord("Fm", "Fm", 53, &[53, 60, 65, 68]),
-        chord("D", "D", 50, &[50, 57, 62, 66]),
-    ];
-    let mut result=vec![HarmonicMotionPreset { id:"cadences".into(),name:"Cadences and competing centers".into(),
-        description:"An authored four-part passage with authentic, deceptive and plagal alternatives. Reweight C, F, A, D or G frames to hear one voiced route under different relative tonics. Named cadence readings are premises to inspect, not inferred labels.".into(),
-        options:options(diatonic.clone(),contexts.clone(),&["C","F","Dm","G7","Am","F","G7","C","F","C"],"G7","C") }];
-    let mut modal_frames = contexts.clone();
-    for frame in &mut modal_frames {
-        frame.weight = if frame.id == "d-dorian" { 1. } else { 0. };
-    }
-    result.push(HarmonicMotionPreset { id:"modal".into(),name:"Modal centers, same collection".into(),
-        description:"D Dorian, C major, A Aeolian and G Mixolydian share the same pitch collection but have different supplied tonics and targets. F major is a contrasting collection. The D-centered vamp has no built-in dominant requirement.".into(),
-        options:options(diatonic,modal_frames,&["Dm","G","Dm","C","Dm","G","F","Dm"],"G","Dm") });
-    let jazz = vec![
-        chord("Cmaj7", "Cmaj7", 48, &[48, 52, 59, 64]),
-        chord("C", "C", 48, &[48, 60, 64, 72]),
-        chord("Dm7", "Dm7", 50, &[50, 53, 60, 69]),
-        chord("G7", "G7", 43, &[43, 53, 59, 62]),
-        chord("Db7", "D♭7", 49, &[49, 53, 59, 61]),
-        chord("Fmaj7", "Fmaj7", 41, &[41, 52, 57, 60]),
-        chord("Am7", "Am7", 45, &[45, 55, 60, 64]),
-        chord("E7", "E7", 40, &[40, 56, 62, 64]),
-        chord("Bb7", "B♭7", 46, &[46, 56, 62, 65]),
-        chord("Ebmaj7", "E♭maj7", 39, &[39, 55, 58, 62]),
-        chord("Abmaj7", "A♭maj7", 44, &[44, 55, 60, 63]),
-        chord("D7", "D7", 38, &[38, 54, 60, 62]),
-    ];
-    result.push(HarmonicMotionPreset { id:"jazz".into(),name:"Jazz routes and tritone alternatives".into(),
-        description:"Voiced ii–V and tritone-substitution alternatives retain explicit bass and member endpoints. G7 and D♭7 share B/F classes in this example; their minimum member maps and bass routes still differ. No substitution equivalence is assumed.".into(),
-        options:options(jazz,contexts.clone(),&["Cmaj7","E7","Am7","Dm7","G7","Cmaj7","Dm7","Db7","Cmaj7","Fmaj7","G7","Cmaj7"],"G7","Cmaj7") });
-    let names = [
-        "C", "D♭", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B",
-    ];
-    let mut triads = vec![];
-    let mut catalog = vec![];
-    for (pc, name) in names.iter().enumerate() {
-        for (suffix, label, intervals) in [
-            ("major", "", vec![0, 4, 7]),
-            ("minor", "m", vec![0, 3, 7]),
-            ("dom7", "7", vec![0, 4, 7, 10]),
-            ("maj7", "maj7", vec![0, 4, 7, 11]),
-        ] {
-            let root = 48 + pc as i64;
-            let c = chord(
-                &format!("{pc}-{suffix}"),
-                &format!("{name}{label}"),
-                root,
-                &intervals.iter().map(|p| root + p).collect::<Vec<_>>(),
-            );
-            if intervals.len() == 3 {
-                triads.push(c.clone());
-            }
-            catalog.push(c);
-        }
-    }
-    result.push(HarmonicMotionPreset { id:"tonnetz".into(),name:"All 24 major/minor triads · P/L/R".into(),
-        description:"All 576 ordered pairs in the complete 12-TET major/minor triad catalog, including identities. Exact P/L/R identities are reported only for eligible triads; supplied root-position registers affect voice movement independently of that adapter.".into(),
-        options:options(triads,contexts.clone(),&["0-major","4-minor","4-major","9-minor","9-major","1-minor","1-major","5-minor","5-major","0-major"],"0-major","4-minor") });
-    result.push(HarmonicMotionPreset { id:"chromatic-atlas".into(),name:"48-chord chromatic atlas".into(),
-        description:"All 2,304 ordered pairs over every 12-TET transposition of major, minor, dominant seventh and major seventh shapes. This is exhaustive for these 48 supplied root-position voicings; it is not every possible voicing or chord.".into(),
-        options:options(catalog,contexts.clone(),&["0-maj7","9-minor","2-minor","7-dom7","0-maj7","8-maj7","1-dom7","0-maj7"],"7-dom7","0-maj7") });
-    let thirds = vec![
-        chord("Bmaj7", "Bmaj7", 47, &[47, 58, 63, 66]),
-        chord("D7", "D7", 50, &[50, 54, 60, 66]),
-        chord("Gmaj7", "Gmaj7", 43, &[43, 54, 59, 62]),
-        chord("Bb7", "B♭7", 46, &[46, 50, 56, 62]),
-        chord("Ebmaj7", "E♭maj7", 39, &[39, 50, 55, 58]),
-        chord("Fs7", "F♯7", 42, &[42, 46, 52, 58]),
-        chord("Am7", "Am7", 45, &[45, 55, 60, 64]),
-        chord("Fm7", "Fm7", 41, &[41, 51, 56, 60]),
-    ];
-    let mut third_frames = vec![
-        frame("b", "B target", 47, &major, &[0, 4, 7, 11], 1.),
-        frame("g", "G target", 43, &major, &[0, 4, 7, 11], 0.),
-        frame("eb", "E♭ target", 39, &major, &[0, 4, 7, 11], 0.),
-    ];
-    third_frames[1].role = MotionFrameRole::Local;
-    third_frames[2].role = MotionFrameRole::Local;
-    result.push(HarmonicMotionPreset { id:"third-cycles".into(),name:"Major-third centers · Coltrane-type route".into(),
-        description:"An authored B–G–E♭ center cycle with dominant approaches. The exact major-third root step closes in three applications modulo the octave; closure alone does not establish any center. Reweight the independently supplied local targets.".into(),
-        options:options(thirds,third_frames,&["Bmaj7","D7","Gmaj7","Bb7","Ebmaj7","Am7","D7","Gmaj7","Fs7","Bmaj7"],"Bmaj7","Gmaj7") });
-    for (id, title, divisions, period, shape, scale) in [
-        (
-            "19edo",
-            "19 equal divisions · native approximation",
-            19i64,
-            1_200_000i64,
-            vec![0, 6, 11],
-            vec![0, 3, 6, 8, 11, 14, 17],
-        ),
-        (
-            "tritave",
-            "13 divisions of a tritave · native approximation",
-            13i64,
-            1_901_955i64,
-            vec![0, 4, 7],
-            vec![0, 2, 4, 5, 7, 9, 11],
-        ),
-    ] {
-        let pitch = |degree: i64| (degree as f64 * period as f64 / divisions as f64).round() as i64;
-        let chords = (0..divisions)
-            .map(|degree| MotionChord {
-                id: format!("d{degree}"),
-                name: format!("Degree {degree} · {:?}", shape),
-                root_millicents: Some(6_000_000 + pitch(degree)),
-                pitches_millicents: shape
-                    .iter()
-                    .map(|step| 6_000_000 + pitch(degree + step))
-                    .collect(),
-            })
-            .collect();
-        let tonal = MotionFrame {
-            id: "degree-0".into(),
-            name: "Declared degree-zero target".into(),
-            role: MotionFrameRole::Global,
-            tonic_millicents: 6_000_000,
-            collection_offsets_millicents: scale.iter().map(|&d| pitch(d)).collect(),
-            target_offsets_millicents: shape.iter().map(|&d| pitch(d)).collect(),
-            weight: 1.,
-        };
-        let mut tuning = options(
-            chords,
-            vec![tonal],
-            &["d0", "d4", "d7", "d0", "d2", "d7", "d0"],
-            "d7",
-            "d0",
-        );
-        tuning.period_millicents = Some(period);
-        tuning.arpeggiate = true;
-        result.push(HarmonicMotionPreset { id:id.into(),name:title.into(),description:format!("All {divisions} transpositions of one explicitly supplied degree shape. Division coordinates are rounded to the nearest native millicent (≤0.0005 cents per coordinate); the tritave period itself is approximated by 1,901.955 cents. Computation is exact for these stored integers, not for ideal equal divisions. No 12-TET chord or P/L/R labels transfer."),options:tuning });
-    }
-    let mut free = options(
-        vec![
-            MotionChord {
-                id: "a".into(),
-                name: "Field A".into(),
-                root_millicents: None,
-                pitches_millicents: vec![4_810_320, 5_312_400, 6_103_200],
-            },
-            MotionChord {
-                id: "b".into(),
-                name: "Field B".into(),
-                root_millicents: None,
-                pitches_millicents: vec![4_830_100, 5_401_700, 6_150_900, 6_811_300],
-            },
-            MotionChord {
-                id: "c".into(),
-                name: "Field C".into(),
-                root_millicents: None,
-                pitches_millicents: vec![4_500_000, 5_312_400, 6_011_800],
-            },
-            MotionChord {
-                id: "d".into(),
-                name: "Field D".into(),
-                root_millicents: None,
-                pitches_millicents: vec![4_810_320, 5_599_800],
-            },
-        ],
-        vec![],
-        &["a", "b", "a", "c", "d", "b", "a"],
-        "a",
-        "b",
-    );
-    free.period_millicents = None;
-    free.arpeggiate = true;
-    result.push(HarmonicMotionPreset { id:"unperiodic".into(),name:"Center-free and nonperiodic".into(),
-        description:"Arbitrary native pitches, unequal cardinalities, no supplied root, center or repetition period. Absolute member motion and authored history remain defined; tonic and cyclic coordinates remain unknown.".into(),options:free });
-    result
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    struct CatalogFixture {
+        id: String,
+        options: HarmonicMotionOptions,
+    }
+
+    fn chord(id: &str, name: &str, root: i64, pitches: &[i64]) -> MotionChord {
+        MotionChord {
+            id: id.into(),
+            name: name.into(),
+            root_millicents: Some(root * 100_000),
+            pitches_millicents: pitches.iter().map(|p| p * 100_000).collect(),
+        }
+    }
+
+    fn frame(
+        id: &str,
+        name: &str,
+        tonic: i64,
+        collection: &[i64],
+        target: &[i64],
+        weight: f64,
+    ) -> MotionFrame {
+        MotionFrame {
+            id: id.into(),
+            name: name.into(),
+            role: if weight > 0. {
+                MotionFrameRole::Global
+            } else {
+                MotionFrameRole::Alternative
+            },
+            tonic_millicents: tonic * 100_000,
+            collection_offsets_millicents: collection.iter().map(|x| x * 100_000).collect(),
+            target_offsets_millicents: target.iter().map(|x| x * 100_000).collect(),
+            weight,
+        }
+    }
+
+    fn path(ids: &[&str]) -> Vec<MotionStep> {
+        ids.iter()
+            .map(|id| MotionStep {
+                chord_id: (*id).into(),
+                duration: MotionDuration {
+                    numerator: 2,
+                    denominator: 1,
+                },
+            })
+            .collect()
+    }
+
+    fn options(
+        chords: Vec<MotionChord>,
+        frames: Vec<MotionFrame>,
+        history: &[&str],
+        from: &str,
+        to: &str,
+    ) -> HarmonicMotionOptions {
+        HarmonicMotionOptions {
+            period_millicents: Some(1_200_000),
+            chords,
+            frames,
+            history: path(history),
+            from_chord_id: from.into(),
+            to_chord_id: to.into(),
+            weights: MotionWeights {
+                motion: 1.,
+                unmatched: 1.5,
+                common_tones: 0.2,
+                collection_distance: 0.8,
+                target_distance: 0.4,
+                target_approach: 0.6,
+                history_distance: 0.2,
+                repetition: 0.5,
+            },
+            tempo: 104.,
+            arpeggiate: false,
+        }
+    }
+
+    // Regression inputs for the generic finite relation kernel, independent of
+    // the progression generator and its production catalog.
+    fn catalog_fixtures() -> Vec<CatalogFixture> {
+        let major = [0, 2, 4, 5, 7, 9, 11];
+        let contexts = vec![
+            frame("c-major", "C major center", 60, &major, &[0, 4, 7], 1.),
+            frame("f-major", "F major center", 65, &major, &[0, 4, 7], 0.),
+            frame(
+                "a-aeolian",
+                "A Aeolian center",
+                57,
+                &[0, 2, 3, 5, 7, 8, 10],
+                &[0, 3, 7],
+                0.,
+            ),
+            frame(
+                "d-dorian",
+                "D Dorian center",
+                62,
+                &[0, 2, 3, 5, 7, 9, 10],
+                &[0, 3, 7],
+                0.,
+            ),
+            frame(
+                "g-mixolydian",
+                "G Mixolydian center",
+                55,
+                &[0, 2, 4, 5, 7, 9, 10],
+                &[0, 4, 7],
+                0.,
+            ),
+        ];
+        let diatonic = vec![
+            chord("C", "C", 48, &[48, 60, 64, 72]),
+            chord("Dm", "Dm", 50, &[50, 57, 65, 69]),
+            chord("Em", "Em", 52, &[52, 59, 64, 67]),
+            chord("F", "F", 53, &[53, 60, 65, 69]),
+            chord("G", "G", 55, &[55, 62, 67, 71]),
+            chord("G7", "G7", 55, &[55, 62, 65, 71]),
+            chord("Am", "Am", 45, &[45, 60, 64, 69]),
+            chord("Bdim", "B diminished", 47, &[47, 59, 62, 65]),
+            chord("Bb", "B♭", 46, &[46, 58, 62, 65]),
+            chord("Cm", "Cm", 48, &[48, 60, 63, 67]),
+            chord("Fm", "Fm", 53, &[53, 60, 65, 68]),
+            chord("D", "D", 50, &[50, 57, 62, 66]),
+        ];
+        let mut result = vec![CatalogFixture {
+            id: "cadences".into(),
+            options: options(
+                diatonic.clone(),
+                contexts.clone(),
+                &["C", "F", "Dm", "G7", "Am", "F", "G7", "C", "F", "C"],
+                "G7",
+                "C",
+            ),
+        }];
+        let mut modal_frames = contexts.clone();
+        for frame in &mut modal_frames {
+            frame.weight = if frame.id == "d-dorian" { 1. } else { 0. };
+        }
+        result.push(CatalogFixture {
+            id: "modal".into(),
+            options: options(
+                diatonic,
+                modal_frames,
+                &["Dm", "G", "Dm", "C", "Dm", "G", "F", "Dm"],
+                "G",
+                "Dm",
+            ),
+        });
+        let jazz = vec![
+            chord("Cmaj7", "Cmaj7", 48, &[48, 52, 59, 64]),
+            chord("C", "C", 48, &[48, 60, 64, 72]),
+            chord("Dm7", "Dm7", 50, &[50, 53, 60, 69]),
+            chord("G7", "G7", 43, &[43, 53, 59, 62]),
+            chord("Db7", "D♭7", 49, &[49, 53, 59, 61]),
+            chord("Fmaj7", "Fmaj7", 41, &[41, 52, 57, 60]),
+            chord("Am7", "Am7", 45, &[45, 55, 60, 64]),
+            chord("E7", "E7", 40, &[40, 56, 62, 64]),
+            chord("Bb7", "B♭7", 46, &[46, 56, 62, 65]),
+            chord("Ebmaj7", "E♭maj7", 39, &[39, 55, 58, 62]),
+            chord("Abmaj7", "A♭maj7", 44, &[44, 55, 60, 63]),
+            chord("D7", "D7", 38, &[38, 54, 60, 62]),
+        ];
+        result.push(CatalogFixture {
+            id: "jazz".into(),
+            options: options(
+                jazz,
+                contexts.clone(),
+                &[
+                    "Cmaj7", "E7", "Am7", "Dm7", "G7", "Cmaj7", "Dm7", "Db7", "Cmaj7", "Fmaj7",
+                    "G7", "Cmaj7",
+                ],
+                "G7",
+                "Cmaj7",
+            ),
+        });
+        let names = [
+            "C", "D♭", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B",
+        ];
+        let mut triads = vec![];
+        let mut catalog = vec![];
+        for (pc, name) in names.iter().enumerate() {
+            for (suffix, label, intervals) in [
+                ("major", "", vec![0, 4, 7]),
+                ("minor", "m", vec![0, 3, 7]),
+                ("dom7", "7", vec![0, 4, 7, 10]),
+                ("maj7", "maj7", vec![0, 4, 7, 11]),
+            ] {
+                let root = 48 + pc as i64;
+                let c = chord(
+                    &format!("{pc}-{suffix}"),
+                    &format!("{name}{label}"),
+                    root,
+                    &intervals.iter().map(|p| root + p).collect::<Vec<_>>(),
+                );
+                if intervals.len() == 3 {
+                    triads.push(c.clone());
+                }
+                catalog.push(c);
+            }
+        }
+        result.push(CatalogFixture {
+            id: "tonnetz".into(),
+            options: options(
+                triads,
+                contexts.clone(),
+                &[
+                    "0-major", "4-minor", "4-major", "9-minor", "9-major", "1-minor", "1-major",
+                    "5-minor", "5-major", "0-major",
+                ],
+                "0-major",
+                "4-minor",
+            ),
+        });
+        result.push(CatalogFixture {
+            id: "chromatic-atlas".into(),
+            options: options(
+                catalog,
+                contexts.clone(),
+                &[
+                    "0-maj7", "9-minor", "2-minor", "7-dom7", "0-maj7", "8-maj7", "1-dom7",
+                    "0-maj7",
+                ],
+                "7-dom7",
+                "0-maj7",
+            ),
+        });
+        let thirds = vec![
+            chord("Bmaj7", "Bmaj7", 47, &[47, 58, 63, 66]),
+            chord("D7", "D7", 50, &[50, 54, 60, 66]),
+            chord("Gmaj7", "Gmaj7", 43, &[43, 54, 59, 62]),
+            chord("Bb7", "B♭7", 46, &[46, 50, 56, 62]),
+            chord("Ebmaj7", "E♭maj7", 39, &[39, 50, 55, 58]),
+            chord("Fs7", "F♯7", 42, &[42, 46, 52, 58]),
+            chord("Am7", "Am7", 45, &[45, 55, 60, 64]),
+            chord("Fm7", "Fm7", 41, &[41, 51, 56, 60]),
+        ];
+        let mut third_frames = vec![
+            frame("b", "B target", 47, &major, &[0, 4, 7, 11], 1.),
+            frame("g", "G target", 43, &major, &[0, 4, 7, 11], 0.),
+            frame("eb", "E♭ target", 39, &major, &[0, 4, 7, 11], 0.),
+        ];
+        third_frames[1].role = MotionFrameRole::Local;
+        third_frames[2].role = MotionFrameRole::Local;
+        result.push(CatalogFixture {
+            id: "third-cycles".into(),
+            options: options(
+                thirds,
+                third_frames,
+                &[
+                    "Bmaj7", "D7", "Gmaj7", "Bb7", "Ebmaj7", "Am7", "D7", "Gmaj7", "Fs7", "Bmaj7",
+                ],
+                "Bmaj7",
+                "Gmaj7",
+            ),
+        });
+        for (id, divisions, period, shape, scale) in [
+            (
+                "19edo",
+                19i64,
+                1_200_000i64,
+                vec![0, 6, 11],
+                vec![0, 3, 6, 8, 11, 14, 17],
+            ),
+            (
+                "tritave",
+                13i64,
+                1_901_955i64,
+                vec![0, 4, 7],
+                vec![0, 2, 4, 5, 7, 9, 11],
+            ),
+        ] {
+            let pitch =
+                |degree: i64| (degree as f64 * period as f64 / divisions as f64).round() as i64;
+            let chords = (0..divisions)
+                .map(|degree| MotionChord {
+                    id: format!("d{degree}"),
+                    name: format!("Degree {degree} · {:?}", shape),
+                    root_millicents: Some(6_000_000 + pitch(degree)),
+                    pitches_millicents: shape
+                        .iter()
+                        .map(|step| 6_000_000 + pitch(degree + step))
+                        .collect(),
+                })
+                .collect();
+            let tonal = MotionFrame {
+                id: "degree-0".into(),
+                name: "Declared degree-zero target".into(),
+                role: MotionFrameRole::Global,
+                tonic_millicents: 6_000_000,
+                collection_offsets_millicents: scale.iter().map(|&d| pitch(d)).collect(),
+                target_offsets_millicents: shape.iter().map(|&d| pitch(d)).collect(),
+                weight: 1.,
+            };
+            let mut tuning = options(
+                chords,
+                vec![tonal],
+                &["d0", "d4", "d7", "d0", "d2", "d7", "d0"],
+                "d7",
+                "d0",
+            );
+            tuning.period_millicents = Some(period);
+            tuning.arpeggiate = true;
+            result.push(CatalogFixture {
+                id: id.into(),
+                options: tuning,
+            });
+        }
+        let mut free = options(
+            vec![
+                MotionChord {
+                    id: "a".into(),
+                    name: "Field A".into(),
+                    root_millicents: None,
+                    pitches_millicents: vec![4_810_320, 5_312_400, 6_103_200],
+                },
+                MotionChord {
+                    id: "b".into(),
+                    name: "Field B".into(),
+                    root_millicents: None,
+                    pitches_millicents: vec![4_830_100, 5_401_700, 6_150_900, 6_811_300],
+                },
+                MotionChord {
+                    id: "c".into(),
+                    name: "Field C".into(),
+                    root_millicents: None,
+                    pitches_millicents: vec![4_500_000, 5_312_400, 6_011_800],
+                },
+                MotionChord {
+                    id: "d".into(),
+                    name: "Field D".into(),
+                    root_millicents: None,
+                    pitches_millicents: vec![4_810_320, 5_599_800],
+                },
+            ],
+            vec![],
+            &["a", "b", "a", "c", "d", "b", "a"],
+            "a",
+            "b",
+        );
+        free.period_millicents = None;
+        free.arpeggiate = true;
+        result.push(CatalogFixture {
+            id: "unperiodic".into(),
+            options: free,
+        });
+        result
+    }
+
     #[test]
-    fn all_presets_analyze_and_compile() {
-        for preset in presets() {
+    fn independent_catalogs_analyze_and_compile() {
+        for preset in catalog_fixtures() {
             let analysis =
                 analyze(&preset.options).unwrap_or_else(|error| panic!("{}: {error:?}", preset.id));
             assert_eq!(analysis.pair_count, preset.options.chords.len().pow(2));
@@ -1396,7 +1450,7 @@ mod tests {
     }
     #[test]
     fn eight_member_arpeggio_retains_exact_gate_and_reduced_duration() {
-        let mut o = presets().remove(0).options;
+        let mut o = catalog_fixtures().remove(0).options;
         o.chords[0].pitches_millicents = (0..8).map(|i| 6_000_000 + i * 100_000).collect();
         o.history = vec![MotionStep {
             chord_id: "C".into(),
@@ -1414,7 +1468,7 @@ mod tests {
     }
     #[test]
     fn absent_history_retains_unknown_exposure_and_a_silent_plan() {
-        let mut o = presets().remove(0).options;
+        let mut o = catalog_fixtures().remove(0).options;
         o.history.clear();
         let a = analyze(&o).unwrap();
         assert_eq!(a.history_quarters, 0.);

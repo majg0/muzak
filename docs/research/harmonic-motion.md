@@ -1,136 +1,178 @@
-# Harmonic motion: relationships in context
+# Harmonic motion: composing a progression
 
-Continuum treats a progression as an **editable trajectory of voiced sonorities through explicit contexts**. A useful answer to “what can follow this chord?” includes the actual member motions, the destination's relation to a supplied center, the remembered passage, and the musical convention being invoked. No single distance supplies all of these answers. A geometrically close chord may leave the tonic; a large bass leap may accompany a convincing return; the same sound may support different functions at different structural depths.
+The purpose of Harmonic Motion is to **generate a useful chord progression, hear it, understand its direction, and change it**. The theory starts from one question: given a home center, a pitch vocabulary and an intended destination, what changes can carry the music there?
 
-This is a foundation and an executable laboratory contract, not a claim to have discovered a universal harmonic law. The shipped lab exhausts a declared finite catalog. Its descriptors do not estimate listener preferences, emotional responses, key probabilities or next-chord probabilities.
+Four connected decisions organize the answer:
 
-## Objects, coordinates and uncertainty
+1. **Establish a center and collection.** The center is what counts as home; the collection supplies a starting vocabulary. C major and A Aeolian share notes but have different homes.
+2. **Construct and transform chords.** Stack members of the collection, borrow from another collection, alter individual members, or build an approach to a chosen target.
+3. **Shape a phrase.** Establish, depart, continue, prepare and return. A chord's job depends on its target and its place in that larger journey.
+4. **Connect the sounding voices.** Choose bass, register, inversions and member motion so the abstract route becomes playable music.
 
-A sonority consists of individually identified sounding members with native pitch and register. Its optional proposed root, chord quality, spelling, bass role and voice correspondence are separate information. Doublings remain separate members. A pitch-class projection can summarize a chord but cannot replace its realization or recover member identity.
+Classical functional motion, jazz substitutions, modal returns, Tonnetz transformations and symmetric center cycles describe different operations inside this foundation. They are useful together because each states what changes and what stays related. A scale or a smooth pairwise transition alone does not compose a phrase.
 
-The minimal pitch coordinate is an absolute logarithmic value. In native realization this is integer millicents; a difference of 100,000 is 100 cents. A period is optional. For declared positive period `P`, pitch-class distance is `min_k |y - x + kP|`; without one it is ordinary absolute distance. Class equivalence never changes the source pitch. An octave, equal temperament, twelve classes, a major/minor vocabulary and a seven-degree collection are independent conventions, not axioms. Irrational ratios and equal divisions that do not land on integer millicents require an explicitly approximate native realization.
+## Reading the progression
 
-A context frame supplies a center and may also supply a collection and a target sonority. “Center” means a reference against which relations are measured; it need not be a common-practice major/minor tonic. Several frames may coexist: home center, local tonicization, modal final, or intended destination. They remain separately inspectable. In the lab, `global`, `local` and `alternative` are supplied descriptive roles with independent preference weights. They do not establish a hierarchy, posterior probabilities or a unique parse, and there is no per-step inferred modulation schedule. No frame means unknown centricity. A collection alone is not a center: C major and A Aeolian can share pitch classes while implying different returns.
+Every generated chord has a chord symbol, a Roman numeral relative to the home center, its spelled members and its construction. A directed approach additionally names its target. These are known choices in the generated program; they are not inferred analyses of an imported performance.
 
-The conceptual context at time `t` is
+The lab uses **the parallel major scale as the consistent reference for Roman root accidentals**. In a C-centered passage, E♭ is always degree ♭3, A♭ is ♭6 and B♭ is ♭7, including in minor. Thus E♭ major is ♭III, A♭ major is ♭VI, B♭ major is ♭VII, and B diminished is vii°. Some classical minor-key analyses omit these flats; the lab keeps them to make comparisons between collections explicit. Roman case indicates the chord's actual major or minor quality, independently of that root coordinate. Roman notation and chord quality are separate from inversion. [Open Music Theory, “Roman Numerals”](https://viva.pressbooks.pub/openmusictheory/chapter/roman-numerals/).
 
-`K_t = (active frames, heard history, metrical/phrase position, style premises, performance premises)`.
-
-The current lab implements supplied frames and duration-weighted heard history. Structural hierarchy, phrase interpretation, learned style expectations and spectral models are extension points, not hidden default inputs. Listening-time evidence stops before the candidate; a retrospective analysis using future events must declare that additional input.
-
-## A transition has several answers
-
-For voiced sonorities `A` and `B`, retain a relationship vector `R(A, B | K)` with independent coordinates:
-
-| Coordinate | What it answers | What it does not establish |
+| Sound | Construction above its root | Example in a C-centered passage |
 | --- | --- | --- |
-| Member motion | Which source member can continue to which destination, with exact signed/register displacement and entering/leaving members? | The true voices or the intended resolution |
-| Common members | Which pitches or declared period classes persist? | Shared parameters, event identity or melodic continuity |
-| Root and bass motion | How do supplied roots and observed lowest pitches move separately? | Harmonic function from bass alone |
-| Frame relation | How are root, members and destination related to each supplied center/collection/target? | The correct center, mode or structural depth |
-| History relation | How much candidate content has been exposed earlier, for how long and how recently? | A trained expectation model or a phrase boundary |
-| Convention cues | Does this pair instantiate a precisely scoped transformation or progression pattern? | A full cadence, stylistic suitability or universal effect |
-| Performance/spectral relation | How do timing, articulation, register, spectra and level change? | Emotion or harmonic quality from a roughness number |
+| Major triad | 1–3–5 | C = I; A♭ = ♭VI |
+| Minor triad | 1–♭3–5 | Dm = ii; Fm = iv |
+| Diminished triad | 1–♭3–♭5 | B° = vii° |
+| Augmented triad | 1–3–♯5 | E♭+ = ♭III+ |
+| Dominant seventh | 1–3–5–♭7 | G7 = V7 |
+| Major seventh | 1–3–5–7 | Cmaj7 = Imaj7 |
+| Minor seventh | 1–♭3–5–♭7 | Dm7 = ii7 |
+| Half-diminished seventh | 1–♭3–♭5–♭7 | Dø7 = iiø7 |
+| Diminished seventh | 1–♭3–♭5–♭♭7 | B°7 = vii°7 |
+| Minor-major seventh | 1–♭3–5–7 | Cm(maj7) = i(maj7) |
 
-The last coordinate needs an explicit model and is not currently scored. All reported measurements state their units and missing values. Do not blend unavailable evidence into a numerical zero.
+The seventh distinguishes ø7 from °7: Bø7 contains A; B°7 contains A♭. A diminished seventh is nine semitones above its root in 12-TET, but its spelling preserves its seventh relationship. Symmetrical pitch content can support different roots and targets; the target and spelling belong to the interpretation. [Music Theory for the 21st-Century Classroom, “Introduction to Seventh Chords”](https://musictheory.pugetsound.edu/mt21c/SeventhChordsIntroduction.html); [“The Fully Diminished Seventh as Pivot Chord”](https://musictheory.pugetsound.edu/mt21c/TheFullyDiminishedSeventhAsPivotChord.html).
 
-An assignment minimizing total absolute register displacement is a **possible economical correspondence**. The lab first matches the maximum possible number of distinct members, then minimizes the sum of their absolute register displacements over every injective assignment. It reports a representative and exact tie count for every atlas pair, all minimum assignments for the selected pair, unmatched members, and minimum-assignment support counts for target-entry links. A representative does not establish recovered voice identity. The lab currently accepts no authored correspondence constraint. If one is added, actual supplied correspondence must remain distinct from a geometry-derived proposal. A nearest destination tone is particularly weak resolution evidence: B entering any member of C major is different from B ascending to C. Pitch-class distance is an additional projection; it is not substituted for signed/register motion. Geometrical chord spaces motivate this distinction between chords and paths between their realizations. [Tymoczko, “The Geometry of Musical Chords” (2006)](https://www.brainmusic.org/EducationalActivities/Tymoczko_chords2006.pdf).
+An accidental **before** the numeral changes its root; an alteration **after** the chord label changes one of its members. ♭II7 and V7(♭9) do different things. An applied slash means “of”: in C, D7 is globally II7, and **V7/V** says that it approaches G as a temporary target. It does not require a permanent modulation. A slash in a lead-sheet symbol such as D7/F♯ instead names a bass note; those two notations must not be conflated. [Music Theory for the 21st-Century Classroom, “Tonicization”](https://musictheory.pugetsound.edu/mt21c/Tonicization.html).
 
-For unequal cardinalities, account explicitly for entry and exit. They are orchestration changes, not infinitely fast notes or silent hidden doublings. Pairwise minima also need not compose into one continuous voice assignment across a whole passage. A later passage optimizer must solve that separate problem and preserve its competing solutions.
+## Scales are connected vocabularies
 
-History can retain exposure `E(c) = sum_i duration_i × membership_i(c)`, optionally under a declared recency kernel. Keep accumulated exposure and total duration visible alongside normalized overlap. Two histories with equal normalized distributions can have different exposure; two with equal exposure can have different event order. A histogram therefore provides memory of content, not sequence grammar. Silence does not by itself erase the center or reset history.
+The lab derives seven rotations from each of four parent collections. This gives 28 scale/mode choices through the same construction, rather than 28 independent progression recipes. Intervals below are measured from each parent tonic in semitones:
 
-The theoretical object “what comes next” is a conditional distribution over complete realizable continuations, given `K`, not merely a root-to-root matrix. A future model must identify its training lineage, listener/style population, inputs and calibration before its outputs can be called probabilities. Short- and long-term learned regularities are a plausible basis for expectation, but evidence from melodic models is not validation of this lab's chord descriptors. [Pearce, “Statistical learning and probabilistic prediction in music cognition” (2018)](https://www.marcus-pearce.com/assets/papers/Pearce2018.pdf).
+| Parent collection | Formula | Semitone offsets | Some resulting colors |
+| --- | --- | --- | --- |
+| Major | 1 2 3 4 5 6 7 | 0 2 4 5 7 9 11 | Major, Dorian, Phrygian, Lydian, Mixolydian, Aeolian, Locrian |
+| Harmonic minor | 1 2 ♭3 4 5 ♭6 7 | 0 2 3 5 7 8 11 | Minor tonic, major dominant, iiø7, vii°7; fifth mode Phrygian dominant |
+| Melodic minor, ascending/jazz form | 1 2 ♭3 4 5 6 7 | 0 2 3 5 7 9 11 | Minor-major tonic; Lydian dominant, Locrian natural 2 and altered collections |
+| Harmonic major | 1 2 3 4 5 ♭6 7 | 0 2 4 5 7 8 11 | Major tonic with minor iv, iiø7 and vii°7 available in the collection |
 
-## Named theories become scoped views
+To rotate a collection, choose a new starting member, subtract it from every offset and wrap at the declared octave. To construct its tertian chords, select alternate degrees, retaining their exact intervals and spelling. Chord qualities are consequences of those members. “Diminished” is not a separate style preset.
 
-The common foundation is exact realization plus contextual relationships. Each named system selects useful coordinates and admits particular operations; none has to be discarded or promoted into a law for all music.
+The fixed melodic-minor choice uses the ascending form in both directions, as in jazz collection practice. Classical minor is more flexible: scale degrees 6 and 7 vary with melodic and harmonic context. Choosing harmonic minor therefore does not assert that every note in a minor-key piece must belong to that one scale. [Open Music Theory, “Minor Scales, Scale Degrees, and Key Signatures”](https://viva.pressbooks.pub/openmusictheory/chapter/minor-scales/); [Berklee, “Piano Scales 101”](https://online.berklee.edu/courses/piano-scales-101?pid=8023).
 
-A substitution states `(original, replacement, preserved relationship, context)`. It may preserve selected melodic endpoints, target function, collection, root, or a phrase role while changing the other coordinates. “Substitute” therefore does not mean that two chords are equal, globally interchangeable, or transitively equivalent through every other substitution. The proof is an admitted edit and its complete downstream realization. A cycle likewise can restore the starting chord without restoring register, voice identity, center history or phrase position.
+A mode also needs its center to be made audible through emphasis and return. C Dorian's major IV supplies A natural, a distinguishing color absent from C natural minor; C Mixolydian's ♭VII supplies B♭. Neither needs an invented B-natural leading tone to be modal. Actual modal traditions involve more than rotating a scale, and the same collection can be used without a single center. [Open Music Theory, “Diatonic Modes”](https://viva.pressbooks.pub/openmusictheory/chapter/diatonic-modes/); [“Modal Schemas”](https://viva.pressbooks.pub/openmusictheory/chapter/modal-schemas/).
 
-| View | Representation in the common foundation | Essential qualification |
+The **altered scale and an altered dominant chord are different selections from a shared vocabulary**. G altered is the pitch collection of A♭ melodic minor viewed from G. A dominant realization selects G–B–F plus particular altered colors, such as A♭ and E♭ for G7(♭9,♭13). The scale's C♭ is respelled as the dominant's B. Blindly stacking alternate degrees of the seventh melodic-minor mode instead gives a half-diminished skeleton; it does not construct that dominant. Lydian dominant is the fourth melodic-minor mode, with a major third, ♭7 and ♯11 available. [Biamonte, “Augmented-Sixth Chords vs. Tritone Substitutes,” §§12–13](https://mtosmt.org/issues/mto.08.14.2/mto.08.14.2.biamonte.html).
+
+## A small set of operations connects the theories
+
+An operation specifies its input, result, preserved relationship and context. These examples all use C as the home center, with a separate local target where needed:
+
+| Operation | Example | Relationship and musical use |
 | --- | --- | --- |
-| Classical functional motion | Root/degree and realized chord relative to home/local frames, with directed member resolutions and phrase evidence | V–I content is only a cadence cue; cadence classification also needs position, preparation, bass, melody and convention |
-| Modal centricity | A supplied center/final independent of collection and optional dominant function | A mode is not obtained by renaming a major key while keeping all functional assumptions |
-| Jazz substitution | Alternative realizations that preserve a declared role or selected member relationships, with bass, melody and extensions exposed | Interchangeability is conditional; equal guide-tone classes do not make every realization equivalent |
-| Tonnetz / P, L, R | Relations within a specified triad family; P: C major↔C minor, L: C major↔E minor, R: C major↔A minor | These standard operations are involutions on major/minor triads in their declared domain, not general tonic-directed arrows |
-| Equal-division center cycles | Repeated transposition of local frames, with independently composed approaches and resolutions | A cycle describes its route; it does not determine a home center, melody or temporal grammar |
-| Xenharmonic systems | Arbitrary native members, optional nonoctave period, independent collections/centers and tuning-specific transformations | “Nearest 12-TET chord” is a lossy diagnostic, never the native object or its automatically inherited function |
+| Move within a collection | C → Am → Dm → G → C | Changes root and chord members while retaining the vocabulary; phrase position distinguishes departure from return |
+| Borrow from a parallel collection | C → Fm → C, I–iv–I | Keeps C as home and introduces A♭; A♭→G can color the return while F→E connects the other changed member |
+| Approach a target with its dominant | D7 → G, V7/V–V | Builds D–F♯–A–C from the chosen G target; F♯ can lead to G while home remains C |
+| Approach with a leading-tone chord | F♯°7 → G, vii°7/V–V | Builds F♯–A–C–E♭ below the G target; keeps its target identity distinct from global ♯iv°7 |
+| Alter a dominant's color | G7(♭9,♭13) → C | Retains dominant root, third and seventh while choosing chromatic color members and their possible destinations |
+| Substitute the dominant root by a tritone | D♭7 → C, subV7–I | Preserves the sounding third/seventh classes of G7 with exchanged roles, while replacing fifth-root motion with semitone-root motion |
+| Transform a major/minor triad | C → Cm (P), C → Em (L), C → Am (R) | Retains two triad members and changes the other; the same operation can be read against any supplied home center |
+| Move a center by a repeated interval | C → E → A♭ → C | Establishes an equal-third route; local dominant or ii–V approaches can be built around each destination |
 
-In tonal jazz, G7 and D♭7 can provide alternatives before C while changing the root/bass approach. Their common sounding guide-tone classes B/C♭ and F do not erase exchanged third/seventh roles, notation, register or possible destination choices. This is a useful example of simultaneous tonal and member-motion syntax. [McClimon, “Transformations in Tonal Jazz” (2017)](https://www.mtosmt.org/issues/mto.17.23.1/mto.17.23.1.mcclimon.php); [Smither, “Guide-Tone Space” (2019)](https://mtosmt.org/issues/mto.19.25.2/mto.19.25.2.smither.html).
+Applied diminished chords follow the same target-first construction as applied dominants. A diminished quality alone does not decide the role: iiø7 can prepare a dominant, while a leading-tone interpretation of the same sounding chord may approach a different target. [Music Theory for the 21st-Century Classroom, “Writing Secondary Diminished Chords”](https://musictheory.pugetsound.edu/mt21c/WritingSecondaryDiminishedChords.html); [“Secondary Diminished Chords in Major and Minor”](https://musictheory.pugetsound.edu/mt21c/SecondaryDiminishedChordsInMajorAndMinor.html).
 
-For example, D7→G can be compared with a G-centered target while the passage retains a C home frame. Its local arrival need not assert that the whole passage has modulated. A modal G-major→A-minor return in an A-Aeolian frame can be inspected without fabricating G♯→A leading-tone motion. These are supplied readings to compare and audition, not automatically recovered functional labels.
+Borrowing changes the collection premise while keeping home; an applied chord changes the immediate target; an alteration changes selected chord members; a substitution preserves a specified role while changing its realization. These distinctions make edits composable. A tritone substitute can itself carry extensions, and an applied dominant can approach a borrowed chord when that target is admitted. The generated catalog supports a finite subset of these combinations, not every possible composition of operations.
 
-The standard triadic operations have a finite algebra that can be enumerated exactly. Their compositional order must be explicit. Their Tonnetz paths describe particular transformations, whereas a tonal interpretation additionally names a center and context. [Peck, “A GAP Tutorial for Transformational Music Theory,” §5 (2011)](https://mtosmt.org/issues/mto.11.17.1/mto.11.17.1.peck.html).
+Tonal jazz can be modeled through transformations of root, third and seventh while treating extensions as additional choices. This explains how Dm7–G7–Cmaj7 and more colored realizations can share a directed route without having identical notes. [McClimon, “Transformations in Tonal Jazz”](https://www.mtosmt.org/issues/mto.17.23.1/mto.17.23.1.mcclimon.php). Guide-tone relationships provide a complementary account of how those realizations connect. [Smither, “Guide-Tone Space”](https://mtosmt.org/issues/mto.19.25.2/mto.19.25.2.smither.html).
 
-Major-third cycles associated with Coltrane can be constructed from equal center spacing plus local dominant or ii–V approaches. Changing the direction, entry point, approach, harmonic rhythm or melody produces different passages while preserving the center-cycle premise. The lab's synthetic cycles are compositional controls, not transcriptions, style models or an algorithm containing a composer's identity. Bleij's analysis compares Coltrane-related sequential gestures with Shorter's changed ordering and interlocking, demonstrating why a root cycle alone is insufficient. [Bleij, “Three Multifaceted Compositions by Wayne Shorter” (2019), §§62–66](https://mtosmt.org/issues/mto.19.25.4/mto.19.25.4.bleij.html).
+P, L and R are precisely defined operations on major/minor triads; each is its own inverse in that domain. Their paths describe changes of triads, while a Roman reading supplies the additional center-relative coordinate. A Tonnetz edge does not determine which direction makes a cadence. [Peck, “A GAP Tutorial for Transformational Music Theory,” §5](https://mtosmt.org/issues/mto.11.17.1/mto.11.17.1.peck.html).
 
-For a period `P`, an equal `n`-center division has ideal increment `P/n`; closure follows from `n(P/n)=P`. In an equal-step system of `N` classes, repeated integer step `s` closes after `N/gcd(N,s)` steps. This arithmetic generalizes cyclic construction. It proves neither perceptual equivalence of periods nor a favored direction. Native rounding must not silently turn an approximate closure into an exact one.
+Major-third center cycles associated with Coltrane likewise combine two ordinary operations: move the center by a repeated interval and compose an approach to the new target. Entry point, direction, ordering, harmonic rhythm and melody distinguish the resulting passages. A composer's identity is not an algorithmic parameter. [Bleij, “Three Multifaceted Compositions by Wayne Shorter,” §§62–66](https://mtosmt.org/issues/mto.19.25.4/mto.19.25.4.bleij.html).
 
-## Effects require a frame and a comparison
+## What makes a progression lead somewhere?
 
-“Arrival,” “departure,” “continuation,” “deflection,” “brightening,” and “tension” name different judgments. Define the measurable component and the contrast before attributing an effect:
+Consider **C–Am–Dm–G7–C**: I–vi–ii–V7–I. Home is established, the middle expands away from it, ii prepares V, and V returns to home. The journey supplies a reason for each chord beyond “these notes are nearby.” Now replace Am with A7: **C–A7–Dm–G7–C**, I–V7/ii–ii–V7–I. The inserted C♯ points toward D; a local target changes while the overall destination stays C. Replace G7 with D♭7 and the final bass approach changes while the return remains directed toward C. These are related edits to one idea.
 
-- Arrival can have stronger overlap with a declared target, root arrival at a supplied center, or actual directed member resolutions. These can disagree.
-- Departure can introduce collection-external content or move away from a target while keeping exceptionally smooth voices.
-- Continuation can preserve a common member, prolong an authored harmonic parameter, or repeat a progression schema. Those are different claims.
-- Deflection requires an established expectation or authored intended destination. A surprising-looking chord is not sufficient evidence.
-- Brightness, roughness, arousal, pleasantness and closure need separate perceptual definitions. A dominant seventh in a blues tonic position is a useful control against “seventh chord equals unresolved dominant.”
+The same logic works in minor: **Cm–Dø7–G7(♭9)–Cm** can use C harmonic minor's E♭, A♭ and B natural. A Dorian passage may instead favor **Cm–F–Cm**, making A natural audible and returning without a leading-tone dominant. The modal return is a different operation with its own evidence; it need not imitate the functional example.
 
-Lerdahl and Krumhansl explicitly distinguish surface dissonance, hierarchical stability and directed attraction in their tonal-tension model. That supports retaining multiple levels and components; it does not license applying its common-practice priors unchanged to modal, post-tonal or arbitrary-tuning music. [“Modeling Tonal Tension” (2007)](https://www.fredlerdahl.com/s/Modeling-Tonal-Tension.pdf).
+Useful effects have several components:
 
-A sensory model additionally needs register, reference frequency, partial frequencies and amplitudes. Changing spectra can change modeled interval roughness while leaving symbolic members and their progression unchanged. This is why pitch relations alone cannot determine xenharmonic consonance or musical value. The current audition voice is not a matched-spectrum experiment. [Sethares, “Relating Tuning and Timbre”](https://sethares.engr.wisc.edu/consemi.html).
+- **Home and arrival:** reaching the intended center or target, with phrase position and duration supporting the return.
+- **Direction:** directed chord-member motion and an authored target, such as F♯ approaching G. Merely entering any note of the next chord is weaker evidence.
+- **Color and contrast:** introducing new scale or chord members while preserving another relationship, such as home, root or guide tones.
+- **Continuity:** common tones, economical register motion and recurring material that connect a larger departure.
+- **Deflection:** taking a different destination from an established or authored target. This depends on context, not just on an unusual chord symbol.
 
-## One exhaustive lab, a finite declared universe
+G7 can be V in C, V/V in F, or a tonic sonority in a G blues context. Its notes alone do not settle its job. Nor do “more chromatic,” “more dissonant” and “more tense” mean the same thing. Hierarchical stability, directed attraction and surface dissonance are distinct components even in a tonal-tension model. [Lerdahl and Krumhansl, “Modeling Tonal Tension”](https://www.fredlerdahl.com/s/Modeling-Tonal-Tension.pdf).
 
-Harmonic Motion is one session with a supplied chord catalog, frames, heard history and a passage. The atlas evaluates every ordered catalog pair, including identity: `N` chords produce `N²` transitions. An exhaustive row has exactly `N` destinations. This covers the admitted catalog and configured metrics; it does not cover every voicing, tuning, chord interpretation, rhythm, context or musical language. Catalog size and resource limits are visible, and exceeded limits fail explicitly.
+The generator uses a declared compositional grammar and a seed, rather than trained listener probabilities. It establishes and returns to the chosen tonic, chooses intervening routes using chord roles, directed targets, phrase position and repetition, then selects voicings across the passage. Its current voicing search keeps a separate root bass and chooses upper positions jointly from a bounded register; it does not infer voices from source music or enforce a complete classical counterpoint rulebook. This is a practical basis for useful variation; listening quality remains an audition judgment. Richer melody, rhythm and style conditioning can improve that judgment without replacing the common representation.
 
-The lab keeps geometric relations, frame relations and history descriptors separate. Select a pair to inspect witnesses; build a passage to hear a sequence; change a frame to compare interpretation under unchanged notes; edit a shared harmonic value to hear dependent occurrences change. Chord naming is display metadata, not inference evidence. Declared centers are compositional premises, not discovered tonic estimates.
+## Using the lab
 
-### Implemented preference objective
+Choose **Key**, **Scale**, **Length** and **Harmonic color**, then generate a progression. The scale notes and large Roman/chord cards make the selected vocabulary and resulting route visible together. **New variation** changes the seed under the same musical premise. Play the passage or export its MIDI.
 
-The native contract is [harmonic_motion.rs](../../crates/muzak-core/src/harmonic_motion.rs). It orders every successor by the sum of eight explicit contributions; smaller cost is preferred. Weight signs can reverse a preference. All weights zero leaves all destinations tied. This objective is authored, untrained and uncalibrated; a ranked first choice is not evidence of listener agreement.
+Select a chord to see its neighbors, its exact spelled tones, its global Roman coordinate, any applied reading, and why it appears there. Suggested replacements are changes within that passage; select one and audition the resulting phrase. Further alternatives and the full catalog remain available without making every setting part of the starting screen.
 
-Let `D(B, S)` be the mean, over every sounded member of `B`, of its distance to the nearest member of `S`, in cents. Distances use the declared period, or absolute native pitch without one. An empty `S` gives an unavailable value. This directional, many-to-one comparison is independent of the register-sensitive injection used for member motion. `D(B, S)=0` says that every member of `B` is in `S`; it does **not** say that `B` realizes all of `S`.
+Advanced controls expose tempo, seed, arpeggiation and the native relationship options. The general relationship explorer accepts explicit catalogs, multiple context frames and arbitrary native tuning; it can analyze and audition a supplied passage through the same compiler. Twelve-tone Roman names and the composer's scale/operation grammar apply only in their declared twelve-tone domain. They are not imposed on arbitrary tuning inputs.
 
-For each frame, translate its collection and target offsets by its center. A frame-averaged value is `sum(frameWeight × availableValue) / sum(availableFrameWeights)`; zero-weight frames remain visible and have no objective influence. With no positive weight on an available value, the aggregate is unavailable. Frame weights are preferences, not posterior masses.
+The exhaustive claim is precise: for a supplied catalog of `N` voiced chords, the relationship kernel evaluates **all `N²` ordered pairs**, including identity. A successor row covers all `N` destinations. The generated phrase is a selected route through a finite vocabulary, not an exhaustive list of every possible phrase, style, voicing or tuning.
 
-| Factor | Reported value | Contribution with weight `w` |
-| --- | --- | --- |
-| Member motion | Mean absolute displacement of a minimum-cost maximum-cardinality register injection, cents | `w × value / 100` |
-| Arrivals / departures | Absolute member-count difference | `w × value` |
-| Common tones | Multiset intersection count under the declared period, or exact native pitch without one | `−w × value` |
-| Collection distance | Frame-averaged `D(destination, collection)`, cents | `w × value / 100` |
-| Target distance | Frame-averaged `D(destination, target)`, cents | `w × value / 100` |
-| Target approach | Frame-averaged `D(source, target) − D(destination, target)`, cents | `−w × value / 100` |
-| History distance | `sum(duration_i × D(destination, pastChord_i)) / sum(duration_i)`, cents | `w × value / 100` |
-| Identity exposure | Fraction of history duration using the destination's exact catalog ID | `w × value` |
+Rust owns scales, spellings, Roman analysis of authored chords, catalog operations, progression selection, voicing, relationship computation and performance preparation. The forward composer is [progression.rs](../../crates/muzak-core/src/progression.rs), with derived vocabulary in [catalog.rs](../../crates/muzak-core/src/progression/catalog.rs). TypeScript owns the controls, session state, display and device adapters. Both simple generation and the advanced explorer lower through shared harmonic palettes and neutral rhythmic materials in `CompositionPlan`; there is one note-emitting compiler.
 
-An unavailable factor remains `null` and contributes zero to this particular objective. That convention is an omitted preference term, not evidence that the measurement is zero. Cost ties use an absolute tolerance of `10^-9`; lexical ID ordering only makes their display deterministic. Total history duration is reported independently of normalized history factors. The implementation uses no recency decay, learned transition counts or confidence derived from exposure. Repeated equal pitches with different IDs are not repeated parameter identity.
+## Representation and relationship kernel
 
-Successor comparisons use the selected source and the entire supplied history; the source is not implicitly appended. Each passage-edge comparison instead uses only the history prefix through that edge's source, excluding the destination and all later steps. This separates exploratory continuation from leakage-free prefix inspection.
+The native contract is [harmonic_motion.rs](../../crates/muzak-core/src/harmonic_motion.rs). A sonority has individually identified members with exact native pitch and register. Proposed root, quality, spelling, bass role and member correspondence are distinct information. Equal pitches can have different owners and parameter bindings. A scene is self-contained; labels and evidence IDs supply no hidden notes.
 
-Admission is finite: 1–64 catalog chords, 1–8 ordered members each, 0–8 frames, and 0–128 history steps. Native coordinates have absolute value at most `10^12` millicents; a supplied period is positive and at most that bound. A frame permits at most 128 collection offsets and 128 target offsets. Frame weights lie in `[0, 100]`, factor weights in `[−100, 100]`, and tempo in `[20, 400]`. Duration numerators are 1–64 and denominators 1–1024, in quarter notes. Realization derives a common exact grid from reduced duration denominators, arpeggio cardinalities and the authored 9/10 gate, rejecting a required PPQ above 1,000,000. Empty history realizes an empty score and leaves history factors unavailable. Inputs retain rational durations; analysis summaries use floating-point cents and quarters. Native-valid timing and pitch still need to pass the separate standard-MIDI loss checks.
+Native pitch uses integer millicents: 100,000 millicents equals 100 cents. A period is optional. With positive period `P`, class distance is `min_k |y − x + kP|`; without one it is ordinary absolute distance. Class projection never changes a member's exact source coordinate. An octave, equal division, twelve classes and a seven-degree scale are separate conventions. Equal divisions or ratios that miss integer millicents require explicit approximate realization.
 
-Rust owns catalog construction, validation, relationship computation and passage preparation. TypeScript owns controls, views, session state and device calls. Audition uses a `CompositionPlan` compiled by the existing decoder, with shared harmonic palettes and materials; no atlas-only note emitter exists. Separate occurrences retain separate emissions. Standard MIDI export must reject native pitches that it cannot preserve.
+A context frame supplies a center and optionally a collection and a target sonority. Home, local and alternative frames can coexist with independent weights. They are compositional premises, not a recovered modulation schedule. No supplied center means centricity is unavailable. The general context is `K_t = (frames, heard history, phrase position, style premises, performance premises)`; each model must state which parts it actually uses.
 
-Finite controls define the useful contrasts, independent of any held-out repertoire. Named stylistic examples are listening/edit experiments; implementation properties additionally require automated checks:
+For source `A`, destination `B` and context `K`, retain separate answers:
 
-| Contrast | Required observation |
+| Relationship | Observable or authored content |
 | --- | --- |
-| Same G7→C, center C versus F | Exact notes and pair geometry agree; center-relative interpretation changes |
-| C major versus A Aeolian frame over the same collection | Collection fit can agree while center coordinates differ |
-| C→Am versus Am→C | Symmetric geometric cost does not force equal directed/frame readings |
-| G7→C versus D♭7→C | Common guide-tone classes coexist with different roots, bass motions and member roles |
-| P/P, L/L, R/R within the admitted triads | The second operation returns the starting triad; unsupported qualities get no fabricated operation |
-| Equal-third cycle, reversed cycle and new entry point | The center route closes arithmetically while the heard trajectory changes |
-| Same pitch classes, changed register/inversion | Class overlap stays fixed; signed/register correspondence and bass can change |
-| Doubled equal pitches edited independently | Distinct members/emissions remain distinct; alignment ambiguity is reported |
-| Same immediate pair, changed duration-weighted prior passage | Pair geometry remains fixed; history exposure changes |
-| Unknown center and empty history | Unknown inputs remain unavailable; no artificial tonic or reset is inferred |
-| 19 equal divisions, arbitrary nonoctave period, absent period | Native geometry remains meaningful; unsupported 12-TET convention cues remain absent |
-| Shared palette edit on a repeated complete passage | Every bound occurrence changes through the compiler; independent rhythm/identity stays intact |
+| Member motion | Exact signed/register displacement under an explicit correspondence; entered and exited members |
+| Shared content | Exact or periodic common members, independently of ownership and parameter identity |
+| Root and bass | Separate motion of the proposed root and sounding lowest member |
+| Center/target | Root coordinates, collection fit, target fit and direction relative to each frame |
+| History | Earlier exposure weighted by duration, with total exposure retained |
+| Convention | A scoped functional or transformational relationship with its premises |
+| Performance | Rhythm, articulation, timbre, register and level; a spectral model requires additional inputs |
 
-These are implementation and counterfactual gates. They are not independent listener validation. The next substantial advance is a useful passage comparison: hold its musical premise explicit, change one relationship, regenerate its dependents, audition both, and record what listeners judge. Only then consider a learned selection model under a fixed evaluation contract. Never replace this with a larger catalog of untested labels.
+The pairwise geometry matches the maximum possible number of distinct members, then minimizes summed absolute register displacement over every injective assignment. It retains the number of tied minima and the alternative assignments for the selected pair, along with unmatched members. A representative minimum is a possible correspondence, not recovered voice identity. Different pairwise minima need not compose into continuous voices; generated passage voicing and inferred performance correspondence are separate problems. [Tymoczko, “The Geometry of Musical Chords”](https://www.brainmusic.org/EducationalActivities/Tymoczko_chords2006.pdf).
 
-All linked primary texts were checked on 2026-10-03. This document's coordinate contract and laboratory design are Continuum's synthesis; citations identify supporting theory and evidence, not validation of the implemented metrics.
+History exposure can be written `E(c) = Σ duration_i × membership_i(c)`. Accumulated duration remains visible beside normalized overlap. Equal histograms can have different event orders; this history summary is not a sequence grammar. Passage-edge inspection uses only the prefix through the source of that edge. Exploratory successor inspection uses the supplied history as given, without silently appending the selected source. Silence alone does not reset harmonic context.
+
+### Advanced successor preferences
+
+The relationship explorer exposes an eight-term preference objective. It is independent of the progression composer's directed phrase grammar. Define `D(B,S)` as mean distance from each member of B to its nearest member of S, in cents, with the declared period or absolute native distance. Empty S is unavailable. `D(B,S)=0` means every B member is in S, not that B realizes every member of S.
+
+Frame values are averaged using available positive frame weights; zero-weight frames remain visible but do not affect the objective. An unavailable factor remains `null` and contributes no preference. Smaller summed cost is preferred:
+
+| Factor | Value | Weighted contribution |
+| --- | --- | --- |
+| Member motion | Mean absolute displacement of a minimum maximum-cardinality injection, cents | `w × value / 100` |
+| Entry/exit | Absolute member-count difference | `w × value` |
+| Common members | Multiset intersection count under the declared projection | `−w × value` |
+| Collection distance | Frame-averaged `D(B, collection)` | `w × value / 100` |
+| Target distance | Frame-averaged `D(B, target)` | `w × value / 100` |
+| Target approach | Frame-averaged `D(A, target) − D(B, target)` | `−w × value / 100` |
+| History distance | `Σ duration_i × D(B, pastChord_i) / Σ duration_i` | `w × value / 100` |
+| Identity exposure | Fraction of history duration using B's exact catalog ID | `w × value` |
+
+Weights can reverse preferences. All weights zero leaves every destination tied. The absolute tie tolerance is `10^-9`; lexical IDs only order the display. These costs express preferences, not confidence or probabilities. Operation selection in the composer separately normalizes by each operation's available realization count, so enlarging one catalog family does not by itself increase that operation's prior weight.
+
+The advanced kernel admits 1–64 chords with 1–8 members each, 0–8 frames and 0–128 history steps. Native coordinate magnitude and positive periods are bounded by `10^12` millicents; frames accept up to 128 collection and target offsets. Frame weights lie in `[0,100]`, preference weights in `[−100,100]`, and tempo in `[20,400]`. Durations retain positive rational quarters, with numerators 1–64 and denominators 1–1024. Exact realization rejects a required PPQ above 1,000,000. Native-valid results still pass the separate standard-MIDI loss checks before export.
+
+## Generalization and useful checks
+
+Arbitrary tuning retains the same structure: choose coordinates and an optional period, supply collections and centers, define admissible member transformations and targets, then realize a passage. A named 12-TET operation is not automatically a meaningful operation in another tuning. For an equal-step system of `N` classes, an integer step `s` closes after `N/gcd(N,s)` steps; for period `P`, ideal equal `n`-center spacing is `P/n`. This proves cycle closure, not perceptual equivalence or a preferred direction. Timbre-dependent consonance needs explicit partial frequencies and amplitudes in addition to pitch coordinates. [Sethares, “Relating Tuning and Timbre”](https://sethares.engr.wisc.edu/consemi.html).
+
+The useful evaluation is a complete passage and a meaningful edit. Controls should preserve independent dimensions:
+
+| Edit or comparison | What should stay separate |
+| --- | --- |
+| Same G7→C under C and F home centers | Identical notes and member geometry; different center-relative readings |
+| C major versus A Aeolian over the same collection | Collection equality; different tonic and phrase return |
+| Natural minor versus harmonic minor | Lowered versus raised seventh, changed dominant and diminished-chord possibilities |
+| Half-diminished versus diminished seventh | Exact seventh member and resulting relationships |
+| Diatonic approach versus V7/target, vii°7/target or subV7/target | Global root coordinate, operation and target identity |
+| Same route with altered dominant color | Preserved route/target; changed emitted members and voice motion |
+| Changed inversion/register | Stable pitch classes; changed bass and signed member movement |
+| Same pair after a different earlier passage | Stable pair geometry; different history and phrase role |
+| Repeated chord with one local edit | Distinct occurrences, identity and emission ownership |
+| Shared harmonic edit | Every bound occurrence regenerated by the compiler |
+| Arbitrary tuning or absent center | Native coordinates retained; unsupported conventions remain unavailable |
+
+Exact reconstruction, clear explanations and pleasing music are separate gates. The foundation supports listening comparisons and executable changes; it does not claim a universal law of emotion or a trained model of listener expectation. A future learned chooser needs declared inputs, work-lineage holdouts and independent evaluation. Source labels remain outside production inference.
+
+The operation model and lab design are Continuum's synthesis. The cited teaching texts and primary research establish their specific notation and theoretical premises; they do not validate the generator's musical quality.

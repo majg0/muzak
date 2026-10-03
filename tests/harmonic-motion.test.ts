@@ -51,16 +51,27 @@ function events(score: Score) {
     .sort((a, b) => a[0] - b[0] || a[2] - b[2]);
 }
 
-test('every shipped study has a complete ordered atlas and an executable standalone passage', () => {
-  const presets = call('getHarmonicMotionPresets', {});
-  assert.ok(presets.length > 0);
-  assert.equal(new Set(presets.map(preset => preset.id)).size, presets.length);
-  for (const preset of presets) {
-    const { options } = preset, saved = structuredClone(options);
+test('independent finite catalogs have complete ordered atlases and executable standalone passages', () => {
+  const catalogs = [{ id: 'voiced-passage', options: fixture() }];
+  for (const qualities of [
+    [[0, 4, 7], [0, 3, 7]],
+    [[0, 4, 7], [0, 3, 7], [0, 4, 7, 10], [0, 4, 7, 11]],
+  ]) {
+    const options = fixture();
+    options.chords = Array.from({ length: 12 }, (_, root) => qualities.map((intervals, quality) =>
+      chord(`${root}-${quality}`, intervals.map(interval => 4800000 + (root + interval) * 100000)))).flat();
+    options.fromChordId = '7-0'; options.toChordId = '0-0';
+    options.history = ['0-0', '5-0', '2-1', '7-0', '0-0'].map(chordId =>
+      ({ chordId, duration: { numerator: 2, denominator: 1 } }));
+    catalogs.push({ id: `${options.chords.length}-chord-catalog`, options });
+  }
+  assert.deepEqual(catalogs.map(item => item.options.chords.length), [4, 24, 48]);
+  for (const catalog of catalogs) {
+    const { options } = catalog, saved = structuredClone(options);
     const analysis = call('analyzeHarmonicMotion', { options });
     const pairs = options.chords.flatMap(from => options.chords.map(to => `${from.id}/${to.id}`)).sort();
-    assert.equal(analysis.pairCount, options.chords.length ** 2, preset.id);
-    assert.deepEqual(analysis.atlas.map(pair => `${pair.fromChordId}/${pair.toChordId}`).sort(), pairs, preset.id);
+    assert.equal(analysis.pairCount, options.chords.length ** 2, catalog.id);
+    assert.deepEqual(analysis.atlas.map(pair => `${pair.fromChordId}/${pair.toChordId}`).sort(), pairs, catalog.id);
     assert.deepEqual(analysis.successors.map(item => item.chordId).sort(), options.chords.map(item => item.id).sort());
     assert.ok(analysis.successors.every(item => Number.isFinite(item.cost)));
     assert.ok(analysis.successors.every((item, index, list) => index === 0 || list[index - 1].cost <= item.cost));
@@ -72,11 +83,11 @@ test('every shipped study has a complete ordered atlas and an executable standal
     const score = call('compileComposition', { plan });
     const expectedNotes = options.history.reduce((sum, step) =>
       sum + options.chords.find(item => item.id === step.chordId)!.pitchesMillicents.length, 0);
-    assert.equal(score.notes.length, expectedNotes, preset.id);
+    assert.equal(score.notes.length, expectedNotes, catalog.id);
     assert.equal(new Set(score.notes.map(note => note.id)).size, expectedNotes);
     const scene = call('sceneFromComposition', { plan });
     assert.equal(scene.origin, 'authored');
-    assert.deepEqual(call('decodeScene', { scene: JSON.parse(JSON.stringify(scene)) }), score, preset.id);
+    assert.deepEqual(call('decodeScene', { scene: JSON.parse(JSON.stringify(scene)) }), score, catalog.id);
     assert.deepEqual(options, saved, 'Analysis and realization preserve authored premises.');
   }
 });
@@ -391,7 +402,6 @@ test('native and Wasm expose the same harmonic study, passage and strict rejecti
   const microtonal = structuredClone(plan); microtonal.harmonies![0].rootMillicents += 1;
   const score = call('compileComposition', { plan: microtonal });
   const requests: CoreRequest[] = [
-    { op: 'getHarmonicMotionPresets', input: {} },
     { op: 'analyzeHarmonicMotion', input: { options } },
     { op: 'realizeHarmonicMotion', input: { options } },
     { op: 'compileComposition', input: { plan } },

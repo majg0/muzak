@@ -22,7 +22,13 @@ use ts_rs::TS;
     rename_all_fields = "camelCase"
 )]
 pub enum CoreRequest {
-    GetHarmonicMotionPresets {},
+    GetProgressionDefaults {},
+    GenerateProgression {
+        options: crate::progression::ProgressionOptions,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        chord_ids: Option<Vec<String>>,
+    },
     AnalyzeHarmonicMotion { options: crate::harmonic_motion::HarmonicMotionOptions },
     RealizeHarmonicMotion { options: crate::harmonic_motion::HarmonicMotionOptions },
     GetLabDefaults {},
@@ -240,7 +246,8 @@ pub enum CoreRequest {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(tag = "op", content = "output", rename_all = "camelCase")]
 pub enum CoreResponse {
-    GetHarmonicMotionPresets(Vec<crate::harmonic_motion::HarmonicMotionPreset>),
+    GetProgressionDefaults(crate::progression::ProgressionDefaults),
+    GenerateProgression(crate::progression::ProgressionResult),
     AnalyzeHarmonicMotion(crate::harmonic_motion::HarmonicMotionAnalysis),
     RealizeHarmonicMotion(composition::CompositionPlan),
     GetLabDefaults(crate::labs::LabDefaults),
@@ -295,7 +302,8 @@ pub enum CoreReply {
 
 pub fn dispatch(request: CoreRequest) -> CoreResult<CoreResponse> {
     Ok(match request {
-        CoreRequest::GetHarmonicMotionPresets {} => CoreResponse::GetHarmonicMotionPresets(crate::harmonic_motion::presets()),
+        CoreRequest::GetProgressionDefaults {} => CoreResponse::GetProgressionDefaults(crate::progression::defaults()),
+        CoreRequest::GenerateProgression { options, chord_ids } => CoreResponse::GenerateProgression(crate::progression::generate(&options, chord_ids.as_deref())?),
         CoreRequest::AnalyzeHarmonicMotion { options } => CoreResponse::AnalyzeHarmonicMotion(crate::harmonic_motion::analyze(&options)?),
         CoreRequest::RealizeHarmonicMotion { options } => CoreResponse::RealizeHarmonicMotion(crate::harmonic_motion::realize(&options)?),
         CoreRequest::GetLabDefaults {} => CoreResponse::GetLabDefaults(crate::labs::LabDefaults::default()),

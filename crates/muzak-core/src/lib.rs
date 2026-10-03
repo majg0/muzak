@@ -20,6 +20,7 @@ pub mod paired_pitch;
 pub mod partition;
 pub mod performance;
 pub mod pitch_relations;
+pub mod progression;
 pub mod scene;
 mod scene_relations;
 pub mod segmental;

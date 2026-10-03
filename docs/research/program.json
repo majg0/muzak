@@ -3,10 +3,10 @@
   "updatedDate": "2026-10-03",
   "objective": "Generate musically compelling, controllable music through focused experiment labs sharing one Rust composition algebra, a composable musical ontology and contextual harmonic relationships.",
   "checkpoint": {
-    "summary": "Harmonic Motion adds a sourced relational foundation and one finite exhaustive lab to the isolated catalog. Rust compares every ordered supplied chord pair, preserves exact member/register correspondences and their ambiguity, measures separate tonal-frame and duration-weighted history effects, and exposes an explicit successor objective. Classical/modal, jazz, triadic-transformation, symmetric-cycle and arbitrary-tuning inputs share the engine. Editable passages lower through shared palettes and neutral rhythmic materials in CompositionPlan. These authored counterfactual controls establish executable scope, not inferred tonic, recovered voices, learned expectation or perceptual quality. Melody, Rhythm and Composition remain independent usable labs; retained sessions are in memory only.",
+    "summary": "Harmonic Motion now centers on generating, hearing and editing a complete progression from a tonic, scale, length and harmonic-color choice. Rust constructs and spells triads/sevenths across 28 modes, preserves global and applied Roman readings, admits borrowing, diminished and altered dominants and tritone substitutions with explicit destinations, and chooses smooth registers across the passage. Replacements preserve neighboring directed targets. The exact native-pitch relation engine remains available for finite exhaustive comparisons, explicit frames, correspondence ambiguity and arbitrary tunings. Both routes lower through the same CompositionPlan compiler. Roman readings and route preferences are authored premises, not inferred tonic, recovered voices, learned expectation or validated perceptual quality. Melody, Rhythm and Composition remain independent usable labs; retained sessions are in memory only.",
     "nextActions": [
-      "Use the harmonic-motion lab for matched passage comparisons: change the supplied center, earlier exposure, voiced chord or one occurrence independently; audition the exact regenerated notes and record useful effects.",
-      "Evaluate continuous passage-level correspondence and explicit changing local contexts before claiming recovered voices, modulation or phrase closure. Pairwise minimum motion and a weighted frame mixture do not establish those structures.",
+      "Audition generated and edited progressions with matched tonic, collection and color controls. Judge route shape, voice leading and usefulness separately from exact compilation and Roman-label correctness; record where the current compositional preferences need improvement.",
+      "Use complete-passage voicing and explicit directed targets as a forward premise for richer phrase rhythm, tonic changes and transformations. The current generator keeps one center and four-quarter chord durations; it does not yet model modulation, recovered voices or listener-validated closure.",
       "If adding expectation, use a declared style/input tier and independent listener or repertoire evidence with work-lineage holdouts; hand-set costs remain compositional preferences.",
       "Connect tuning and spectral premises only through a concrete compositional experiment. Preserve exact source coordinates and declare native rounding; roughness, functional stability and musical quality remain separate.",
       "Keep future experiments isolated, retain the ontology's qualified vocabulary and lower useful relationships through CompositionPlan. Artist references guide musical goals, never hard-coded identities or fixed phrase lengths."
@@ -20,7 +20,7 @@
       "owner": null,
       "dependsOn": [],
       "evidence": ["src/labs/", "src/score/timeline.ts", "crates/muzak-core/src/labs.rs", "docs/research/labs.md"],
-      "nextAction": "Keep the harmonic atlas and score audition within one isolated session. Add future views through lazy modules and generated Rust contracts; consider durable persistence only with an explicit storage/version contract."
+      "nextAction": "Keep progression generation, chord explanations, structural replacement and audition in one focused session. Add future views through lazy modules and generated Rust contracts; consider durable persistence only with an explicit storage/version contract."
     },
     {
       "id": "harmonic-motion-context",
@@ -30,11 +30,14 @@
       "dependsOn": [],
       "evidence": [
         "crates/muzak-core/src/harmonic_motion.rs",
+        "crates/muzak-core/src/progression.rs",
+        "crates/muzak-core/src/progression/",
         "src/labs/harmonic-motion.ts",
         "tests/harmonic-motion.test.ts",
+        "tests/progression.test.ts",
         "docs/research/harmonic-motion.md"
       ],
-      "nextAction": "Audition matched authored passages under center, prior-history, register and shared/local chord edits. Keep exact reconstruction, correspondence ambiguity and listener judgments separate. Extend to continuous passage-level assignments or explicit context schedules only when these comparisons need them; do not present atlas preferences as harmonic discovery."
+      "nextAction": "Evaluate the generator through complete passage listening and meaningful replacements, with explicit negative controls for incorrect directed targets. Extend route rhythm and changing local centers when those comparisons need them. Retain the finite geometry engine for arbitrary tuning and contextual counterfactuals; do not present hand-set preferences as harmonic discovery."
     },
     {
       "id": "ontology-review",

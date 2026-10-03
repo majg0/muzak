@@ -34,9 +34,9 @@ Both Rust experiments return `CompositionPlan`: one reusable material and repeat
 
 ## Harmonic Motion
 
-One lab combines a finite all-pairs atlas, exact directional member correspondences, tonic-relative comparisons, a decomposed successor objective and an editable complete passage. Classical, modal, jazz, Tonnetz, symmetric-cycle and xenharmonic examples are authored inputs to the same Rust engine. An advanced JSON editor exposes the full finite premise, including optional period/root/center information. Read [the foundation and scope](harmonic-motion.md) before interpreting its rankings as musical evidence.
+The main workflow is key, scale, length, color → generate → listen → select a chord → understand or replace it. Roman numerals, chord symbols, spelled members and contextual explanations accompany the actual generated passage. Major modes and the harmonic minor, melodic minor and harmonic major families supply pitch collections to one Rust chord-construction and route model. Chromatic choices carry their borrowing or directed-target premises. Generation is seeded; changing a chord choice recompiles a voiced passage through the existing composition algebra.
 
-Geometry is separate from the contextual objective. Global/local/comparison frames expose their influence; changing a center does not change the pair's pitches. The passage provides duration-weighted exposure and prefix comparisons. Selected-pair correspondence ties remain available, including exact register endpoints, arrivals and departures. The finite atlas includes every ordered pair rather than pruning to fashionable chord routes. The score preview auditions palette-bound notes through the existing compiler and retains strict MIDI loss checks for arbitrary native pitch.
+Technical inspection is an advanced disclosure. The general exact-pitch analyzer retains finite all-pairs geometry, alternate correspondences, explicit tonal frames and duration-weighted history, including arbitrary native pitch and periods. These metrics inspect a declared premise; they do not supply learned next-chord probabilities. The former scenario presets are regression fixtures rather than separate product workflows. Read [the foundation and scope](harmonic-motion.md) for the implemented vocabulary and interpretation boundary.
 
 ## Adding an experiment
 

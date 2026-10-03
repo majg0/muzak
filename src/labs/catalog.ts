@@ -3,8 +3,8 @@ import type { LabDefinition } from './types';
 export const labs = [
   {
     id: 'harmonic-motion', title: 'Harmonic motion', group: 'Compose & inspect',
-    description: 'Explore every chord-to-chord move in a finite catalog. Change the tonal frame, compare relationships and hear an editable passage.',
-    tags: ['harmony', 'tonic', 'modal', 'jazz', 'substitution', 'Tonnetz', 'Coltrane', 'xenharmonic', 'voice leading'],
+    description: 'Generate a chord progression in your chosen key and scale. Read its Roman numerals, try altered chords and substitutions, then hear the result.',
+    tags: ['harmony', 'progression', 'Roman numerals', 'harmonic minor', 'melodic minor', 'diminished', 'tonic', 'modal', 'jazz', 'substitution', 'Tonnetz', 'Coltrane', 'xenharmonic', 'voice leading'],
     load: () => import('./harmonic-motion'),
   },
   {
