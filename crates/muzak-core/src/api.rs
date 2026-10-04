@@ -23,6 +23,18 @@ use ts_rs::TS;
 )]
 pub enum CoreRequest {
     GetProgressionDefaults {},
+    ConnectProgression {
+        options: crate::progression::ProgressionOptions,
+        chord_ids: Vec<String>,
+        from_index: usize,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        max_intermediates: Option<u8>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        weights: Option<crate::harmonic_connection::ConnectionWeights>,
+    },
+    AnalyzeHarmonicConnection { options: crate::harmonic_connection::HarmonicConnectionOptions },
     GenerateProgression {
         options: crate::progression::ProgressionOptions,
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -247,6 +259,8 @@ pub enum CoreRequest {
 #[serde(tag = "op", content = "output", rename_all = "camelCase")]
 pub enum CoreResponse {
     GetProgressionDefaults(crate::progression::ProgressionDefaults),
+    ConnectProgression(crate::progression::ProgressionConnectionResult),
+    AnalyzeHarmonicConnection(crate::harmonic_connection::HarmonicConnectionAnalysis),
     GenerateProgression(crate::progression::ProgressionResult),
     AnalyzeHarmonicMotion(crate::harmonic_motion::HarmonicMotionAnalysis),
     RealizeHarmonicMotion(composition::CompositionPlan),
@@ -303,6 +317,8 @@ pub enum CoreReply {
 pub fn dispatch(request: CoreRequest) -> CoreResult<CoreResponse> {
     Ok(match request {
         CoreRequest::GetProgressionDefaults {} => CoreResponse::GetProgressionDefaults(crate::progression::defaults()),
+        CoreRequest::ConnectProgression { options, chord_ids, from_index, max_intermediates, weights } => CoreResponse::ConnectProgression(crate::progression::connect(&options, &chord_ids, from_index, max_intermediates.unwrap_or(3), weights.as_ref())?),
+        CoreRequest::AnalyzeHarmonicConnection { options } => CoreResponse::AnalyzeHarmonicConnection(crate::harmonic_connection::analyze(&options)?),
         CoreRequest::GenerateProgression { options, chord_ids } => CoreResponse::GenerateProgression(crate::progression::generate(&options, chord_ids.as_deref())?),
         CoreRequest::AnalyzeHarmonicMotion { options } => CoreResponse::AnalyzeHarmonicMotion(crate::harmonic_motion::analyze(&options)?),
         CoreRequest::RealizeHarmonicMotion { options } => CoreResponse::RealizeHarmonicMotion(crate::harmonic_motion::realize(&options)?),

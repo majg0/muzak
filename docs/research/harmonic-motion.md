@@ -1,15 +1,17 @@
-# Harmonic motion: composing a progression
+# Harmonic motion: voices, sonorities and context
 
-The purpose of Harmonic Motion is to **generate a useful chord progression, hear it, understand its direction, and change it**. The theory starts from one question: given a home center, a pitch vocabulary and an intended destination, what changes can carry the music there?
+The purpose of Harmonic Motion is to **generate useful music, follow its individual lines, hear their combined harmony, and change it**. The foundation is a passage of exact timed pitches with explicit relationships through time and across simultaneous sounds. Chord symbols are readings and possible constraints on that passage; a chain of chord symbols alone does not describe its melodic life.
 
-Four connected decisions organize the answer:
+Four connected dimensions organize the model:
 
-1. **Establish a center and collection.** The center is what counts as home; the collection supplies a starting vocabulary. C major and A Aeolian share notes but have different homes.
-2. **Construct and transform chords.** Stack members of the collection, borrow from another collection, alter individual members, or build an approach to a chosen target.
-3. **Shape a phrase.** Establish, depart, continue, prepare and return. A chord's job depends on its target and its place in that larger journey.
-4. **Connect the sounding voices.** Choose bass, register, inversions and member motion so the abstract route becomes playable music.
+1. **Voices through time.** Each part has a succession, register, rhythm and melodic contour. Persistent member correspondence makes a line inspectable across a phrase; matching each pair cheaply is insufficient to establish a good melody.
+2. **Sonorities between voices.** Simultaneous or overlapping pitches have spacing, interval content, shared tones and changing relationships. A chord core, its colors, its bass and its performed members are distinct information.
+3. **Context and harmonic readings.** An optional home center, collection and local targets supply Roman coordinates and functional interpretations. C major and A Aeolian share a collection but have different homes. Geometry remains meaningful without either premise.
+4. **Phrase organization.** Duration, recurrence, direction, departures and arrivals connect local events into a larger gesture. A chord's structural role and a line's turning point depend on that wider context.
 
-Classical functional motion, jazz substitutions, modal returns, Tonnetz transformations and symmetric center cycles describe different operations inside this foundation. They are useful together because each states what changes and what stays related. A scale or a smooth pairwise transition alone does not compose a phrase.
+These dimensions constrain one another without imposing one mandatory composition order. A composer can begin with lines and hear the resulting harmonies, or choose harmonic constraints and solve for coherent lines. The lab's tonal generator currently takes the latter approach. That implementation is an authored forward strategy, not evidence that chord classification must precede voice organization in an inverse model.
+
+Classical functional motion, jazz substitutions, modal returns, Tonnetz transformations and symmetric center cycles describe operations and conventions inside this foundation. Each states what changes, what stays related and which contextual premises it needs. A scale, a chord label or a smooth isolated transition alone does not compose a phrase. The common `CompositionPlan` remains the executable representation; trajectory and harmonic analyses must refer to exact members and useful edits, not become independent descriptive reports.
 
 ## Reading the progression
 
@@ -94,13 +96,75 @@ Useful effects have several components:
 
 G7 can be V in C, V/V in F, or a tonic sonority in a G blues context. Its notes alone do not settle its job. Nor do “more chromatic,” “more dissonant” and “more tense” mean the same thing. Hierarchical stability, directed attraction and surface dissonance are distinct components even in a tonal-tension model. [Lerdahl and Krumhansl, “Modeling Tonal Tension”](https://www.fredlerdahl.com/s/Modeling-Tonal-Tension.pdf).
 
-The generator uses a declared compositional grammar and a seed, rather than trained listener probabilities. It establishes and returns to the chosen tonic, chooses intervening routes using chord roles, directed targets, phrase position and repetition, then selects voicings across the passage. Its current voicing search keeps a separate root bass and chooses upper positions jointly from a bounded register; it does not infer voices from source music or enforce a complete classical counterpoint rulebook. This is a practical basis for useful variation; listening quality remains an audition judgment. Richer melody, rhythm and style conditioning can improve that judgment without replacing the common representation.
+The generator uses a declared compositional grammar and a seed, rather than trained listener probabilities. It establishes and returns to the chosen tonic, chooses intervening routes using chord roles, directed targets, phrase position, repetition and shared motion/context costs, then selects voicings across the passage. Its bounded register vocabulary admits inversions, keeping harmonic root distinct from the sounding bass. Lead-sheet slash symbols show the actual bass, while Roman labels retain the chord's contextual reading. The search does not infer voices from source music or enforce a complete classical counterpoint rulebook. Listening quality remains an audition judgment. Richer melody, rhythm and style conditioning can improve that judgment without replacing the common representation.
+
+## Smoothness, color and the time they occupy
+
+The supplied **Am–A♭m–G–G♭m**, one bar per chord, is a useful control. The next chord is Am again. The sequence below describes optimal *pitch-class* correspondence, with signed movements measured in semitones:
+
+| Transition | Shortest wrapped correspondence | Total absolute motion | Largest step |
+| --- | --- | ---: | ---: |
+| Am → A♭m | A→A♭ −1; C→B −1; E→E♭ −1 | 3 | 1 |
+| A♭m → G | A♭→G −1; B→B 0; E♭→D −1 | 2 | 1 |
+| G → G♭m | G→G♭ −1; B→B♭ −1; D→D♭ −1 | 3 | 1 |
+| G♭m → Am | G♭→E −2; B♭→A −1; D♭→C −1 | 4 | 2 |
+
+The last row does **not** assert Am/E, a descending bass, or a performed ordering of E–A–C. A pitch-class ring permits octave equivalence and member permutation; a performance has exact registers and a bass. For example, G♭3–B♭3–D♭4 → A3–C4–E4 has minimum registered total motion 8 semitones, while the corresponding periodic minimum is 4. Both descriptions are useful, but only the former measures those exact sounding coordinates. Even a minimum registered assignment is a proposed correspondence, not recovered voice identity.
+
+Relative to A natural minor, the four chords contain respectively 0, 2, 0 and 3 distinct outside-collection classes. Those counts do not erase their economical motion or determine their structural role. Each chord occupies a whole bar; no offbeat or short-duration discount follows from this example. A passing interpretation would require an additional hierarchical premise. Repetition can make the four-bar cycle coherent without proving that it prolongs one latent Am harmony. Contrapuntal hierarchies and surface sonorities can describe different structural levels. [Yust, “Voice-Leading Transformation and Generative Theories of Tonal Structure”](https://www.mtosmt.org/issues/mto.15.21.4/mto.15.21.4.yust.php).
+
+The objectionable Dm→E°7→F example isolates a different issue. Its four registered voices move D2–A3–F4–D5 → E2–B♭3–G4–D♭5 by +2, +1, +2, −1 semitones. Both newly chromatic tones enter by semitone. Calling it a large leap or a lack of stepwise entry would misdiagnose the sound. It combines **two new outside-scale classes, a fully diminished sonority and a full bar of exposure**. These are independent facts. Small voice movement can coexist with a strong change of color.
+
+The connection model therefore retains a vector of measurements. Its representative correspondence minimizes the supplied linear-plus-squared motion objective; the reported absolute total describes that assignment, and is not necessarily the independent L1 minimum when squared motion has positive weight:
+
+- Registered and periodic member assignments, exact endpoints, signed movement, held members, entry/exit and tied assignments.
+- Total absolute motion, mean and maximum displacement, and the sum of squared displacements in 100-cent units.
+- Collection membership and newly introduced outside-collection classes, relative to the declared context.
+- A scoped twelve-tone interval-content strain proxy and exposure over exact rational durations. This proxy is not acoustic roughness or a universal dissonance judgment; other tunings leave it unavailable.
+
+The scalar cost is an authored preference over these terms. Increasing a color penalty expresses a desired restraint; it does not make chromatic harmony theoretically invalid. A named operation can explain a relationship without dictating its measured distance. In particular, graph distance in a Tonnetz need not equal economical voice-leading distance: the graph's vertices and permitted moves determine its geometry. [Tymoczko, “Geometrical Methods in Recent Music Theory”](https://www.mtosmt.org/issues/mto.10.16.1/mto.10.16.1.tymoczko.html).
+
+### Each voice is also a melody
+
+**Voice**, **part**, **voice line** and **melodic line** are established terms for a strand through the music. Voice leading includes its successive motion; counterpoint considers both the melodic strands and their simultaneous relationships. The distinction here is between optimizing isolated chord changes and shaping a line over a phrase. A succession of small alternating steps can have little net direction, while a series of descending steps can make a clear gesture. The latter is not automatically better: a coherent arch, a returning neighbor figure, a repeated motive or a prepared leap can also be intelligible.
+
+Counterpoint teaching explicitly treats stepwise motion, contour, leaps and their recovery, along with harmonic relationships between lines. Strict species exercises additionally seek independence and impose particular consonance and parallel-motion conventions. Those conventions describe a style and pedagogical problem; they are not universal prerequisites for effective music. Parallel fifths can conflict with that independence objective while helping several voices cohere as one moving sonority. [Composing Music: From Theory to Practice, “Introduction to Species Counterpoint”](https://rwu.pressbooks.pub/musictheory/chapter/species-counterpoint/); [“Counterpoint: First Species”](https://rwu.pressbooks.pub/musictheory/chapter/first-species-counterpoint/).
+
+This gives three related objectives rather than one chord-pair score:
+
+1. **Within a line:** interval sizes, direction, turning points, range, rhythm, repeated gestures and phrase destination.
+2. **Between lines:** similar, contrary or oblique motion, rhythmic agreement or independence, spacing, crossing and sustained relationships.
+3. **Across the harmonic passage:** collection and tonic relationships, local targets, chromatic entry, sonority exposure and structural role.
+
+The supplied chromatic descent makes the first two especially audible. Its first four pitch-class chords admit small, largely parallel descending movements. The wrapped correspondence at the repeat still does not establish a descending registered performance. A line over the full loop must retain its actual pitches; repeated octave-equivalent matches cannot silently move its register downward on every cycle.
+
+Whole-phrase inspection therefore composes member correspondences through the *same member* of each intermediate chord. It preserves each source coordinate, entering/leaving members and assignment ambiguity. The resulting displayed paths are explicit proposed parts in the realization, not recovered instrumental identities. No named, uppermost or bass voice receives a special melodic exemption. A continuity preference compares squared changes in successive signed steps in 100-cent units, while keeping reversals, range and total motion visible separately. The strength defaults to 0.08 and can be set to zero. The voiced composer compares 24 complete candidates admitted by its first-order search; this is bounded reranking, not a global optimum over all voice assignments and registers. A zero-strength control retains the first-order result and its tie decisions.
+
+The generic [harmonic_lines.rs](../../crates/muzak-core/src/harmonic_lines.rs) depends on exact members and their succession, independently of Roman labels or the tonal catalog. Display and scoring share its correspondence choices. Each displayed line also has a self-contained solo `CompositionPlan` retaining the selected rhythmic events and harmonic bindings. Their emissions partition the full passage; harmonic edits still recompile through those bindings. Solo plans preserve actual arpeggio offsets, gates, routing and silence. The contour plot uses harmonic-slot boundaries, which are distinct from an arpeggiated member's performed onset.
+
+This is a narrow contour model, not a complete measure of melody: duration-sensitive motion, motives and phrase-level expectation still need their own evidence and models. Tied local correspondences remain visible but are not jointly optimized for global part identity. The connector's finite edge-cost optimum is also distinct from the full-phrase continuity comparison; a cheapest local connection need not produce the best melody.
+
+### Finding a connection
+
+Any two admitted endpoint sonorities have a direct candidate. The search compares it with routes containing one, two or three supplied intermediate states. A state contains exact member pitches as well as chord identity, so an intermediate cannot use one voicing to arrive and a different voicing to depart. Endpoints remain fixed.
+
+Pure summed absolute motion cannot make a detour cheaper for equal-cardinality chords under the same metric: the triangle inequality applies. A six-semitone move split into two three-semitone moves still travels six semitones. Its squared motion falls from 36 to 18. The search uses a nonnegative mixture of linear and squared motion, explicit member-change costs, chromatic entry, collection/strain exposure and a strictly positive insertion charge. This lets a user prefer gentler successive changes while charging the extra harmonic event. Squared displacement per attack is an authored jolt preference, not physical energy or a duration-normalized motion model. With unequal member counts, entry/exit matching has different metric properties and must be inspected separately.
+
+For `k` inserted chords, the source's span `T` is divided into `k+1` equal rational durations. The source and each insertion receive `T/(k+1)`; the destination retains its original duration. Every occupied span contributes its own exposure, including the source. Thus the progression adapter keeps the target's onset and the total passage length unchanged while offering a different harmonic rhythm before it. All original pitches remain unchanged. The full-bar reference above remains a separate observation, not evidence for assigning these generated durations to it.
+
+Layered dynamic programming returns the best route for each allowed insertion count, with component costs and the count of retained minimum-cost DP prefixes. That count does not enumerate more expensive prefixes that later round into equal floating-point totals. Optimality is limited to the supplied finite states and deterministic objective. Reported totals follow the search's accumulation order; regrouped explanatory components can differ in their last floating-point bits.
+
+The progression adapter proposes 48 rooted major/minor/diminished/augmented triads plus seven native sevenths, with up to two endpoint-conditioned registered voicings per chord. Intermediate member counts remain between the endpoint counts, and equal-sized endpoints retain that count throughout. This prevents the default connector from avoiding a difficult moving voice by simply deleting and restarting it. Octave doublings preserve each candidate's pitch classes. It does not search every voicing or every harmonic grammar. Its connector choices are authored surface alternatives; any original directed targets still describe the anchor sequence. Search does not prove a passing interpretation or perceptual necessity.
+
+Both the generic scorer/search in [harmonic_connection.rs](../../crates/muzak-core/src/harmonic_connection.rs) and the progression adapter in [connection.rs](../../crates/muzak-core/src/progression/connection.rs) preserve the existing compiler boundary. A selected preview becomes ordinary harmonic palettes and rhythmic placements in `CompositionPlan`. Editing those parameters regenerates notes through the common decoder; it does not secretly rerun path search.
 
 ## Using the lab
 
 Choose **Key**, **Scale**, **Length** and **Harmonic color**, then generate a progression. The scale notes and large Roman/chord cards make the selected vocabulary and resulting route visible together. **New variation** changes the seed under the same musical premise. Play the passage or export its MIDI.
 
 Select a chord to see its neighbors, its exact spelled tones, its global Roman coordinate, any applied reading, and why it appears there. Suggested replacements are changes within that passage; select one and audition the resulting phrase. Further alternatives and the full catalog remain available without making every setting part of the starting screen.
+
+The selected chord's incoming transition separates actual-register motion from periodic matching under the declared motion objective and shows its color and exposure. **Find a smooth connection** compares the direct route with up to three inserted chords. Preview a choice in the existing passage player, inspect its costs, then restore the original to compare. These previews keep the original anchor pitches and share the preceding chord's bar; they do not silently lengthen the phrase. The weights remain in advanced controls.
 
 Advanced controls expose tempo, seed, arpeggiation and the native relationship options. The general relationship explorer accepts explicit catalogs, multiple context frames and arbitrary native tuning; it can analyze and audition a supplied passage through the same compiler. Twelve-tone Roman names and the composer's scale/operation grammar apply only in their declared twelve-tone domain. They are not imposed on arbitrary tuning inputs.
 

@@ -188,6 +188,12 @@ test('every generated directed chord is followed by its declared native target',
       assert.ok(target, `${step.chord.name} requires a destination after its own slot.`);
       assert.equal(target.chord.degree, step.chord.resolutionDegree);
       assert.equal(target.chord.colorCost, 0, 'The proposed resolution must actually arrive at the native target.');
+      assert.equal(target.chord.rootPitchClass, step.chord.resolutionRootPitchClass,
+        'A matching degree number cannot replace the declared sounding target root.');
+      const requiredCore = result.catalog.chords.find(chord => chord.id === step.chord.resolutionChordId);
+      assert.ok(requiredCore);
+      assert.ok(requiredCore.intervals.every(interval => target.chord.intervals.includes(interval)),
+        'The receiving chord must contain the promised native core, not only a matching root label.');
       directedCount++;
     }
   }
@@ -215,6 +221,12 @@ test('bounded generated passages begin and return home without collapsing into o
 test('an offered replacement edits one harmonic slot while the compiler recomputes the voiced passage', () => {
   const original = generate({ tonic: 'C', family: 'major', mode: 0, color: 'adventurous', length: 8, seed: 31 });
   const saved = structuredClone(original);
+  for (const step of original.steps) {
+    const costs = step.replacements.map(replacement => replacement.cost);
+    assert.ok(costs.every(cost => Number.isFinite(cost) && cost >= 0));
+    assert.deepEqual(costs, sorted(costs),
+      'Replacement suggestions must rank by the disclosed connection cost for both neighbors.');
+  }
   const content = (chordId: string) => {
     const chord = original.catalog.chords.find(chord => chord.id === chordId)!;
     return JSON.stringify(sorted(chord.intervals.map(interval => mod12(chord.rootPitchClass + interval))));
@@ -238,10 +250,10 @@ test('invalid premises and malformed edits fail rather than silently clamping or
     { tonic: 'H' }, { family: 'unknown' as ProgressionOptions['family'] },
     { mode: -1 }, { mode: 7 }, { mode: 0.5 }, { length: 3 }, { length: 17 }, { length: 4.5 },
     { color: 'unknown' as ProgressionOptions['color'] }, { seed: -1 }, { seed: 4294967296 },
-    { tempo: 29 }, { tempo: 241 },
+    { tempo: 29 }, { tempo: 241 }, { lineContinuity: -1 }, { lineContinuity: 101 },
   ];
   for (const patch of invalid) {
-    assert.throws(() => generate(patch), /invalid|unknown|expected|range|mode|length|tempo|seed|tonic|variant/i,
+    assert.throws(() => generate(patch), /invalid|unknown|expected|range|mode|length|tempo|seed|tonic|variant|continuity/i,
       `Invalid premise was accepted: ${JSON.stringify(patch)}`);
   }
   const result = generate();

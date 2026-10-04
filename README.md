@@ -2,7 +2,7 @@
 
 A music generator and codec: **ideas → editable composition program → score**, and **score → inferred relationships + program → score**.
 
-The page is a growing collection of [independent experiment labs](docs/research/labs.md). Harmonic Motion generates editable chord progressions with Roman numerals and contextual explanations. Melody explores a seeded pitch walk; Rhythm distributes pulses across a cycle; Composition retains generation, MIDI import, structural editing and export. The searchable catalog loads one lab at a time. Each lab owns its draft and results, and can opt into the shared piano-roll view and audition controls.
+The page is a growing collection of [independent experiment labs](docs/research/labs.md). Harmonic Motion connects melodic voice paths, simultaneous harmony and tonic-relative readings in editable progressions. Melody explores a seeded pitch walk; Rhythm distributes pulses across a cycle; Composition retains generation, MIDI import, structural editing and export. The searchable catalog loads one lab at a time. Each lab owns its draft and results, and can opt into the shared piano-roll view and audition controls.
 
 The [typed musical ontology](docs/research/ontology.md) remains the representation foundation: ECS-style entities compose pitch, rhythm, harmony, voice, instrumentation, timbre, performance, form and notation, with explicit relationships and evidence. Its glossary audit covers the complete indexed LilyPond vocabulary plus additional composition and performance terms. Named techniques become audible only when deliberately implemented through the existing compiler.
 
@@ -21,6 +21,10 @@ Choose Melody or Rhythm for a small generator experiment, or Composition for a c
 
 Choose **Harmonic Motion** to generate a progression: choose a key, scale, length and harmonic color, then listen. Chord cards show symbols, Roman numerals and their role in the passage. Select a chord to understand or replace it. Major modes and the harmonic minor, melodic minor and harmonic major families share the same construction and progression engine. Borrowed, diminished and altered harmonies have explicit derivations; directed approaches also name their destinations. The [harmonic foundation](docs/research/harmonic-motion.md) connects scale, chord construction, directed relationships and voice leading. Advanced exact-pitch inspection retains the general finite relationship engine, including arbitrary periods, separately from the conventional twelve-tone progression vocabulary.
 
+Inspect a transition's actual-register motion, periodic matching, chromatic entry and sustained sonority separately. **Find a smooth connection** compares the direct move with up to three inserted chords, sharing the source bar while preserving the original arrival times and pitches. Audition a complete passage preview or restore the original. Costs are explicit compositional preferences; the minimum is scoped to the finite catalog and supplied weights.
+
+Open **Follow each voice through the phrase** to see and solo its individual melodic lines. Inversions and independent triad doublings let every line participate in smooth motion; slash chord symbols show the sounding bass. Advanced **Line continuity** controls the phrase contour preference, with zero as an explicit disabled baseline. Solo parts retain the original timing and harmonic bindings through the same compiler.
+
 In Composition, generate a seeded passage, play it, edit its harmonic palettes or shared/local materials, and export MIDI. Tempo, meter, mode, density, variation and color are controllable. Generated phrases retain their authored bindings; edits compile directly and never re-infer away the program.
 
 Open MIDI or choose a local reference to infer a scene from observations. Analysis covers the whole score automatically. Drag/resize the overview window to navigate; seek with the timeline ruler or playhead. Bar lines follow recorded meter changes; missing meter uses marked quarter coordinates. Source observations remain available beside the decoded edited program.
@@ -30,6 +34,8 @@ Open MIDI or choose a local reference to infer a scene from observations. Analys
 - `crates/muzak-core/src/ontology/`: composable Rust musical nouns, typed components and relationships, glossary coverage and validation.
 - `crates/muzak-core/src/labs.rs`: bounded melody/rhythm experiments producing the existing `CompositionPlan`.
 - `crates/muzak-core/src/harmonic_motion.rs`: exhaustive finite chord relations, tonic/context comparisons and passage realization through `CompositionPlan`.
+- `crates/muzak-core/src/harmonic_connection.rs`: registered/periodic correspondence, contextual transition costs and bounded connecting-route search.
+- `crates/muzak-core/src/harmonic_lines.rs`: persistent member paths, whole-phrase contour descriptors and shared continuity scoring, independent of chord labels.
 - `crates/muzak-core/src/progression.rs`: seeded contextual progressions, Roman readings, scale-derived and chromatic chord choices, replacement validation and voiced realization.
 - `crates/muzak-core/src/scene.rs`: encoder, standalone scene decoding and shared/local edits.
 - `generator.rs`: seeded themes, melody-aware harmonic routes, voicing and arrangement through the same composition algebra.

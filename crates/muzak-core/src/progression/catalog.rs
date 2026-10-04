@@ -43,6 +43,7 @@ pub struct ProgressionOptions {
     pub seed: u32,
     pub tempo: f64,
     pub arpeggiate: bool,
+    pub line_continuity: f64,
 }
 
 impl Default for ProgressionOptions {
@@ -61,6 +62,7 @@ pub fn default_options() -> ProgressionOptions {
         seed: 7,
         tempo: 104.,
         arpeggiate: false,
+        line_continuity: crate::harmonic_lines::DEFAULT_CONTINUITY_WEIGHT,
     }
 }
 
@@ -571,9 +573,149 @@ pub fn catalog(options: &ProgressionOptions) -> CoreResult<ProgressionCatalog> {
     Ok(result)
 }
 
+/// A finite, root-labelled chromatic triad vocabulary for connection search.
+/// These choices do not enter the ordinary progression catalog: a nearby
+/// sonority alone supplies neither a functional destination nor permission to
+/// treat that sonority as a passing chord. `catalog` must be produced by
+/// [`catalog`], which validates its tonic and seven-degree collection.
+pub fn connection_chords(catalog: &ProgressionCatalog) -> Vec<ProgressionChord> {
+    let tonic = tonic(&catalog.tonic).expect("a generated catalog has a validated tonic");
+    let qualities = [
+        ("major", [0, 4, 7]),
+        ("minor", [0, 3, 7]),
+        ("diminished", [0, 3, 6]),
+        ("augmented", [0, 4, 8]),
+    ];
+    let mut result = Vec::with_capacity(48);
+    for root_pitch_class in 0..12 {
+        let root_offset = (root_pitch_class - catalog.tonic_pitch_class).rem_euclid(12);
+        // Keep the collection's letter for an existing scale degree. For other
+        // roots use the nearest major-reference degree, preferring the lowered
+        // degree in an enharmonic tie (e.g. C: D-flat rather than C-sharp).
+        let degree = catalog
+            .scale_offsets
+            .iter()
+            .position(|&offset| offset == root_offset)
+            .unwrap_or_else(|| {
+                (0..7)
+                    .min_by_key(|&degree| {
+                        let change = closest_change(root_offset, MAJOR[degree]);
+                        (change.abs(), change > 0, degree)
+                    })
+                    .expect("the seven major-reference degrees are nonempty")
+            });
+        for (quality_name, intervals) in qualities {
+            result.push(
+                chord(
+                    tonic,
+                    ChordSpec {
+                        id: format!("connection-{root_pitch_class}-{quality_name}"),
+                        degree,
+                        root_offset,
+                        intervals: intervals.to_vec(),
+                        tone_steps: &[0, 2, 4],
+                        roman: None,
+                        role: ProgressionRole::Color,
+                        operator: "chromaticTriad",
+                        derivation: format!(
+                            "Freely authored {quality_name} triad in the chromatic connection vocabulary. Its Roman numeral describes its root and quality relative to {}. A connection must be judged by its measured motion and passage context; no functional resolution or passing role is asserted.",
+                            catalog.tonic
+                        ),
+                        resolution_degree: None,
+                        color_cost: 3,
+                    },
+                )
+                .expect("the connection vocabulary contains supported triad qualities"),
+            );
+        }
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn connection_vocabulary_has_every_root_and_exact_triad_quality() {
+        let data = catalog(&default_options()).unwrap();
+        let chords = connection_chords(&data);
+        assert_eq!(chords.len(), 48);
+        assert!(data.chords.iter().all(|c| c.operator != "chromaticTriad"));
+        let mut identities = std::collections::BTreeSet::new();
+        for root in 0..12 {
+            for (name, intervals) in [
+                ("major", vec![0, 4, 7]),
+                ("minor", vec![0, 3, 7]),
+                ("diminished", vec![0, 3, 6]),
+                ("augmented", vec![0, 4, 8]),
+            ] {
+                let c = chords
+                    .iter()
+                    .find(|c| c.id == format!("connection-{root}-{name}"))
+                    .unwrap();
+                assert_eq!(c.root_pitch_class, root);
+                assert_eq!(c.intervals, intervals);
+                assert_eq!(c.tone_names.len(), 3);
+                assert_eq!(
+                    c.intervals
+                        .iter()
+                        .map(|offset| (root + offset).rem_euclid(12))
+                        .collect::<std::collections::BTreeSet<_>>()
+                        .len(),
+                    3
+                );
+                assert!(identities.insert((root, c.intervals.clone())));
+                assert_eq!(c.role, ProgressionRole::Color);
+                assert_eq!(c.operator, "chromaticTriad");
+                assert_eq!(c.roman, c.global_roman);
+                assert_eq!(c.color_cost, 3);
+                assert!(c.resolution_degree.is_none());
+                assert!(c.resolution_chord_id.is_none());
+                assert!(c.resolution_root_pitch_class.is_none());
+            }
+        }
+        // Augmented pitch sets repeat under major-third root changes; declared
+        // roots remain distinct authored choices, not a claim of 48 unique sets.
+        assert_eq!(identities.len(), 48);
+    }
+
+    #[test]
+    fn connection_spellings_preserve_collection_degrees_without_function_stories() {
+        let major = connection_chords(&catalog(&default_options()).unwrap());
+        let flat = major.iter().find(|c| c.id == "connection-1-minor").unwrap();
+        assert_eq!(flat.name, "D♭m");
+        assert_eq!(flat.roman, "♭ii");
+        assert_eq!(flat.tone_names, ["D♭", "F♭", "A♭"]);
+        let lydian = connection_chords(
+            &catalog(&ProgressionOptions {
+                mode: 3,
+                ..default_options()
+            })
+            .unwrap(),
+        );
+        let raised = lydian
+            .iter()
+            .find(|c| c.id == "connection-6-diminished")
+            .unwrap();
+        assert_eq!(raised.name, "F♯dim");
+        assert_eq!(raised.roman, "♯iv°");
+        assert_eq!(raised.tone_names, ["F♯", "A", "C"]);
+        let transposed = connection_chords(
+            &catalog(&ProgressionOptions {
+                tonic: "Bb".into(),
+                ..default_options()
+            })
+            .unwrap(),
+        );
+        let tonic = transposed
+            .iter()
+            .find(|c| c.id == "connection-10-augmented")
+            .unwrap();
+        assert_eq!(tonic.name, "B♭aug");
+        assert_eq!(tonic.roman, "I+");
+        assert_eq!(tonic.tone_names, ["B♭", "D", "F♯"]);
+    }
 
     #[test]
     fn every_family_mode_stacks_exact_spelled_scale_thirds() {

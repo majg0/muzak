@@ -1,17 +1,22 @@
 //! A bounded forward grammar over a supplied tonal center. Chord meanings are
 //! authored premises; route preferences are neither inference nor learned odds.
 pub mod catalog;
+mod connection;
 mod voicing;
 
 use crate::{
     composition::CompositionPlan,
     error::{CoreResult, invalid},
+    harmonic_connection::{
+        self, ConnectionContext, ConnectionGeometry, ConnectionMetrics, ConnectionWeights,
+    },
     harmonic_motion::{
         self, HarmonicMotionOptions, MotionChord, MotionDuration, MotionFrame, MotionFrameRole,
         MotionStep, MotionWeights,
     },
 };
 pub use catalog::*;
+pub use connection::*;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use ts_rs::TS;
@@ -31,6 +36,7 @@ pub struct ProgressionDefaults {
     pub families: Vec<ProgressionFamilyChoice>,
     pub tonics: Vec<String>,
     pub colors: Vec<ProgressionColorChoice>,
+    pub connection_weights: ConnectionWeights,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -38,6 +44,9 @@ pub struct ProgressionDefaults {
 pub struct ProgressionReplacement {
     pub chord_id: String,
     pub reason: String,
+    /// Shared periodic/context cost across both neighboring edges, before the
+    /// edited passage chooses actual registered voicings.
+    pub cost: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -46,9 +55,12 @@ pub struct ProgressionStep {
     pub index: usize,
     pub chord_id: String,
     pub chord: ProgressionChord,
+    /// Actual registered bass in slash notation, independent of the Roman root.
+    pub voiced_name: String,
     pub reason: String,
-    /// Every emitted member, including the separately voiced root bass.
+    /// Every emitted member; bass and declared harmonic root are independent.
     pub voiced_midi: Vec<i32>,
+    pub voiced_tone_names: Vec<String>,
     pub replacements: Vec<ProgressionReplacement>,
 }
 
@@ -62,12 +74,19 @@ pub struct ProgressionResult {
     pub motion_options: HarmonicMotionOptions,
     pub explanation: String,
     pub roman_convention: String,
+    /// Adjacent edge i connects steps i and i+1. Geometry never infers voices.
+    pub transitions: Vec<ConnectionMetrics>,
+    pub lines: crate::harmonic_lines::HarmonicLinesAnalysis,
+    /// Independently executable solo plans aligned with `lines.lines`. They keep
+    /// the passage duration, original event timing and harmonic member bindings.
+    pub line_plans: Vec<CompositionPlan>,
 }
 
 pub fn defaults() -> ProgressionDefaults {
     ProgressionDefaults {
         options: catalog::default_options(),
         families: catalog::family_choices(),
+        connection_weights: harmonic_connection::default_weights(),
         tonics: ["C", "C#", "Db", "D", "Eb", "E", "F", "F#", "Gb", "G", "Ab", "A", "Bb", "B"]
             .iter().map(|value| (*value).into()).collect(),
         colors: vec![
@@ -116,6 +135,140 @@ fn follows(from: &ProgressionChord, to: &ProgressionChord, catalog: &Progression
 
 fn is_home(chord: &ProgressionChord) -> bool {
     chord.degree == 0 && chord.color_cost == 0
+}
+
+fn voiced_names(chord: &ProgressionChord, pitches: &[i32]) -> Vec<String> {
+    pitches
+        .iter()
+        .map(|pitch| {
+            let member = chord
+                .intervals
+                .iter()
+                .position(|interval| {
+                    (chord.root_pitch_class + interval).rem_euclid(12) == pitch.rem_euclid(12)
+                })
+                .expect("Voicing retains a catalog chord member");
+            chord.tone_names[member].clone()
+        })
+        .collect()
+}
+
+fn voiced_name(chord: &ProgressionChord, pitches: &[i32]) -> String {
+    if pitches
+        .first()
+        .is_none_or(|pitch| pitch.rem_euclid(12) == chord.root_pitch_class)
+    {
+        return chord.name.clone();
+    }
+    format!("{}/{}", chord.name, voiced_names(chord, pitches)[0])
+}
+
+fn connection_context(catalog: &ProgressionCatalog) -> ConnectionContext {
+    ConnectionContext {
+        tonic_millicents: Some(i64::from(catalog.tonic_pitch_class) * 100_000),
+        collection_millicents: catalog
+            .scale_offsets
+            .iter()
+            .map(|offset| i64::from((catalog.tonic_pitch_class + offset).rem_euclid(12)) * 100_000)
+            .collect(),
+    }
+}
+
+fn motion_chord(chord: &ProgressionChord, pitches: &[i32], id: String) -> MotionChord {
+    MotionChord {
+        id,
+        name: format!("{} · {}", chord.roman, voiced_name(chord, pitches)),
+        root_millicents: pitches
+            .iter()
+            .find(|pitch| pitch.rem_euclid(12) == chord.root_pitch_class)
+            .map(|&pitch| i64::from(pitch) * 100_000),
+        pitches_millicents: pitches
+            .iter()
+            .map(|&pitch| i64::from(pitch) * 100_000)
+            .collect(),
+    }
+}
+
+fn periodic_chord(chord: &ProgressionChord) -> MotionChord {
+    motion_chord(
+        chord,
+        &chord
+            .intervals
+            .iter()
+            .map(|interval| (chord.root_pitch_class + interval).rem_euclid(12))
+            .collect::<Vec<_>>(),
+        chord.id.clone(),
+    )
+}
+
+fn adjacent_cost(
+    from: &MotionChord,
+    to: &MotionChord,
+    context: &ConnectionContext,
+    geometry: ConnectionGeometry,
+    weights: &ConnectionWeights,
+) -> CoreResult<f64> {
+    let metrics =
+        harmonic_connection::pair_metrics(from, to, Some(1_200_000), Some(context), weights)?;
+    Ok(harmonic_connection::transition_cost(&metrics, geometry, 4.0, weights)?.total)
+}
+
+fn solo_line_plans(
+    plan: &CompositionPlan,
+    analysis: &crate::harmonic_lines::HarmonicLinesAnalysis,
+) -> CoreResult<Vec<CompositionPlan>> {
+    let material_by_id: BTreeMap<_, _> = plan
+        .materials
+        .iter()
+        .map(|material| (material.id.as_str(), material))
+        .collect();
+    analysis
+        .lines
+        .iter()
+        .enumerate()
+        .map(|(line_index, line)| {
+            let mut solo = plan.clone();
+            solo.materials.clear();
+            solo.placements.clear();
+            for point in &line.points {
+                let original = plan
+                    .placements
+                    .get(point.step_index)
+                    .ok_or_else(|| invalid("A trajectory point has no corresponding placement."))?;
+                let material = material_by_id
+                    .get(original.material.as_str())
+                    .ok_or_else(|| {
+                        invalid("A trajectory placement has no corresponding material.")
+                    })?;
+                let event = material.notes.get(point.member_index).ok_or_else(|| {
+                    invalid("A trajectory member has no corresponding material event.")
+                })?;
+                let binding = original
+                    .pitch_bindings
+                    .as_ref()
+                    .and_then(|bindings| bindings.get(point.member_index))
+                    .ok_or_else(|| {
+                        invalid("A trajectory member has no corresponding harmonic binding.")
+                    })?;
+                // Keep the exact original rhythmic event and harmonic address. In
+                // particular, a solo arpeggio member retains its within-chord offset;
+                // its onset is not replaced by the analytical chord boundary.
+                let mut selected_material = (**material).clone();
+                selected_material.id = format!("line-{line_index}-step-{}", point.step_index);
+                selected_material.notes = vec![event.clone()];
+                let mut placement = original.clone();
+                placement.material = selected_material.id.clone();
+                placement.pitch_bindings = Some(vec![binding.clone()]);
+                solo.materials.push(selected_material);
+                solo.placements.push(placement);
+            }
+            crate::composition::compile_composition(
+                &solo,
+                &crate::composition::CompositionLimits::default(),
+            )?;
+            Ok(solo)
+        })
+        .collect()
 }
 
 struct Random(u64);
@@ -232,7 +385,33 @@ fn choose_route(
     options: &ProgressionOptions,
     catalog: &ProgressionCatalog,
 ) -> CoreResult<Vec<usize>> {
+    choose_route_with_cost(options, catalog, 0.45)
+}
+
+fn choose_route_with_cost(
+    options: &ProgressionOptions,
+    catalog: &ProgressionCatalog,
+    cost_strength: f64,
+) -> CoreResult<Vec<usize>> {
     let chords = &catalog.chords;
+    let profiles: Vec<_> = chords.iter().map(periodic_chord).collect();
+    let context = connection_context(catalog);
+    let weights = harmonic_connection::default_weights();
+    let mut costs = BTreeMap::<(usize, usize), f64>::new();
+    let mut edge_cost = |from: usize, to: usize| -> CoreResult<f64> {
+        if let Some(cost) = costs.get(&(from, to)) {
+            return Ok(*cost);
+        }
+        let cost = adjacent_cost(
+            &profiles[from],
+            &profiles[to],
+            &context,
+            ConnectionGeometry::Periodic,
+            &weights,
+        )?;
+        costs.insert((from, to), cost);
+        Ok(cost)
+    };
     let length = usize::from(options.length);
     let home = chords
         .iter()
@@ -278,7 +457,8 @@ fn choose_route(
     let mut random = Random(u64::from(options.seed));
     let mut needs_color = colored[0][home];
     for position in 1..length - 1 {
-        let from = &chords[*result.last().unwrap()];
+        let from_index = *result.last().unwrap();
+        let from = &chords[from_index];
         let candidates: Vec<_> = chords
             .iter()
             .enumerate()
@@ -293,9 +473,30 @@ fn choose_route(
         for (_, chord) in &candidates {
             *counts.entry(chord.operator.as_str()).or_default() += 1;
         }
+        let mut candidate_costs = Vec::with_capacity(candidates.len());
+        for (i, chord) in &candidates {
+            // A prospective directed chord must be considered with its actual
+            // admitted successor. Collection escape and sustained sonority are
+            // charged separately from minimum periodic correspondence motion.
+            let mut outgoing = f64::INFINITY;
+            for (j, next) in chords.iter().enumerate().filter(|(j, next)| {
+                viable[position + 1][*j]
+                    && follows(chord, next, catalog)
+                    && (!needs_color || supplies_color(chord) || colored[position + 1][*j])
+            }) {
+                let _ = next;
+                outgoing = outgoing.min(edge_cost(*i, j)?);
+            }
+            candidate_costs.push(edge_cost(from_index, *i)? + outgoing * 0.5);
+        }
+        let minimum_cost = candidate_costs
+            .iter()
+            .copied()
+            .fold(f64::INFINITY, f64::min);
         let weighted: Vec<_> = candidates
             .iter()
-            .map(|(i, chord)| {
+            .zip(&candidate_costs)
+            .map(|((i, chord), cost)| {
                 // Operation priors are independent of how many chord realizations
                 // each operation contributes to the current catalog.
                 let weight = operator_prior(&chord.operator, &options.color)
@@ -308,7 +509,8 @@ fn choose_route(
                         &result,
                         chords,
                     )
-                    / counts[chord.operator.as_str()] as f64;
+                    / counts[chord.operator.as_str()] as f64
+                    * (-cost_strength * (cost - minimum_cost)).exp();
                 (*i, weight)
             })
             .collect();
@@ -403,9 +605,11 @@ pub fn generate(
     if !(4..=16).contains(&options.length)
         || !options.tempo.is_finite()
         || !(30.0..=240.0).contains(&options.tempo)
+        || !options.line_continuity.is_finite()
+        || !(0.0..=100.0).contains(&options.line_continuity)
     {
         return Err(invalid(
-            "A progression requires 4–16 chords and a finite tempo between 30 and 240 BPM.",
+            "A progression requires 4–16 chords, finite tempo 30–240 BPM and line continuity 0–100.",
         ));
     }
     let catalog = catalog::catalog(options)?;
@@ -452,21 +656,15 @@ pub fn generate(
         choose_route(options, &catalog)?
     };
     let chosen: Vec<_> = route.iter().map(|&i| catalog.chords[i].clone()).collect();
-    let voices = voicing::voice(&chosen);
+    let voices = voicing::voice_with_continuity(&chosen, options.line_continuity);
     let motion_options = HarmonicMotionOptions {
         period_millicents: Some(1_200_000),
         chords: chosen
             .iter()
             .zip(&voices)
             .enumerate()
-            .map(|(index, (chord, pitches))| MotionChord {
-                id: format!("progression-{index}"),
-                name: format!("{} · {}", chord.roman, chord.name),
-                root_millicents: Some(i64::from(pitches[0]) * 100_000),
-                pitches_millicents: pitches
-                    .iter()
-                    .map(|&pitch| i64::from(pitch) * 100_000)
-                    .collect(),
+            .map(|(index, (chord, pitches))| {
+                motion_chord(chord, pitches, format!("progression-{index}"))
             })
             .collect(),
         frames: vec![MotionFrame {
@@ -513,6 +711,28 @@ pub fn generate(
         arpeggiate: options.arpeggiate,
     };
     let plan = harmonic_motion::realize(&motion_options)?;
+    let context = connection_context(&catalog);
+    let connection_weights = harmonic_connection::default_weights();
+    let transitions = motion_options
+        .chords
+        .windows(2)
+        .map(|pair| {
+            harmonic_connection::pair_metrics(
+                &pair[0],
+                &pair[1],
+                Some(1_200_000),
+                Some(&context),
+                &connection_weights,
+            )
+        })
+        .collect::<CoreResult<Vec<_>>>()?;
+    let lines = crate::harmonic_lines::analyze_with_continuity(
+        &motion_options.chords,
+        &motion_options.history,
+        &connection_weights,
+        options.line_continuity,
+    )?;
+    let line_plans = solo_line_plans(&plan, &lines)?;
     let length = chosen.len();
     let steps = chosen
         .iter()
@@ -520,7 +740,7 @@ pub fn generate(
         .map(|(index, chord)| {
             let before = index.checked_sub(1).map(|i| &chosen[i]);
             let after = chosen.get(index + 1);
-            let mut replacements: Vec<_> = catalog
+            let replacements: Vec<_> = catalog
                 .chords
                 .iter()
                 .filter(|candidate| {
@@ -531,32 +751,55 @@ pub fn generate(
                         && after.is_none_or(|next| follows(candidate, next, &catalog))
                 })
                 .collect();
-            replacements.sort_by(|a, b| {
-                let score = |candidate: &ProgressionChord| {
-                    before.map_or(1.0, |p| transition_preference(p, candidate))
-                        * after.map_or(1.0, |n| transition_preference(candidate, n))
-                };
-                score(b).total_cmp(&score(a)).then(a.id.cmp(&b.id))
-            });
-            ProgressionStep {
+            let mut ranked = replacements
+                .into_iter()
+                .map(|candidate| {
+                    let candidate_profile = periodic_chord(candidate);
+                    let mut cost = 0.0;
+                    if let Some(previous) = before {
+                        cost += adjacent_cost(
+                            &periodic_chord(previous),
+                            &candidate_profile,
+                            &context,
+                            ConnectionGeometry::Periodic,
+                            &connection_weights,
+                        )?;
+                    }
+                    if let Some(next) = after {
+                        cost += adjacent_cost(
+                            &candidate_profile,
+                            &periodic_chord(next),
+                            &context,
+                            ConnectionGeometry::Periodic,
+                            &connection_weights,
+                        )?;
+                    }
+                    Ok((candidate, cost))
+                })
+                .collect::<CoreResult<Vec<_>>>()?;
+            ranked.sort_by(|(a, ca), (b, cb)| ca.total_cmp(cb).then(a.id.cmp(&b.id)));
+            Ok(ProgressionStep {
                 index,
                 chord_id: chord.id.clone(),
                 chord: chord.clone(),
+                voiced_name: voiced_name(chord, &voices[index]),
                 voiced_midi: voices[index].clone(),
+                voiced_tone_names: voiced_names(chord, &voices[index]),
                 reason: step_reason(chord, before, after, index, length, &catalog),
-                replacements: replacements
+                replacements: ranked
                     .into_iter()
-                    .map(|candidate| ProgressionReplacement {
+                    .map(|(candidate, cost)| ProgressionReplacement {
                         chord_id: candidate.id.clone(),
                         reason: step_reason(candidate, before, after, index, length, &catalog),
+                        cost,
                     })
                     .collect(),
-            }
+            })
         })
-        .collect();
+        .collect::<CoreResult<Vec<_>>>()?;
     Ok(ProgressionResult {
-        options: options.clone(), catalog, steps, plan, motion_options,
-        explanation: "Begin at the supplied tonic, choose a route through the collection and admitted transformations, and return home. Directed chromatic chords keep their resolution targets; smooth register choices are optimized over the complete passage. The seed samples explicit compositional preferences, not learned probabilities or a guarantee of musical quality. Conventional naming and this generator use twelve-tone equal temperament; the advanced relation engine still accepts arbitrary native pitches and periods.".into(),
+        options: options.clone(), catalog, steps, plan, motion_options, transitions, lines, line_plans,
+        explanation: "Begin at the supplied tonic, choose a route through the collection and admitted transformations, and return home. Directed chromatic chords keep their resolution targets. Incoming and prospective outgoing periodic motion, newly foreign notes and duration-weighted sonority/context costs guide chord choice; registered voicing keeps the 24 best local-motion/register passages and reranks their complete melodic lines by changes in signed step size. Line continuity is an explicit preference with a zero-weight baseline; this bounded comparison is not a global counterpoint optimum. The reported periodic correspondence is potential motion, not an inferred inversion or recovered voice. Every original chord lasts four quarters. The seed samples explicit compositional preferences, not learned probabilities or a guarantee of musical quality. Conventional naming and this generator use twelve-tone equal temperament; the advanced relation engine still accepts arbitrary native pitches and periods.".into(),
         roman_convention: "Roman roots are measured against the parallel major scale: minor-third, minor-sixth and minor-seventh roots carry ♭. Upper/lower case gives major/minor third; ° is diminished, ø7 half-diminished, + augmented, maj7 a major seventh. A slash names a temporary target (V7/V); the global Roman remains separately visible. These are authored interpretations of the generated program, not source-only chord recognition.".into(),
     })
 }
@@ -566,6 +809,110 @@ mod tests {
     use super::*;
     use crate::composition::{CompositionLimits, compile_composition};
     use std::collections::BTreeSet;
+
+    #[test]
+    fn actual_inversion_names_do_not_replace_the_harmonic_root() {
+        let catalog = catalog::catalog(&catalog::default_options()).unwrap();
+        let c = catalog
+            .chords
+            .iter()
+            .find(|chord| chord.id == "scale-0-3")
+            .unwrap();
+        let pitches = [52, 60, 67, 72];
+        assert_eq!(voiced_name(c, &pitches), "C/E");
+        let motion = motion_chord(c, &pitches, "inverted".into());
+        assert_eq!(motion.root_millicents, Some(6_000_000));
+        assert_eq!(motion.pitches_millicents[0], 5_200_000);
+        let a = catalog
+            .chords
+            .iter()
+            .find(|chord| chord.id == "scale-5-3")
+            .unwrap();
+        assert_eq!(voiced_name(a, &[57, 60, 64]), "Am");
+        assert_eq!(voiced_name(a, &[52, 57, 60]), "Am/E");
+    }
+
+    #[test]
+    fn solo_lines_partition_actual_events_with_silence_and_arpeggio_offsets() {
+        let ids = ["scale-0-3", "altered-0-flat9", "scale-0-3", "scale-0-3"].map(String::from);
+        for arpeggiate in [false, true] {
+            let options = ProgressionOptions {
+                length: 4,
+                color: ProgressionColor::Adventurous,
+                arpeggiate,
+                ..catalog::default_options()
+            };
+            let generated = generate(&options, Some(&ids)).unwrap();
+            let full = compile_composition(&generated.plan, &CompositionLimits::default()).unwrap();
+            let key = |note: &crate::model::ScoreNote| {
+                (
+                    note.part.clone(),
+                    note.onset,
+                    note.duration,
+                    note.pitch.millicents,
+                    note.velocity,
+                    note.release_velocity,
+                )
+            };
+            let mut expected = full.notes.iter().map(key).collect::<Vec<_>>();
+            expected.sort();
+            let mut actual = Vec::new();
+            assert_eq!(generated.line_plans.len(), generated.lines.lines.len());
+            for (line, plan) in generated.lines.lines.iter().zip(&generated.line_plans) {
+                let solo = compile_composition(plan, &CompositionLimits::default()).unwrap();
+                assert_eq!(solo.duration, full.duration);
+                assert_eq!(solo.ppq, full.ppq);
+                assert_eq!(solo.notes.len(), line.points.len());
+                actual.extend(solo.notes.iter().map(key));
+            }
+            actual.sort();
+            assert_eq!(actual, expected);
+        }
+    }
+
+    #[test]
+    fn motion_and_exposure_cost_improve_matched_seed_routes() {
+        let mut options = catalog::default_options();
+        assert_eq!(options.seed, 7);
+        let catalog = catalog::catalog(&options).unwrap();
+        let context = connection_context(&catalog);
+        let weights = harmonic_connection::default_weights();
+        let cost = |route: &[usize]| -> f64 {
+            route
+                .windows(2)
+                .map(|pair| {
+                    adjacent_cost(
+                        &periodic_chord(&catalog.chords[pair[0]]),
+                        &periodic_chord(&catalog.chords[pair[1]]),
+                        &context,
+                        ConnectionGeometry::Periodic,
+                        &weights,
+                    )
+                    .unwrap()
+                })
+                .sum()
+        };
+        let baseline = choose_route_with_cost(&options, &catalog, 0.0).unwrap();
+        let scored = choose_route(&options, &catalog).unwrap();
+        assert_ne!(scored, baseline);
+        assert!(
+            cost(&scored) < cost(&baseline),
+            "default route: {} versus disabled {}",
+            cost(&scored),
+            cost(&baseline)
+        );
+        let mut baseline_sum = 0.0;
+        let mut scored_sum = 0.0;
+        for seed in 0..24 {
+            options.seed = seed;
+            baseline_sum += cost(&choose_route_with_cost(&options, &catalog, 0.0).unwrap());
+            scored_sum += cost(&choose_route(&options, &catalog).unwrap());
+        }
+        assert!(
+            scored_sum < baseline_sum,
+            "matched seed total: {scored_sum} versus {baseline_sum}"
+        );
+    }
 
     #[test]
     fn seeded_routes_are_reproducible_and_not_fixed_presets() {
