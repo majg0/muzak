@@ -2,6 +2,12 @@ import type { LabDefinition } from './types';
 
 export const labs = [
   {
+    id: 'patterns', title: 'Patterns & voices', group: 'Compose & inspect',
+    description: 'Build a line from an outer shape, a shared inner figure and independent rhythm. Combine, nest and edit executable patterns, then hear the result.',
+    tags: ['pattern', 'melody', 'voice', 'rhythm', 'sequence', 'scale degrees', 'chromatic', 'subdivision', 'polymeter', 'composition'],
+    load: () => import('./patterns'),
+  },
+  {
     id: 'harmonic-motion', title: 'Harmonic motion', group: 'Compose & inspect',
     description: 'Generate a chord progression in your chosen key and scale. Read its Roman numerals, try altered chords and substitutions, then hear the result.',
     tags: ['harmony', 'progression', 'Roman numerals', 'harmonic minor', 'melodic minor', 'diminished', 'tonic', 'modal', 'jazz', 'substitution', 'Tonnetz', 'Coltrane', 'xenharmonic', 'voice leading'],

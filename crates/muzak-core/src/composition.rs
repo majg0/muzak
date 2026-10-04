@@ -143,7 +143,7 @@ impl PitchAnchor {
     }
 }
 
-fn resolve_harmonic_pitch(
+pub(crate) fn resolve_harmonic_pitch(
     harmony: &str,
     tone: usize,
     octave: i64,
@@ -254,7 +254,9 @@ impl PitchBinding {
     }
 }
 
-fn harmony_index(frames: &[CompositionHarmony]) -> CoreResult<HashMap<&str, &CompositionHarmony>> {
+pub(crate) fn harmony_index(
+    frames: &[CompositionHarmony],
+) -> CoreResult<HashMap<&str, &CompositionHarmony>> {
     let mut result = HashMap::new();
     for frame in frames {
         if frame.id.is_empty()
@@ -453,6 +455,11 @@ pub struct CompositionPlan {
     )]
     #[ts(optional, rename = "pitchLattices")]
     pub pitch_lattices: Option<Vec<PitchLattice>>,
+    /// Authored value patterns remain executable rather than being replaced by
+    /// their current rendering. They lower to leaves before this compiler emits.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub patterns: Option<crate::composition_patterns::CompositionPatterns>,
 }
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -510,6 +517,10 @@ pub fn compile_composition(
     plan: &CompositionPlan,
     limits: &CompositionLimits,
 ) -> CoreResult<Score> {
+    if plan.patterns.is_some() {
+        let expanded = crate::composition_patterns::lower_composition_patterns(plan, limits)?;
+        return compile_composition(&expanded, limits);
+    }
     validate_score(&plan.context.score(vec![]))?;
     let harmonies = harmony_index(plan.harmonies.as_deref().unwrap_or_default())?;
     let lattices = lattice_index(plan.pitch_lattices.as_deref().unwrap_or_default())?;
@@ -938,6 +949,7 @@ mod pitch_binding_tests {
             }],
             harmonies: None,
             pitch_lattices: Some(vec![domain()]),
+            patterns: None,
         }
     }
 

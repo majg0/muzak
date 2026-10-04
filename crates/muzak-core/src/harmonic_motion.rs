@@ -1067,6 +1067,7 @@ pub fn realize(options: &HarmonicMotionOptions) -> CoreResult<CompositionPlan> {
         placements,
         harmonies: Some(harmonies),
         pitch_lattices: None,
+        patterns: None,
     };
     compile_composition(&plan, &CompositionLimits::default())?;
     Ok(plan)

@@ -624,6 +624,7 @@ mod tests {
             definitions: None,
             harmonies: Some(example.harmonies.clone()),
             pitch_lattices: Some(example.lattices.clone()),
+            patterns: None,
             placements: vec![MaterialPlacement {
                 material: material.id.clone(),
                 onset: 0,

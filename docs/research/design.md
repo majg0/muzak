@@ -28,6 +28,16 @@ Bindings use the harmonic context at each attack. A held note may belong analyti
 
 ## Executable pitch relations
 
+The [pattern algebra](patterns.md) extends `CompositionPlan` with retained typed
+definitions and authored voices. A generic `Pattern<T>` shares exact time,
+references, nesting, variadic combination, independent cycles, subdivision and
+explicit clipping across value types. Duration, sounding/resting, pitch and
+velocity remain independent. Time, subdivision-slot and sounding-attack clocks
+are explicit. Degree offsets combine before lattice mapping, with native offsets
+applied afterward. Pattern voices lower to the existing materials and placements
+at compilation; no parallel note emitter or inferred hierarchy is introduced.
+Saved programs regenerate their dependents after shared and local edits.
+
 `CompositionPlan.pitchLattices` is a shared dictionary of origins, strictly ordered intervals and positive periods in native millicents. It assumes neither twelve equal divisions nor a major scale. A `latticePath` binding names a lattice, two typed anchors, a rational position, degree offset and exact pitch residual. An anchor references either a material-event index or a direct harmonic value address (palette, tone, octave and residual). Both resolved anchors must lie on that lattice; interpolation must yield an integer degree. Unknown anchors, cycles, unsafe coordinates and off-lattice edits fail explicitly. Resolution is iterative and source-independent; evidence IDs supply no musical values.
 
 The bounded inverse kernel proposes zero-residual, adjacent-degree passing and neighbor triples. Endpoints must have direct harmonic bindings; scene admission uses selected chord-core attacks, and their harmonic contexts may differ. Reciprocal nearest-pitch links between adjacent attack groups provide conservative selection evidence. Exact release-to-attack adjacency also proposes paths across unrelated intervening attacks. A chord-core middle or a path requiring this added adjacency remains an unselected alternative alongside its direct binding; melodic dependence does not negate chord membership. Both geometries share gap/step bounds, work limits and unsupported-note competition. Contradictory co-release evidence prevents an automatic rewrite without erasing the candidate. Coincident attacks may share an endpoint value only when timing, native curves and direct binding expressions agree; equal sounding pitches attached to different palettes remain distinct. Such classes use harmonic value anchors and retain every witness and emission. This does not infer voice identity. Ties abstain and track names do not establish voices. Supplied successors are a distinct input condition. Nonconstant native pitch curves remain observations but cannot participate in this narrow inference.

@@ -2,6 +2,11 @@ pub mod api;
 pub mod boundary;
 pub mod comparison;
 pub mod composition;
+pub mod composition_patterns;
+pub mod pattern;
+pub mod pattern_lab;
+#[cfg(test)]
+mod pattern_controls;
 pub mod error;
 pub mod evaluation;
 pub mod harmonic;

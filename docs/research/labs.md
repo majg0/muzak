@@ -32,6 +32,18 @@ Melody is a bounded seeded walk over a supplied native `PitchLattice`; its small
 
 Both Rust experiments return `CompositionPlan`: one reusable material and repeated placements, compiled by the existing `compile_composition`. These are small architecture exercises, not claims of new long-form musical quality or complete ontology lowering. No meter is inferred from the number of steps. MIDI export retains the existing strict loss checks.
 
+## Patterns & voices
+
+The pattern lab exposes an outer degree shape, a reusable inner figure and an
+independent duration cycle. Sound/rest masks use a separate slot clock; native
+pitch offsets use elapsed time. Zero has no rest meaning. Advanced editable
+programs demonstrate nested subdivision, three independently phased cycles,
+fractional cut/restart windows and harmonic member voices. The full Rust
+[pattern algebra](patterns.md) retains shared definitions through serialization
+and recompilation. One player supports the full passage or a selected voice.
+Invalid edits retain the accepted result; switching labs retains both form and
+program drafts while disposing playback and worker resources.
+
 ## Harmonic Motion
 
 The main workflow is key, scale, length, color → generate → listen → select a chord → understand or replace it. Roman numerals, chord symbols, spelled members and contextual explanations accompany the actual generated passage. Major modes and the harmonic minor, melodic minor and harmonic major families supply pitch collections to one Rust chord-construction and route model. Chromatic choices carry their borrowing or directed-target premises. Generation is seeded; changing a chord choice recompiles a voiced passage through the existing composition algebra.

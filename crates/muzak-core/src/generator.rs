@@ -215,7 +215,7 @@ pub fn generate_plan(options: &GeneratorOptions) -> CoreResult<CompositionPlan> 
         parts:[("melody","Melody"),("harmony","Harmony"),("bass","Bass")].into_iter().enumerate().map(|(i,(id,name))|ScorePart {id:id.into(),name:name.into(),track:i,channel:i as u8,percussion:false}).collect(),
         attachments:vec![ScoreAttachment {tick:0,track:0,order:0,bytes:vec![255,81,3,(micros>>16) as u8,(micros>>8) as u8,micros as u8]},
             ScoreAttachment {tick:0,track:0,order:1,bytes:vec![255,88,4,options.beats_per_bar as u8,2,24,8]}]};
-    let plan=CompositionPlan {context,materials,definitions:Some(definitions),placements,harmonies:Some(harmonies),
+    let plan=CompositionPlan {context,materials,definitions:Some(definitions),placements,harmonies:Some(harmonies),patterns:None,
         pitch_lattices:Some(vec![PitchLattice {id:"mode".into(),origin_millicents:i64::from(options.tonic)*100_000,
             period_millicents:1_200_000,intervals:options.mode.intervals().into_iter().map(|p|p*100_000).collect()}])};
     compile_composition(&plan,&CompositionLimits::default())?;

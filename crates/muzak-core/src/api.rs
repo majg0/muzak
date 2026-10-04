@@ -22,6 +22,8 @@ use ts_rs::TS;
     rename_all_fields = "camelCase"
 )]
 pub enum CoreRequest {
+    GetPatternLabDefaults {},
+    GeneratePatternLab { options: crate::pattern_lab::PatternLabOptions },
     GetProgressionDefaults {},
     ConnectProgression {
         options: crate::progression::ProgressionOptions,
@@ -258,6 +260,8 @@ pub enum CoreRequest {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(tag = "op", content = "output", rename_all = "camelCase")]
 pub enum CoreResponse {
+    GetPatternLabDefaults(crate::pattern_lab::PatternLabDefaults),
+    GeneratePatternLab(composition::CompositionPlan),
     GetProgressionDefaults(crate::progression::ProgressionDefaults),
     ConnectProgression(crate::progression::ProgressionConnectionResult),
     AnalyzeHarmonicConnection(crate::harmonic_connection::HarmonicConnectionAnalysis),
@@ -316,6 +320,8 @@ pub enum CoreReply {
 
 pub fn dispatch(request: CoreRequest) -> CoreResult<CoreResponse> {
     Ok(match request {
+        CoreRequest::GetPatternLabDefaults {} => CoreResponse::GetPatternLabDefaults(crate::pattern_lab::defaults()?),
+        CoreRequest::GeneratePatternLab { options } => CoreResponse::GeneratePatternLab(crate::pattern_lab::generate(&options)?),
         CoreRequest::GetProgressionDefaults {} => CoreResponse::GetProgressionDefaults(crate::progression::defaults()),
         CoreRequest::ConnectProgression { options, chord_ids, from_index, max_intermediates, weights } => CoreResponse::ConnectProgression(crate::progression::connect(&options, &chord_ids, from_index, max_intermediates.unwrap_or(3), weights.as_ref())?),
         CoreRequest::AnalyzeHarmonicConnection { options } => CoreResponse::AnalyzeHarmonicConnection(crate::harmonic_connection::analyze(&options)?),

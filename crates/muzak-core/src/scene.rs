@@ -845,6 +845,7 @@ pub fn encode_score(score: &Score, options: &SceneOptions) -> CoreResult<Musical
     let program = CompositionPlan {
         harmonies: Some(harmonies),
         pitch_lattices: Some(relations.lattices),
+        patterns: None,
         context: ScoreContext::from(score),
         materials: e.materials,
         definitions: Some(e.definitions),
@@ -887,19 +888,25 @@ pub fn encode_score(score: &Score, options: &SceneOptions) -> CoreResult<Musical
 /// program from its rendering. Graph membership follows executable placements;
 /// harmonic membership follows bindings, including dependent event anchors.
 pub fn scene_from_program(plan: &CompositionPlan) -> CoreResult<MusicalScene> {
-    let score = compile_composition(plan, &CompositionLimits {
+    let limits = CompositionLimits {
         max_depth: Some(64), max_expanded_notes: Some(1_000_000),
         max_expanded_placements: Some(100_000),
-    })?;
-    let materials: HashMap<_, _> = plan.materials.iter().map(|m| (m.id.as_str(), m)).collect();
-    let definitions: HashMap<_, _> = plan.definitions.iter().flatten().map(|d| (d.id.as_str(), d)).collect();
+    };
+    // Ownership describes the compiler's leaves, while the scene retains the
+    // authored expressions that generated them. Lowering is not a second emitter.
+    let lowered = crate::composition_patterns::lower_composition_patterns(plan, &limits)?;
+    let score = compile_composition(&lowered, &limits)?;
+    let materials: HashMap<_, _> = lowered.materials.iter().map(|m| (m.id.as_str(), m)).collect();
+    let definitions: HashMap<_, _> = lowered.definitions.iter().flatten().map(|d| (d.id.as_str(), d)).collect();
+    let pattern_voices: HashMap<_, _> = plan.patterns.iter().flat_map(|patterns| &patterns.voices)
+        .enumerate().map(|(index, voice)| (lowered.placements[plan.placements.len() + index].material.as_str(), voice)).collect();
     let palette_ids: HashSet<_> = plan.harmonies.iter().flatten().map(|h| h.id.as_str()).collect();
     let mut prefix = "composition:".to_string();
     while palette_ids.iter().any(|id| id.starts_with(&prefix)) { prefix.push(':'); }
     let mut nodes: Vec<SceneNode> = vec![];
     let mut uses: BTreeMap<String, Vec<usize>> = BTreeMap::new();
     let mut palette_members: BTreeMap<String, Vec<String>> = BTreeMap::new();
-    let mut stack: Vec<_> = plan.placements.iter().enumerate()
+    let mut stack: Vec<_> = lowered.placements.iter().enumerate()
         .map(|(i, p)| (p, i.to_string(), None::<usize>)).rev().collect();
     let mut membership_count = 0usize;
     let mut charge = |count: usize| -> CoreResult<()> {
@@ -927,6 +934,15 @@ pub fn scene_from_program(plan: &CompositionPlan) -> CoreResult<MusicalScene> {
                 nodes[index].material_id = Some(material.id.clone());
                 nodes[index].placement_path = Some(path);
                 uses.entry(material.id.clone()).or_default().push(index);
+            }
+            if let Some(voice) = pattern_voices.get(material.id.as_str()) {
+                nodes[index].kind = SceneKind::Melody;
+                nodes[index].label = format!("Pattern voice · {}", voice.id);
+                nodes[index].evidence = vec!["Authored voice generated from independent pattern controls. Transposition edits its chromatic control; shared expressions remain executable.".into()];
+                if let crate::composition_patterns::PatternPitchAnchor::Harmony { harmony, .. } = &voice.pitch.anchor {
+                    charge(ids.len())?;
+                    palette_members.entry(harmony.clone()).or_default().extend(ids.iter().cloned());
+                }
             }
             if let Some(bindings) = &p.pitch_bindings {
                 // The compiler already validates indices and cycles. This is
@@ -1001,8 +1017,8 @@ pub fn scene_from_program(plan: &CompositionPlan) -> CoreResult<MusicalScene> {
     let costs = SceneCosts {
         source_note_count: score.notes.len(), material_note_count: plan.materials.iter().map(|m| m.notes.len()).sum(),
         material_count: plan.materials.len(), placement_count: uses.values().map(Vec::len).sum(),
-        reused_material_count: uses.values().filter(|v| v.len() > 1).count(),
-        literal_material_count: uses.values().filter(|v| v.len() == 1).count(),
+        reused_material_count: uses.iter().filter(|(id, v)| !pattern_voices.contains_key(id.as_str()) && v.len() > 1).count(),
+        literal_material_count: uses.iter().filter(|(id, v)| !pattern_voices.contains_key(id.as_str()) && v.len() == 1).count(),
         identity_record_count: identities.len(), velocity_residual_count: 0,
         program_json_bytes: serde_json::to_vec(plan)?.len(), identity_json_bytes: serde_json::to_vec(&identities)?.len(),
         residual_json_bytes: 2, relational_binding_count: bindings.iter().filter(|b| matches!(b, PitchBinding::LatticePath { .. })).count(),
@@ -1604,6 +1620,47 @@ fn validate_scene_graph(scene: &MusicalScene) -> CoreResult<()> {
     Ok(())
 }
 
+fn transpose_pattern_voice(plan: &mut CompositionPlan, index: usize, millicents: i64) -> CoreResult<()> {
+    use crate::{
+        composition_patterns::{PatternClock, PatternControl},
+        pattern::{evaluate_pattern, Pattern, PatternLimits, PatternOperation},
+    };
+    let patterns = plan.patterns.as_mut().ok_or_else(|| invalid("Missing authored pattern program."))?;
+    let voice = patterns.voices.get_mut(index).ok_or_else(|| invalid("Unknown authored pattern voice."))?;
+    let limits = PatternLimits { max_depth: 64, max_events: 1_000_000, max_work: 100_000 };
+    let span = match &voice.pitch.chromatic {
+        Some(control) => evaluate_pattern(&control.pattern, &patterns.number_definitions, &limits)?.span,
+        None => evaluate_pattern(&voice.rhythm, &patterns.gate_definitions, &limits)?.span,
+    };
+    let constant = Pattern::Atom { value: millicents, span: span.clone() };
+    let add = |value: &mut i64| -> CoreResult<()> {
+        *value = value.checked_add(millicents).filter(|value| value.unsigned_abs() <= MAX_SAFE)
+            .ok_or_else(|| invalid("Scene transposition exceeds exact pitch."))?;
+        Ok(())
+    };
+    if let Some(control) = &mut voice.pitch.chromatic {
+        match &mut control.pattern {
+            Pattern::Atom { value, .. } => add(value)?,
+            Pattern::Combine { operation: PatternOperation::Add, operands } => {
+                // Accumulate the local constant instead of growing expression
+                // depth with each repeated scene edit. Shared refs stay shared.
+                if let Some(Pattern::Atom { value, span: last_span }) = operands.last_mut()
+                    && *last_span == span {
+                    add(value)?;
+                } else {
+                    operands.push(constant);
+                }
+            },
+            _ => control.pattern = Pattern::Combine {
+                operation: PatternOperation::Add, operands: vec![control.pattern.clone(), constant],
+            },
+        }
+    } else {
+        voice.pitch.chromatic = Some(PatternControl { pattern: constant, clock: PatternClock::Time });
+    }
+    Ok(())
+}
+
 /// Local occurrence edits and shared dictionary edits use the same compiler.
 /// The returned scene retains its authored dependencies and original evidence.
 pub fn transpose_scene(
@@ -1617,6 +1674,25 @@ pub fn transpose_scene(
     }
     let previous = decode_scene(scene)?;
     let mut edited = scene.clone();
+    // Pattern leaves exist only during lowering. Their graph addresses still
+    // identify executable owners, but edits target the originating voice.
+    if let Some(patterns) = &scene.program.patterns {
+        let index = match scope {
+            SceneEditScope::Material => {
+                let lowered = crate::composition_patterns::lower_composition_patterns(&scene.program, &CompositionLimits {
+                    max_depth: Some(64), max_expanded_notes: Some(1_000_000), max_expanded_placements: Some(100_000),
+                })?;
+                lowered.placements[scene.program.placements.len()..].iter().position(|p| p.material == target)
+            },
+            SceneEditScope::Occurrence => target.parse::<usize>().ok()
+                .and_then(|index| index.checked_sub(scene.program.placements.len()))
+                .filter(|&index| index < patterns.voices.len()),
+        };
+        if let Some(index) = index {
+            if millicents != 0 { transpose_pattern_voice(&mut edited.program, index, millicents)?; }
+            return finish_scene_edit(scene, edited, &previous);
+        }
+    }
     match scope {
         SceneEditScope::Material => {
             if !edited.program.materials.iter().any(|m|m.id == target) {
@@ -1700,6 +1776,98 @@ pub fn transpose_scene(
 mod authoritative_edit_tests {
     use super::*;
     use serde_json::json;
+
+    fn pattern_plan(chromatic: bool) -> CompositionPlan {
+        let atom = |value: serde_json::Value, span: u64| json!({
+            "kind":"atom", "value":value, "span":{"numerator":span,"denominator":1}
+        });
+        let mut voice = json!({
+            "id":"line", "part":"p",
+            "rhythm":{"kind":"ref","id":"held"},
+            "pitch":{"anchor":{"kind":"harmony","harmony":"c","tone":0,"octave":5,
+                "residualMillicents":0,"lattice":"white"},
+                "degree":{"clock":"attack","pattern":{"kind":"ref","id":"shape"}}}
+        });
+        if chromatic {
+            voice["pitch"]["chromatic"] = json!({"clock":"attack","pattern":{"kind":"ref","id":"color"}});
+        }
+        let mut second = voice.clone();
+        second["id"] = json!("answer");
+        second["onset"] = json!({"numerator":3,"denominator":1});
+        serde_json::from_value(json!({
+            "context":{"ppq":3,"duration":0,"trackEnds":[0],"attachments":[],
+                "parts":[{"id":"p","name":"","track":0,"channel":0,"percussion":false}]},
+            "materials":[],"placements":[],
+            "harmonies":[{"id":"c","rootMillicents":0,"intervals":[0,400000,700000]}],
+            "pitchLattices":[{"id":"white","originMillicents":0,"periodMillicents":1200000,
+                "intervals":[0,200000,400000,500000,700000,900000,1100000]}],
+            "patterns":{
+                "numberDefinitions":{
+                    "shape":{"kind":"sequence","items":[atom(json!(0),1),atom(json!(2),1)]},
+                    "color":{"kind":"sequence","items":[atom(json!(12501),1),atom(json!(-2501),1)]}
+                },
+                "gateDefinitions":{"held":{"kind":"sequence","items":[atom(json!(true),2),atom(json!(true),1)]}},
+                "voices":[voice,second]
+            }
+        })).unwrap()
+    }
+
+    #[test]
+    fn pattern_scene_retains_executable_definitions_and_exact_owners_through_palette_edits() {
+        let plan = pattern_plan(false);
+        let expected = compile_composition(&plan, &CompositionLimits::default()).unwrap();
+        let scene = scene_from_program(&plan).unwrap();
+        let saved: MusicalScene = serde_json::from_slice(&serde_json::to_vec(&scene).unwrap()).unwrap();
+        assert_eq!(decode_scene(&saved).unwrap(), expected);
+        assert_eq!(serde_json::to_value(&saved.program).unwrap(), serde_json::to_value(&plan).unwrap());
+        assert!(saved.program.materials.is_empty() && saved.program.placements.is_empty());
+        assert_eq!(saved.costs.program_json_bytes, serde_json::to_vec(&plan).unwrap().len());
+        assert_eq!(saved.costs.literal_material_count, 0);
+        assert_eq!(saved.nodes.iter().filter(|node| node.placement_path.is_some()).count(), 2);
+        assert_eq!(saved.nodes.iter().find(|node| node.id == "c").unwrap().note_ids.len(), 4);
+        let shifted = change_scene_harmony(&saved, "c", 500_000, None).unwrap();
+        let shifted_score = decode_scene(&shifted).unwrap();
+        assert_eq!(shifted_score.notes.iter().map(|note| note.pitch.millicents).collect::<Vec<_>>(),
+            [6_500_000,6_900_000,6_500_000,6_900_000]);
+        assert_eq!(shifted_score.notes.iter().map(|note| (&note.id,note.onset,note.duration)).collect::<Vec<_>>(),
+            expected.notes.iter().map(|note| (&note.id,note.onset,note.duration)).collect::<Vec<_>>());
+        let restored = change_scene_harmony(&shifted, "c", 0, None).unwrap();
+        assert_eq!(decode_scene(&restored).unwrap(), expected);
+        // Missing one derived owner fails the same exclusive-ownership contract.
+        let mut corrupt = saved;
+        corrupt.nodes.iter_mut().find(|node| node.placement_path.is_some()).unwrap().placement_path = None;
+        assert!(decode_scene(&corrupt).unwrap_err().message.contains("owners"));
+    }
+
+    #[test]
+    fn pattern_scene_transposition_edits_native_controls_without_detaching_shared_shapes() {
+        for chromatic in [false, true] {
+            let scene = scene_from_program(&pattern_plan(chromatic)).unwrap();
+            let original = decode_scene(&scene).unwrap();
+            let answer_material = scene.nodes.iter().find(|node| node.placement_path.as_deref() == Some("1"))
+                .unwrap().material_id.clone().unwrap();
+            let shifted = transpose_scene(&scene, SceneEditScope::Occurrence, "0", 137).unwrap();
+            let shifted = transpose_scene(&shifted, SceneEditScope::Material, &answer_material, -211).unwrap();
+            let pitches: Vec<_> = decode_scene(&shifted).unwrap().notes.iter().map(|note| note.pitch.millicents).collect();
+            assert_eq!(pitches, original.notes.iter().enumerate().map(|(index,note)|
+                note.pitch.millicents + if index < 2 {137} else {-211}).collect::<Vec<_>>());
+            let patterns = shifted.program.patterns.as_ref().unwrap();
+            assert_eq!(serde_json::to_value(&patterns.number_definitions).unwrap(),
+                serde_json::to_value(&scene.program.patterns.as_ref().unwrap().number_definitions).unwrap());
+            assert!(matches!(patterns.voices[0].pitch.degree.as_ref().unwrap().pattern, crate::pattern::Pattern::Ref { .. }));
+            assert_eq!(patterns.voices[0].pitch.chromatic.as_ref().unwrap().clock,
+                if chromatic { crate::composition_patterns::PatternClock::Attack } else { crate::composition_patterns::PatternClock::Time });
+            let back = transpose_scene(&shifted, SceneEditScope::Occurrence, "0", -137).unwrap();
+            let mut back = transpose_scene(&back, SceneEditScope::Material, &answer_material, 211).unwrap();
+            assert_eq!(decode_scene(&back).unwrap(), original);
+            // Repeated edits accumulate one local constant instead of nesting
+            // wrappers until an otherwise small program hits its depth budget.
+            for _ in 0..70 { back = transpose_scene(&back, SceneEditScope::Occurrence, "0", 1).unwrap(); }
+            let after = decode_scene(&back).unwrap();
+            assert_eq!(after.notes[0].pitch.millicents, original.notes[0].pitch.millicents + 70);
+            assert_eq!(after.notes[2..], original.notes[2..]);
+        }
+    }
 
     fn plan() -> CompositionPlan {
         let notes = (0..3).map(|i| json!({

@@ -25,6 +25,8 @@ Inspect a transition's actual-register motion, periodic matching, chromatic entr
 
 Open **Follow each voice through the phrase** to see and solo its individual melodic lines. Inversions and independent triad doublings let every line participate in smooth motion; slash chord symbols show the sounding bass. Advanced **Line continuity** controls the phrase contour preference, with zero as an explicit disabled baseline. Solo parts retain the original timing and harmonic bindings through the same compiler.
 
+Choose **Patterns & voices** to compose an outer shape and an inner figure with independent durations and sound/rest masks. Shared typed patterns support nested subdivision, several independently cycling inputs, overlap, and exact cut-and-restart windows. Degree patterns resolve through arbitrary pitch lattices before native chromatic or microtonal offsets. The [pattern contract](docs/research/patterns.md) maps the operations and musical controls; the lab retains an editable executable program, complete-passage audition, voice solos and export.
+
 In Composition, generate a seeded passage, play it, edit its harmonic palettes or shared/local materials, and export MIDI. Tempo, meter, mode, density, variation and color are controllable. Generated phrases retain their authored bindings; edits compile directly and never re-infer away the program.
 
 Open MIDI or choose a local reference to infer a scene from observations. Analysis covers the whole score automatically. Drag/resize the overview window to navigate; seek with the timeline ruler or playhead. Bar lines follow recorded meter changes; missing meter uses marked quarter coordinates. Source observations remain available beside the decoded edited program.
@@ -33,6 +35,7 @@ Open MIDI or choose a local reference to infer a scene from observations. Analys
 
 - `crates/muzak-core/src/ontology/`: composable Rust musical nouns, typed components and relationships, glossary coverage and validation.
 - `crates/muzak-core/src/labs.rs`: bounded melody/rhythm experiments producing the existing `CompositionPlan`.
+- `crates/muzak-core/src/pattern.rs`, `composition_patterns.rs`: generic exact-time pattern operations and their typed voice interpretation inside the same composition compiler.
 - `crates/muzak-core/src/harmonic_motion.rs`: exhaustive finite chord relations, tonic/context comparisons and passage realization through `CompositionPlan`.
 - `crates/muzak-core/src/harmonic_connection.rs`: registered/periodic correspondence, contextual transition costs and bounded connecting-route search.
 - `crates/muzak-core/src/harmonic_lines.rs`: persistent member paths, whole-phrase contour descriptors and shared continuity scoring, independent of chord labels.

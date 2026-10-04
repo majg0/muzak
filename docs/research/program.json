@@ -3,16 +3,33 @@
   "updatedDate": "2026-10-04",
   "objective": "Generate musically compelling, controllable music through focused experiment labs sharing one Rust composition algebra, a composable musical ontology and contextual harmonic relationships.",
   "checkpoint": {
-    "summary": "Harmonic Motion uses a generic Rust trajectory layer for exact member succession, whole-phrase contour costs and individual-line audition through CompositionPlan. Roman readings remain contextual interpretations or authored harmonic constraints. The tonal generator constructs 28 scale modes and bounded chord routes, then compares 24 complete voicings using explicit line continuity with a zero-strength baseline. Shared registered/periodic motion, chromatic entry and duration-weighted exposure support replacement and finite connecting routes. Up to three insertions subdivide a source bar while retaining anchor pitches, later onsets and member counts within endpoint bounds. Solos preserve actual rhythm and their emissions partition the full passage. These are authored forward strategies and bounded optima, not recovered voice identity, inferred passing roles or a complete counterpoint grammar. All labs retain the sole composition compiler.",
+    "summary": "CompositionPlan retains generic exact-time patterns and authored voices. Shared definitions, nested subdivision, variadic combination, independent cycles, overlap and clipping lower through the existing compiler. Duration, sound/rest masks, degree/native pitch and velocity controls have explicit time, slot or sounding-attack clocks. Degree coordinates map once through arbitrary lattices before chromatic or microtonal offsets; harmonic member anchors and voice identities remain separate. Serialized shared/local edits, rational cut/restart controls and authored scene edits regenerate dependent notes. Patterns & voices provides passage/solo audition and editable programs. Harmonic Motion retains contextual chord routes, exact member correspondence and bounded phrase-continuity preferences. These are executable authored relationships, not inferred melodic hierarchy or a universal melody-quality model.",
     "nextActions": [
       "Audition complete phrases and their individual lines under matched harmonic constraints and explicit zero-continuity controls. Evaluate contour, motives, duration, inter-line motion, harmonic exposure and phrase destination separately; keep the chromatic descent and already-stepwise diminished controls.",
-      "Use persistent exact trajectory relationships as the foundation for composing from melodic intentions as well as harmonic constraints. Next evaluate joint phrase/correspondence search and richer rhythm or motive constraints against the current bounded voiced-reranking baseline; do not equate a small step-change penalty with a complete melody model.",
+      "Use shared pattern programs to compare recognizable outer shapes, inner figures, independent rhythmic development and harmonic-member edits in complete passages. Evaluate perceptual quality separately from exact rendering and relation reuse; do not equate smoothness or concise construction with a strong melody.",
       "If adding expectation, use a declared style/input tier and independent listener or repertoire evidence with work-lineage holdouts; hand-set costs remain compositional preferences.",
       "Connect tuning and spectral premises only through a concrete compositional experiment. Preserve exact source coordinates and declare native rounding; roughness, functional stability and musical quality remain separate.",
       "Keep future experiments isolated, retain the ontology's qualified vocabulary and lower useful relationships through CompositionPlan. Artist references guide musical goals, never hard-coded identities or fixed phrase lengths."
     ]
   },
   "tasks": [
+    {
+      "id": "pattern-voices",
+      "title": "Compose and evaluate shared melodic and rhythmic pattern programs",
+      "status": "planned",
+      "owner": null,
+      "dependsOn": [],
+      "evidence": [
+        "crates/muzak-core/src/pattern.rs",
+        "crates/muzak-core/src/composition_patterns.rs",
+        "crates/muzak-core/src/pattern_lab.rs",
+        "crates/muzak-core/src/pattern_controls.rs",
+        "tests/patterns.test.ts",
+        "src/labs/patterns.ts",
+        "docs/research/patterns.md"
+      ],
+      "nextAction": "Audition full passages and individual voices before and after shared pattern, rhythm and harmonic-member edits. Compare alternative authored outer/inner explanations rather than claiming a unique hierarchy. Extend typed operations only for a concrete compositional need, preserving exact clocks and the sole compiler."
+    },
     {
       "id": "labs-experiments",
       "title": "Grow experiments through the isolated lab contract",
@@ -74,7 +91,7 @@
         "crates/muzak-core/src/generator.rs",
         "crates/muzak-core/src/performance.rs"
       ],
-      "nextAction": "After the ontology step, choose a bounded combination of rhythmic material, pitch binding, voicing and expressive technique. Lower through the existing compiler and fail explicitly for unsupported realization; add no parallel decoder."
+      "nextAction": "Use the retained typed pattern/voice algebra for complete compositional edits involving rhythm, pitch, harmonic members and expression. Evaluate useful generated passages before enlarging the operation vocabulary; preserve explicit unsupported realization and the sole compiler."
     },
     {
       "id": "passage-quality",

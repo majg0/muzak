@@ -216,6 +216,7 @@ fn repeated_plan(
             .collect(),
         harmonies: None,
         pitch_lattices: None,
+        patterns: None,
     };
     compile_composition(&plan, &CompositionLimits::default())?;
     Ok(plan)
