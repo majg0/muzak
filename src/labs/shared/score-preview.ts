@@ -100,18 +100,29 @@ export function mountScorePreview(container: HTMLElement, context: LabContext, f
   }
   return {
     pause(): void { resumeAfterScrub = false; pause(); },
-    setResult(next: ScorePreviewResult): void {
+    /** Live edits retain transport intent and quarter-note coordinates. A fresh
+     * generation keeps the usual stopped, fully fitted preview. */
+    setResult(next: ScorePreviewResult, options: {live?: boolean} = {}): void {
       if (disposed) return;
-      resumeAfterScrub = false; pause(); result = next; cursor = 0; exportVersion++; revokeDownload();
+      const live = !!options.live && !!result, resume = live && playing;
+      const scale = live ? next.score.ppq / result!.score.ppq : 1;
+      const viewport = live ? timeline!.getViewport() : undefined;
+      const nextCursor = live ? Math.min(next.score.duration, cursor * scale) : 0;
+      resumeAfterScrub = false; pause(); result = next;
+      cursor = resume && nextCursor >= next.score.duration ? 0 : nextCursor;
+      exportVersion++; revokeDownload();
       get<HTMLAnchorElement>('download').hidden = true;
       get<HTMLButtonElement>('export').disabled = false;
       get('summary').textContent = `${next.score.notes.length} notes · ${next.score.parts.length} ${next.score.parts.length === 1 ? 'part' : 'parts'}`;
-      timeline!.setScore(next.score); timeline!.setMeter(next.meter); timeline!.setSelection({ noteIds: [] }); renderTransport();
+      timeline!.setScore(next.score, {preserveViewport: live});
+      if (viewport) timeline!.setViewport({from: viewport.from * scale, to: viewport.to * scale});
+      timeline!.setMeter(next.meter); timeline!.setSelection({ noteIds: [] }); renderTransport();
       get('timing').hidden = next.meter.diagnostics.length === 0;
       get('diagnostics').replaceChildren(...next.meter.diagnostics.map(diagnostic => {
         const item = document.createElement('li'); item.textContent = diagnostic; return item;
       }));
       status('The browser instrument is a simple audition sound.');
+      if (resume) void play();
     },
   };
 }

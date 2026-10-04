@@ -160,13 +160,21 @@ partial result is returned. Windows can skip fully hidden repeats; subdividing
 a very large parent still pays for the parent events needed to preserve its
 schedule. These are finite bounded programs, not infinite lazy streams.
 
-The Patterns & voices lab presents connected, recursive degree and duration
-trees. Selecting a node exposes its value, operation and structural edits:
+The Patterns & voices lab presents compact, connected degree and duration
+trees side by side, stacking them on narrow screens. Selecting a node exposes its value, operation and structural edits:
 add, remove, reorder, or wrap in another level. Shared-reference nodes display
 their definitions; edits keep the references shared. The same generic editor
 handles sound masks and native offsets. No outer/inner level count is imposed;
 the existing evaluator depth and work budgets still bound compilation. The
 visual editor changes the typed program without evaluating music in TypeScript.
+Valid tree, setting and program edits compile automatically. A coalescing queue
+runs one composition update at a time, discards superseded results and preserves
+the last valid music while a draft is incomplete. Playback keeps its running or
+paused state, quarter-note position and viewport through accepted edits, including
+PPQ changes. Existing solos stay selected when the voice remains in the program.
+The last edited source supplies the result: tree edits replace the JSON program;
+JSON edits preserve their text and leave the separate tree draft intact. Navigation
+retains both drafts and resumes the current draft on return.
 Its complete JSON program
 editor and worked examples use generated Rust contracts. All examples can be
 auditioned and exported, with individual voice audition for multi-voice programs.

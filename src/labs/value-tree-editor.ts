@@ -100,11 +100,15 @@ export function mountValueTreeEditor<T>(host: HTMLElement, options: EditorOption
   }
   function change(action: () => void, redraw = true, checkPending = true): void {
     if (disposed) return;
-    if (checkPending && !validate()) return;
+    if (checkPending && !validate({ reveal: true })) return;
     history.push(state()); if (history.length > 40) history.shift(); future.length = 0;
     action(); if (redraw) render(); options.onChange(structuredClone(program));
   }
-  function select(address: TreeAddress): void { selected = address; render(); }
+  function select(address: TreeAddress): void {
+    selected = address; render();
+    const input = host.querySelector<HTMLInputElement>('[data-tree-input]');
+    if (input) { input.focus({ preventScroll: true }); input.select(); }
+  }
   function open(address: TreeAddress): void { view = address; selected = address; render(); }
   function nodeText(node: ValueTree<T>): [string, string] {
     switch (node.kind) {
@@ -131,7 +135,8 @@ export function mountValueTreeEditor<T>(host: HTMLElement, options: EditorOption
     card.dataset.treeNode = node.kind; card.dataset.treeAddress = key;
     card.setAttribute('aria-label', `${options.label}: ${title}${address.definition === undefined ? '' : ` in shared ${address.definition}`}`);
     card.setAttribute('aria-pressed', String(sameAddress(address, selected)));
-    card.append(el('strong', 'vte-node-title', title), el('small', 'vte-node-subtitle', subtitle));
+    card.title = subtitle;
+    card.append(el('strong', 'vte-node-title', title));
     if (address.definition !== undefined && address.path.length === 0) card.append(el('span', 'vte-shared-badge', `Shared ${address.definition}`));
     row.append(card); branch.append(row);
     const children: Array<{ node: ValueTree<T>; address: TreeAddress; label?: string; references: Set<string> }> = [];
@@ -195,7 +200,7 @@ export function mountValueTreeEditor<T>(host: HTMLElement, options: EditorOption
       for (const card of host.querySelectorAll<HTMLElement>('[data-tree-address]')) {
         if (card.dataset.treeAddress !== addressKey(address)) continue;
         card.querySelector('.vte-node-title')!.textContent = title;
-        card.querySelector('.vte-node-subtitle')!.textContent = subtitle;
+        card.title = subtitle;
         card.setAttribute('aria-label', `${options.label}: ${title}${address.definition === undefined ? '' : ` in shared ${address.definition}`}`);
         const fold = card.parentElement?.querySelector<HTMLButtonElement>('.vte-fold');
         if (fold) fold.setAttribute('aria-label', `${fold.getAttribute('aria-expanded') === 'true' ? 'Collapse' : 'Expand'} ${title}`);
@@ -247,9 +252,8 @@ export function mountValueTreeEditor<T>(host: HTMLElement, options: EditorOption
     const panel = el('div', 'vte-inspector'), node = at(selected)!;
     panel.dataset.treeInspector = options.domain;
     const heading = el('div', 'vte-inspector-heading');
-    heading.append(el('strong', undefined, selected.definition === undefined ? 'Selected branch' : `Editing shared ${selected.definition}`));
-    heading.append(el('span', undefined, `${kindNames[node.kind]} · level ${selected.path.length + 1}`)); panel.append(heading);
-    panel.append(el('p', 'vte-explanation', node.kind === 'leaf' && options.domain === 'duration' ? 'One exact duration. Use a whole number or a fraction such as 2/3; sound and rest remain separate.' : explanations[node.kind]));
+    heading.append(el('strong', undefined, selected.definition === undefined ? kindNames[node.kind] : `${selected.definition} · ${kindNames[node.kind]}`));
+    heading.title = `Level ${selected.path.length + 1}. ${explanations[node.kind]}`; panel.append(heading);
     const fields = el('div', 'vte-fields');
     if (node.kind === 'leaf') inputField(fields, 'Value', 'value', options.format(node.value), text => { const current = at(selected); if (current?.kind === 'leaf') current.value = options.parse(text); });
     if (node.kind === 'repeat' || node.kind === 'cycle') inputField(fields, node.kind === 'repeat' ? 'Repeat count' : 'Value count', 'count', String(node.count), text => { const current = at(selected); if (current?.kind === 'repeat' || current?.kind === 'cycle') current.count = Number(text); });
@@ -266,8 +270,10 @@ export function mountValueTreeEditor<T>(host: HTMLElement, options: EditorOption
     const key = selected.path.at(-1), siblings = selected.path.length ? arrayChildren(at(parentAddress)) : undefined;
     if (typeof key === 'number' && siblings) {
       actions.append(button('+ Sibling', () => change(() => { siblings.splice(key + 1, 0, leaf()); selected = childAddress(parentAddress, key + 1); })));
-      const left = button('← Earlier', () => change(() => { [siblings[key - 1], siblings[key]] = [siblings[key], siblings[key - 1]]; selected = childAddress(parentAddress, key - 1); })); left.disabled = key === 0;
-      const right = button('Later →', () => change(() => { [siblings[key + 1], siblings[key]] = [siblings[key], siblings[key + 1]]; selected = childAddress(parentAddress, key + 1); })); right.disabled = key === siblings.length - 1;
+      const left = button('←', () => change(() => { [siblings[key - 1], siblings[key]] = [siblings[key], siblings[key - 1]]; selected = childAddress(parentAddress, key - 1); })); left.disabled = key === 0;
+      left.title = 'Move earlier'; left.setAttribute('aria-label', `${options.label} move selected branch earlier`);
+      const right = button('→', () => change(() => { [siblings[key + 1], siblings[key]] = [siblings[key], siblings[key + 1]]; selected = childAddress(parentAddress, key + 1); })); right.disabled = key === siblings.length - 1;
+      right.title = 'Move later'; right.setAttribute('aria-label', `${options.label} move selected branch later`);
       const remove = button('Remove', () => change(() => { siblings.splice(key, 1); selected = parentAddress; }), 'vte-action vte-danger'); remove.disabled = siblings.length <= 1;
       actions.append(left, right, remove);
     }
@@ -275,10 +281,13 @@ export function mountValueTreeEditor<T>(host: HTMLElement, options: EditorOption
       const retained = node.kind === 'repeat' || node.kind === 'cycle' ? node.tree : node.kind === 'expand' ? node.parent : list?.[0];
       if (retained) actions.append(button('Unwrap', () => change(() => assign(selected, retained))));
     }
+    const nest = button('Nest', () => change(() => wrap('sequence')));
+    nest.title = 'Put this branch inside a new sequence'; actions.append(nest);
     panel.append(actions);
-    const structure = el('details', 'vte-structure'); structure.append(el('summary', undefined, 'Nest, combine or share this branch'));
+    const structure = el('details', 'vte-structure'); structure.append(el('summary', undefined, 'More'));
+    structure.append(el('p', 'vte-explanation', node.kind === 'leaf' && options.domain === 'duration' ? 'One exact duration. Use a whole number or a fraction such as 2/3; sound and rest remain separate.' : explanations[node.kind]));
     const wraps = el('div', 'vte-actions');
-    for (const kind of ['sequence', 'expand', 'repeat', 'cycle', 'combine'] as const) wraps.append(button(`Wrap in ${kindNames[kind].toLowerCase()}`, () => change(() => wrap(kind))));
+    for (const kind of ['expand', 'repeat', 'cycle', 'combine'] as const) wraps.append(button(`Wrap in ${kindNames[kind].toLowerCase()}`, () => change(() => wrap(kind))));
     wraps.append(button('Make shared', () => change(() => {
       const name = sharedName(), source = at(selected)!;
       Object.defineProperty(program.definitions, name, { value: source, enumerable: true, writable: true, configurable: true });
@@ -298,7 +307,10 @@ export function mountValueTreeEditor<T>(host: HTMLElement, options: EditorOption
     if (!at(selected)) selected = { path: [] };
     if (!at(view)) view = { path: [] };
     const header = el('div', 'vte-header');
-    const title = el('div'); title.append(el('h3', undefined, options.label), el('p', undefined, options.description)); header.append(title);
+    const title = el('div', 'vte-title'); title.append(el('h3', undefined, options.label));
+    const help = el('details', 'vte-help');
+    const helpSummary = el('summary', undefined, '?'); helpSummary.setAttribute('aria-label', `About ${options.label.toLowerCase()}`);
+    help.append(helpSummary, el('p', undefined, `${options.description} Select a node to edit; Nest adds another level.`)); title.append(help); header.append(title);
     const undo = button('Undo', () => { const last = history.pop(); if (last) { future.push(state()); restore(last); options.onChange(structuredClone(program)); } }); undo.disabled = history.length === 0;
     const redo = button('Redo', () => { const next = future.pop(); if (next) { history.push(state()); restore(next); options.onChange(structuredClone(program)); } }); redo.disabled = future.length === 0;
     undo.dataset.treeHistory = 'undo'; redo.dataset.treeHistory = 'redo';
@@ -312,16 +324,18 @@ export function mountValueTreeEditor<T>(host: HTMLElement, options: EditorOption
     const canvas = el('div', 'vte-canvas'); canvas.setAttribute('aria-label', `${options.label} visual tree`); canvas.tabIndex = 0;
     const tree = el('ul', 'vte-tree'); renderedNodes = 0;
     tree.append(graph(at(view)!, view, new Set(view.definition === undefined ? [] : [view.definition]), 0)); canvas.append(tree);
-    const hint = el('p', 'vte-canvas-hint', 'Select any node to edit it. Branches can nest again; shared branches update together.');
-    host.replaceChildren(header, nav, canvas, hint, inspector()); canvas.scrollLeft = scroll.left; canvas.scrollTop = scroll.top;
+    host.replaceChildren(header, nav, canvas, inspector()); canvas.scrollLeft = scroll.left; canvas.scrollTop = scroll.top;
   }
-  function validate(): boolean {
+  function validate({ reveal = false }: { reveal?: boolean } = {}): boolean {
     for (const [key, text] of Object.entries(pending)) {
       const { address, field } = JSON.parse(key) as { address: TreeAddress; field: string };
       if (pendingError(address, field, text)) {
-        selected = address; render();
-        const input = host.querySelector<HTMLInputElement>(`[data-tree-input="${field}"]`);
-        if (input?.getClientRects().length) input.reportValidity(); return false;
+        if (reveal) {
+          selected = address; render();
+          const input = host.querySelector<HTMLInputElement>(`[data-tree-input="${field}"]`);
+          if (input?.getClientRects().length) { input.focus({ preventScroll: true }); input.reportValidity(); }
+        }
+        return false;
       }
     }
     return true;

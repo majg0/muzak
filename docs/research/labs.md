@@ -48,10 +48,13 @@ Zero has no rest meaning. Advanced editable programs retain the independent
 value trees and demonstrate explicit timed subdivision, three independently
 phased cycles, fractional cut/restart windows and harmonic member voices. The full Rust
 [pattern algebra](patterns.md) retains shared definitions through serialization
-and recompilation. One player supports the full passage or a selected voice.
-Invalid edits retain the accepted result; switching labs retains tree structure,
-selection, pending field edits and program drafts while disposing playback and
-worker resources.
+and recompilation. Tree edits, program edits and example selection update the
+result automatically through one coalescing composition queue. One player supports
+the full passage or a selected voice; live updates preserve playback intent and
+quarter-note cursor/viewport coordinates across PPQ changes. Invalid edits retain
+the accepted result. The most recently edited source is retained alongside tree
+structure, selection, pending fields and program text; switching labs disposes
+playback and workers, then recompiles that draft on return.
 
 ## Harmonic Motion
 

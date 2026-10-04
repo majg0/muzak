@@ -5,7 +5,12 @@ import type { PatternLabOptions } from '../core/generated/PatternLabOptions';
 import type { PatternTime } from '../core/generated/PatternTime';
 import type { LabSession } from './types';
 import { mountScorePreview, type ScorePreviewResult } from './shared/score-preview';
+import { createLiveUpdate } from './shared/live-update';
 import { mountValueTreeEditor, type ValueTreeEditorState } from './value-tree-editor';
+
+type PatternSource = 'trees' | 'program';
+type PatternUpdate = { source: 'trees'; options: PatternLabOptions } | { source: 'program'; plan: CompositionPlan };
+type AcceptedPattern = ScorePreviewResult & { plan: CompositionPlan; source: PatternSource };
 
 interface PatternDraft {
   fields: Record<string, string>;
@@ -19,6 +24,7 @@ interface PatternDraft {
   example: string;
   detailsOpen: boolean;
   programOpen: boolean;
+  source: PatternSource;
 }
 
 /** This view edits Rust inputs and executable programs. All pattern operations,
@@ -26,47 +32,46 @@ interface PatternDraft {
 export function createSession(): LabSession {
   let defaults: PatternLabDefaults | undefined;
   let draft: PatternDraft | undefined;
-  let accepted: (ScorePreviewResult & { plan: CompositionPlan; label: string }) | undefined;
+  let accepted: AcceptedPattern | undefined;
   let audition: ScorePreviewResult | undefined, auditionVoice = '';
   let revision = 0;
   return {
     async mount(container, context) {
       const mountRevision = ++revision;
-      let disposed = false, ready = false, request = 0, downloadUrl: string | undefined;
+      let disposed = false, ready = false, auditionRequest = 0, downloadUrl: string | undefined;
+      let source: PatternSource = draft?.source ?? 'trees';
       const active = () => !disposed && !context.signal.aborted && revision === mountRevision;
-      context.onDispose(() => { disposed = true; request++; revokeDownload(); });
+      context.onDispose(() => { disposed = true; auditionRequest++; revokeDownload(); });
       container.classList.add('patterns-lab');
       container.innerHTML = `
         <section class="panel patterns-compose">
-          <div class="patterns-heading"><p class="eyebrow">A LINE FROM SHARED PATTERNS</p><h2>Shape a phrase, branch by branch.</h2><p>Select a node to edit it. Add branches or nest another figure at any level. Pitch and duration grow as independent trees.</p></div>
           <form data-patterns="form" novalidate><fieldset data-patterns="fields" disabled>
             <legend class="patterns-sr-only">Pattern settings</legend>
+            <div class="patterns-controls">
+              <label title="Take this many values from each independent tree.">Steps<input name="steps" type="number" min="1" max="256" step="1" required/></label>
+              <label title="Repeat the phrase, restarting each tree.">Repeats<input name="repeats" type="number" min="1" max="16" step="1" required/></label>
+              <label title="Quarter notes per minute.">Tempo<input name="tempo" type="number" min="20" max="400" step="1" required/></label>
+              <button class="button quiet" type="button" data-patterns="reset">Reset</button>
+              <p class="patterns-status" data-patterns="status" role="status" aria-live="polite">Loading…</p>
+            </div>
+            <p class="patterns-reading">C Ionian · 0 = C · duration 1 = an eighth note · edits are live</p>
             <div class="patterns-trees">
               <div data-patterns="degree-tree"></div>
               <div data-patterns="duration-tree"></div>
             </div>
-            <div class="patterns-controls">
-              <label><span>Steps per phrase</span><input name="steps" type="number" min="1" max="256" step="1" required aria-describedby="patterns-steps-help"/><small id="patterns-steps-help">How many values to take from each independent pattern.</small></label>
-              <label>Repeats<input name="repeats" type="number" min="1" max="16" step="1" required/><small>Repeat the phrase, restarting each pattern.</small></label>
-              <label>Tempo<input name="tempo" type="number" min="20" max="400" step="1" required/><small>Quarter notes per minute.</small></label>
-            </div>
-            <p class="patterns-reading">C Ionian · degree zero is C · one duration unit is an eighth note. Degrees have no duration of their own. Each step takes the next degree and duration; each pattern cycles independently to fill the phrase. Long notes hold, and muted steps keep their place. The durations determine the phrase's length in time.</p>
             <details class="patterns-settings" data-patterns="details"><summary>Sound / rest &amp; pitch offsets</summary><div class="patterns-extra-controls">
               <div data-patterns="gate-tree"></div>
               <div data-patterns="offset-tree"></div>
             </div></details>
-            <div class="patterns-actions"><button class="button primary" type="submit">Generate line</button><button class="button quiet" type="button" data-patterns="reset">Reset patterns</button><span>Then press Play below.</span></div>
           </fieldset></form>
-          <p class="patterns-status" data-patterns="status" role="status" aria-live="polite">Loading the musical core…</p>
         </section>
-        <section class="patterns-audition"><div class="patterns-voice-picker" data-patterns="voice-picker" hidden><label>Listen to<select data-patterns="voice"><option value="">Full passage</option></select></label><p>Solo one authored voice, preserving its pitch and timing relationships.</p></div><div data-patterns="preview"></div></section>
-        <details class="panel patterns-program" data-patterns="program-details"><summary>Compose with the full pattern algebra</summary><div class="patterns-program-body">
-          <p>Degree, duration and mask trees can each nest, share definitions and combine several patterns. Bind them by successive steps, or use explicit timed operations for subdivisions, overlapping voices and exact time windows. The editable program below preserves these relationships.</p>
-          <div class="patterns-example-controls"><label>Worked example<select data-patterns="example" disabled><option value="">Choose an example…</option></select></label><button class="button" type="button" data-patterns="load-example" disabled>Load into editor</button></div>
-          <p class="patterns-example-description" data-patterns="example-description">Explore independent cycles, unequal subdivisions and shared edits.</p>
+        <section class="patterns-audition"><div class="patterns-voice-picker" data-patterns="voice-picker" hidden><label>Listen to<select data-patterns="voice"><option value="">Full passage</option></select></label></div><div data-patterns="preview"></div></section>
+        <details class="panel patterns-program" data-patterns="program-details"><summary>Program &amp; examples</summary><div class="patterns-program-body">
+          <div class="patterns-example-controls"><label>Worked example<select data-patterns="example" disabled><option value="">Choose an example…</option></select></label></div>
+          <p class="patterns-example-description" data-patterns="example-description">Choose an example to hear it immediately.</p>
           <label class="patterns-program-label" for="patterns-program">Composition program</label><textarea id="patterns-program" data-patterns="program" rows="18" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="patterns-program-help" disabled></textarea>
-          <p id="patterns-program-help" class="patterns-program-help">Apply to validate and hear this program. Invalid edits leave the last accepted result available. The visual trees are a separate composition draft; Generate line replaces this program with their result.</p>
-          <div class="patterns-actions"><button class="button primary" type="button" data-patterns="apply-program" disabled>Apply program</button><button class="button" type="button" data-patterns="restore-program" disabled>Restore last accepted</button><button class="button quiet" type="button" data-patterns="download-program" disabled>Download accepted program</button></div>
+          <p id="patterns-program-help" class="patterns-program-help">Edits are live. Incomplete edits keep the last valid music. The last editor you change supplies the result: editing a tree replaces this program; program edits keep the tree draft separate.</p>
+          <div class="patterns-actions"><button class="button" type="button" data-patterns="restore-program" disabled>Restore last valid</button><button class="button quiet" type="button" data-patterns="download-program" disabled>Download program</button></div>
         </div></details>`;
       const get = <T extends HTMLElement>(name: string) => container.querySelector<T>(`[data-patterns="${name}"]`)!;
       const form = get<HTMLFormElement>('form'), fields = get<HTMLFieldSetElement>('fields');
@@ -83,11 +88,10 @@ export function createSession(): LabSession {
         draft = {
           fields: Object.fromEntries(['steps', 'tempo', 'repeats'].map(name => [name, field(name)])),
           trees: { degrees: degreeTree.getState(), durations: durationTree.getState(), gates: gateTree.getState(), offsets: offsetTree.getState() },
-          program: editor.value, example: examples.value, detailsOpen: details.open, programOpen: programDetails.open,
+          program: editor.value, example: examples.value, detailsOpen: details.open, programOpen: programDetails.open, source,
         };
       };
-      const changed = (message: string) => { request++; preview.pause(); voice.value = auditionVoice; remember(); showStatus(message); };
-      const treeChanged = () => changed('Tree changed. Generate the line to hear it.');
+      const treeChanged = () => updateTrees();
       const arithmetic = [{ value: 'add' as const, label: 'Add' }, { value: 'multiply' as const, label: 'Multiply' }];
       const degreeTree = mountValueTreeEditor<number>(get('degree-tree'), {
         label: 'Degree tree', description: 'Values form a shape; nesting adds figures to that shape. Shared branches stay linked.', domain: 'degree',
@@ -116,8 +120,7 @@ export function createSession(): LabSession {
       const onClick = (name: string, listener: () => void) => button(name).addEventListener('click', listener, { signal: context.signal });
       const renderExample = () => {
         const example = defaults?.examples.find(item => item.id === examples.value);
-        get('example-description').textContent = example?.description ?? 'Explore independent cycles, unequal subdivisions and shared edits.';
-        button('load-example').disabled = !example;
+        get('example-description').textContent = example?.description ?? 'Choose an example to hear it immediately.';
       };
       const writeOptions = (options: PatternLabOptions) => {
         degreeTree.setProgram(options.degrees); durationTree.setProgram(options.durations);
@@ -135,7 +138,6 @@ export function createSession(): LabSession {
       function revokeDownload(): void { if (downloadUrl) URL.revokeObjectURL(downloadUrl); downloadUrl = undefined; }
       function renderAccepted(): void {
         if (!accepted) return;
-        preview.setResult(audition ?? accepted);
         const voices = accepted.plan.patterns?.voices ?? [];
         voice.replaceChildren();
         const all = document.createElement('option'); all.value = ''; all.textContent = 'Full passage'; voice.append(all);
@@ -143,84 +145,115 @@ export function createSession(): LabSession {
         voice.value = auditionVoice; get('voice-picker').hidden = voices.length === 0 || (voices.length === 1 && accepted.plan.placements.length === 0);
         button('restore-program').disabled = false; button('download-program').disabled = false;
       }
-      async function compile(plan: CompositionPlan, ticket: number, label: string): Promise<void> {
-        if (!active() || ticket !== request) return;
-        const score = await context.call('compileComposition', { plan });
-        if (!active() || ticket !== request) return;
-        const meter = await context.call('scoreMeter', { score });
-        if (!active() || ticket !== request) return;
-        accepted = { plan, score, meter, label };
-        audition = undefined; auditionVoice = '';
-        editor.value = JSON.stringify(plan, null, 2); remember(); renderAccepted();
-        showStatus(`${label} ready. Play to hear it, or edit a shared pattern.`);
-      }
-      async function generate(): Promise<void> {
-        if (!active() || !defaults) return;
-        for (const tree of treeEditors) {
-          if (!tree.validate()) {
-            if (tree === gateTree || tree === offsetTree) details.open = true;
-            showStatus('Correct the highlighted tree value before generating. Your previous result is retained.', true);
+      const updates = createLiveUpdate<PatternUpdate>({
+        async run(input, isCurrent) {
+          const current = () => active() && isCurrent();
+          if (!current()) return;
+          const plan = input.source === 'trees'
+            ? await context.call('generatePatternLab', { options: input.options })
+            : input.plan;
+          if (!current()) return;
+          const score = await context.call('compileComposition', { plan });
+          if (!current()) return;
+          const meter = await context.call('scoreMeter', { score });
+          if (!current()) return;
+          const result = { plan, score, meter, source: input.source };
+          accepted = result;
+          // JSON typing owns its text and caret; only a tree edit replaces it.
+          if (input.source === 'trees') editor.value = JSON.stringify(plan, null, 2);
+          remember();
+          try { await refreshAudition(result); }
+          catch (error) {
+            if (!active() || accepted !== result) return;
+            audition = undefined; auditionVoice = ''; renderAccepted();
+            preview.setResult(result, { live: true });
+            if (current()) showStatus(`Full passage updated; solo unavailable. ${message(error)}`, true);
             return;
           }
-        }
-        if (!form.checkValidity()) { if (details.querySelector(':invalid')) details.open = true; form.reportValidity(); return; }
-        const ticket = ++request; preview.pause(); voice.value = auditionVoice; remember(); showStatus('Generating the pattern line…');
-        try {
-          const plan = await context.call('generatePatternLab', { options: readOptions() });
-          await compile(plan, ticket, 'Pattern line');
-        } catch (error) { if (active() && ticket === request) showStatus(`${accepted ? 'Previous result retained. ' : ''}${message(error)}`, true); }
+          if (current()) showStatus(`${input.source === 'trees' ? 'Trees' : 'Program'} live`);
+        },
+        onError: error => showStatus(`${accepted ? 'Last valid music retained. ' : ''}${message(error)}`, true),
+      });
+      context.onDispose(() => updates.dispose());
+      function invalidDraft(error: unknown): void {
+        updates.invalidate();
+        showStatus(`${message(error)}${accepted ? ' Last valid music retained.' : ''}`, true);
       }
-      async function applyProgram(): Promise<void> {
-        const ticket = ++request; preview.pause(); voice.value = auditionVoice; remember(); showStatus('Validating and compiling the program…');
+      function updateTrees(delayMs = 80): void {
+        if (!active() || !ready) return;
+        source = 'trees'; examples.value = ''; renderExample(); remember();
+        if (!treeEditors.every(tree => tree.validate())) {
+          invalidDraft('Finish the highlighted tree value.'); return;
+        }
+        const invalid = form.querySelector<HTMLInputElement>('input:invalid');
+        if (invalid) { invalidDraft(invalid.validationMessage); return; }
+        try {
+          updates.request({ source, options: readOptions() }, delayMs);
+          showStatus('Updating trees…');
+        } catch (error) { invalidDraft(error); }
+      }
+      function updateProgram(delayMs = 80): void {
+        if (!active() || !ready) return;
+        source = 'program'; remember();
         try {
           const plan: unknown = JSON.parse(editor.value);
-          if (typeof plan !== 'object' || plan === null || Array.isArray(plan)) throw new Error('The composition program must be a JSON object.');
-          await compile(plan as CompositionPlan, ticket, 'Edited program');
-        } catch (error) { if (active() && ticket === request) showStatus(`${accepted ? 'Previous result retained. ' : ''}${message(error)}`, true); }
+          if (typeof plan !== 'object' || plan === null || Array.isArray(plan)) throw new Error('The program must be a JSON object.');
+          updates.request({ source, plan: plan as CompositionPlan }, delayMs);
+          showStatus('Updating program…');
+        } catch (error) { invalidDraft(error); }
+      }
+      async function refreshAudition(result: AcceptedPattern): Promise<void> {
+        const ticket = ++auditionRequest, selected = auditionVoice;
+        const current = () => active() && ticket === auditionRequest && accepted === result;
+        const patterns = result.plan.patterns, selectedVoice = patterns?.voices.find(item => item.id === selected);
+        if (!patterns || !selectedVoice) {
+          audition = undefined; auditionVoice = ''; renderAccepted();
+          preview.setResult(result, { live: true }); return;
+        }
+        try {
+          const plan: CompositionPlan = { ...result.plan, placements: [], patterns: { ...patterns, voices: [selectedVoice] } };
+          const score = await context.call('compileComposition', { plan });
+          if (!current()) return;
+          const meter = await context.call('scoreMeter', { score });
+          if (!current()) return;
+          audition = { score, meter }; renderAccepted(); preview.setResult(audition, { live: true });
+        } catch (error) { if (current()) throw error; }
       }
       async function selectVoice(): Promise<void> {
         if (!accepted) return;
-        const selected = voice.value, ticket = ++request;
-        preview.pause();
-        if (!selected) { audition = undefined; auditionVoice = ''; preview.setResult(accepted); showStatus('Full accepted passage restored.'); return; }
-        const patterns = accepted.plan.patterns, selectedVoice = patterns?.voices.find(item => item.id === selected);
-        if (!patterns || !selectedVoice) { voice.value = auditionVoice; return; }
-        showStatus(`Preparing ${selected} alone…`);
-        try {
-          const plan: CompositionPlan = { ...accepted.plan, placements: [], patterns: { ...patterns, voices: [selectedVoice] } };
-          const score = await context.call('compileComposition', { plan });
-          if (!active() || ticket !== request) return;
-          const meter = await context.call('scoreMeter', { score });
-          if (!active() || ticket !== request) return;
-          audition = { score, meter }; auditionVoice = selected; preview.setResult(audition);
-          showStatus(`${selected} is ready alone. Choose Full passage to hear all parts together.`);
-        } catch (error) {
-          if (active() && ticket === request) { voice.value = auditionVoice; showStatus(`Previous audition retained. ${message(error)}`, true); }
+        const result = accepted, previous = auditionVoice;
+        auditionVoice = voice.value;
+        const pending = refreshAudition(result), ticket = auditionRequest;
+        try { await pending; }
+        catch (error) {
+          if (active() && ticket === auditionRequest && accepted === result) {
+            auditionVoice = previous; voice.value = previous;
+            showStatus(`Previous audition retained. ${message(error)}`, true);
+          }
         }
       }
-      form.addEventListener('input', () => changed('Patterns changed. Generate the line to apply them.'), { signal: context.signal });
-      form.addEventListener('submit', event => { event.preventDefault(); void generate(); }, { signal: context.signal });
-      editor.addEventListener('input', () => changed('Program changed. Apply the program to validate and hear it.'), { signal: context.signal });
-      examples.addEventListener('change', () => { changed('Choose Load into editor to inspect this example.'); renderExample(); }, { signal: context.signal });
+      form.addEventListener('input', () => updateTrees(), { signal: context.signal });
+      form.addEventListener('submit', event => { event.preventDefault(); updateTrees(0); }, { signal: context.signal });
+      editor.addEventListener('input', () => { examples.value = ''; renderExample(); updateProgram(); }, { signal: context.signal });
+      examples.addEventListener('change', () => {
+        renderExample();
+        const example = defaults?.examples.find(item => item.id === examples.value); if (!example) return;
+        editor.value = JSON.stringify(example.plan, null, 2); updateProgram(0);
+      }, { signal: context.signal });
       voice.addEventListener('change', () => { void selectVoice(); }, { signal: context.signal });
       details.addEventListener('toggle', remember, { signal: context.signal });
       programDetails.addEventListener('toggle', remember, { signal: context.signal });
-      onClick('reset', () => { if (!defaults) return; writeOptions(defaults.options); changed('Patterns reset. Generating the default line…'); void generate(); });
-      onClick('apply-program', () => { void applyProgram(); });
-      onClick('load-example', () => {
-        const example = defaults?.examples.find(item => item.id === examples.value); if (!example) return;
-        editor.value = JSON.stringify(example.plan, null, 2); changed(`${example.title} loaded. Apply the program to hear it.`);
-      });
+      onClick('reset', () => { if (!defaults) return; writeOptions(defaults.options); updateTrees(0); });
       onClick('restore-program', () => {
         if (!accepted) return;
-        editor.value = JSON.stringify(accepted.plan, null, 2); changed(`${accepted.label} restored in the editor. Your current audition is retained.`);
+        editor.value = JSON.stringify(accepted.plan, null, 2); examples.value = ''; renderExample(); updateProgram(0);
       });
       onClick('download-program', () => {
         if (!accepted) return;
         revokeDownload(); downloadUrl = URL.createObjectURL(new Blob([JSON.stringify(accepted.plan, null, 2)], { type: 'application/json' }));
         const link = document.createElement('a'); link.href = downloadUrl; link.download = 'continuum-patterns.json'; link.click();
       });
-      if (accepted) renderAccepted();
+      if (accepted) { renderAccepted(); preview.setResult(audition ?? accepted); }
       try {
         const loaded = defaults ?? await context.call('getPatternLabDefaults', {});
         if (!active()) return;
@@ -232,10 +265,8 @@ export function createSession(): LabSession {
           gateTree.setState(draft.trees.gates); offsetTree.setState(draft.trees.offsets);
           editor.value = draft.program; examples.value = draft.example; details.open = draft.detailsOpen; programDetails.open = draft.programOpen;
         }
-        ready = true; fields.disabled = false; editor.disabled = false; examples.disabled = false; button('apply-program').disabled = false; renderExample();
-        if (accepted) showStatus(`Your draft and last accepted ${accepted.label.toLocaleLowerCase()} are retained.`);
-        else if (draft?.program.trim()) showStatus('Your program draft is retained. Apply it to validate and hear it.');
-        else await generate();
+        ready = true; fields.disabled = false; editor.disabled = false; examples.disabled = false; renderExample();
+        if (source === 'program') updateProgram(0); else updateTrees(0);
       } catch (error) { if (active()) showStatus(`Could not load pattern settings. ${message(error)}`, true); }
     },
   };
