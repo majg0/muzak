@@ -31,20 +31,21 @@ export function createSession(): LabSession {
       container.classList.add('patterns-lab');
       container.innerHTML = `
         <section class="panel patterns-compose">
-          <div class="patterns-heading"><p class="eyebrow">A LINE FROM SHARED PATTERNS</p><h2>Outer shape. Inner figure. Independent rhythm.</h2><p>Place an inner figure at each outer degree. Let rhythm move on its own clock.</p></div>
+          <div class="patterns-heading"><p class="eyebrow">A LINE FROM SHARED PATTERNS</p><h2>Outer shape. Inner figure. Independent rhythm.</h2><p>Build a tree of degrees. Give each successive degree a duration from its own pattern.</p></div>
           <form data-patterns="form"><fieldset data-patterns="fields" disabled>
             <legend class="patterns-sr-only">Pattern settings</legend>
             <div class="patterns-controls">
               <label><span><b>A</b> Outer degrees</span><input name="outer" type="text" spellcheck="false" required aria-describedby="patterns-outer-help"/><small id="patterns-outer-help">Offsets for successive placements of B.</small></label>
               <label><span><b>B</b> Inner degrees</span><input name="inner" type="text" spellcheck="false" required aria-describedby="patterns-inner-help"/><small id="patterns-inner-help">A shared figure, added to each outer offset.</small></label>
               <label><span><b>R</b> Duration pattern</span><input name="durations" type="text" spellcheck="false" required aria-describedby="patterns-rhythm-help"/><small id="patterns-rhythm-help">2,1 holds for two units, then one. Fractions such as 1/3 are exact.</small></label>
+              <label><span>Steps per phrase</span><input name="steps" type="number" min="1" max="256" step="1" required aria-describedby="patterns-steps-help"/><small id="patterns-steps-help">How many values to take from each independent pattern.</small></label>
             </div>
-            <p class="patterns-reading">C Ionian · degree zero is C · one unit is an eighth note. Each duration cell advances the pitch pattern once; a long note holds its pitch. Muted cells keep their place. Each repeat fills a window of A length × B length units, clipping the last duration if needed.</p>
+            <p class="patterns-reading">C Ionian · degree zero is C · one duration unit is an eighth note. Degrees have no duration of their own. Each step takes the next degree and duration; each pattern cycles independently to fill the phrase. Long notes hold, and muted steps keep their place. The durations determine the phrase's length in time.</p>
             <details class="patterns-settings" data-patterns="details"><summary>Sound / rest, pitch offsets &amp; repetition</summary><div class="patterns-extra-controls">
               <label>Sound / rest mask<input name="gates" type="text" spellcheck="false" required/><small>Use on and off, one value per duration cell. The mask cycles independently; a rest keeps its duration. Numeric zero is never a rest instruction.</small></label>
               <label>Native pitch offsets<input name="chromaticMillicents" type="text" spellcheck="false" required/><small>An independent cycle advancing once per duration cell, added after scale mapping, in millicents. 100000 = one semitone; 50000 = a quarter tone.</small></label>
               <label>Tempo<input name="tempo" type="number" min="20" max="400" step="1" required/><small>Quarter notes per minute.</small></label>
-              <label>Repeats<input name="repeats" type="number" min="1" max="16" step="1" required/><small>Repeat the complete outer × inner window.</small></label>
+              <label>Repeats<input name="repeats" type="number" min="1" max="16" step="1" required/><small>Repeat the complete phrase, restarting each pattern.</small></label>
             </div></details>
             <div class="patterns-actions"><button class="button primary" type="submit">Generate line</button><button class="button quiet" type="button" data-patterns="reset">Reset patterns</button><span>Then press Play below.</span></div>
           </fieldset></form>
@@ -52,7 +53,7 @@ export function createSession(): LabSession {
         </section>
         <section class="patterns-audition"><div class="patterns-voice-picker" data-patterns="voice-picker" hidden><label>Listen to<select data-patterns="voice"><option value="">Full passage</option></select></label><p>Solo one authored voice, preserving its pitch and timing relationships.</p></div><div data-patterns="preview"></div></section>
         <details class="panel patterns-program" data-patterns="program-details"><summary>Compose with the full pattern algebra</summary><div class="patterns-program-body">
-          <p>Shared definitions can nest, combine several patterns, gate subdivisions, layer voices, or repeat into an exact time window. The editable program below preserves these relationships.</p>
+          <p>Degree, duration and mask trees can each nest, share definitions and combine several patterns. Bind them by successive steps, or use explicit timed operations for subdivisions, overlapping voices and exact time windows. The editable program below preserves these relationships.</p>
           <div class="patterns-example-controls"><label>Worked example<select data-patterns="example" disabled><option value="">Choose an example…</option></select></label><button class="button" type="button" data-patterns="load-example" disabled>Load into editor</button></div>
           <p class="patterns-example-description" data-patterns="example-description">Explore independent cycles, unequal subdivisions and shared edits.</p>
           <label class="patterns-program-label" for="patterns-program">Composition program</label><textarea id="patterns-program" data-patterns="program" rows="18" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="patterns-program-help" disabled></textarea>
@@ -88,14 +89,14 @@ export function createSession(): LabSession {
         const values = {
           outer: options.outer.join(', '), inner: options.inner.join(', '),
           durations: options.durations.map(formatTime).join(', '), gates: options.gates.map(value => value ? 'on' : 'off').join(', '), chromaticMillicents: options.chromaticMillicents.join(', '),
-          tempo: String(options.tempo), repeats: String(options.repeats),
+          steps: String(options.steps), tempo: String(options.tempo), repeats: String(options.repeats),
         };
         for (const [name, value] of Object.entries(values)) (form.elements.namedItem(name) as HTMLInputElement).value = value;
       };
       const readOptions = (): PatternLabOptions => ({
         outer: integerList(field('outer'), 'Outer degrees'), inner: integerList(field('inner'), 'Inner degrees'),
         durations: durationList(field('durations')), gates: gateList(field('gates')), chromaticMillicents: integerList(field('chromaticMillicents'), 'Native pitch offsets'),
-        tempo: integer(field('tempo'), 'Tempo'), repeats: integer(field('repeats'), 'Repeats'),
+        steps: phraseSteps(field('steps')), tempo: integer(field('tempo'), 'Tempo'), repeats: integer(field('repeats'), 'Repeats'),
       });
       function field(name: string): string { return (form.elements.namedItem(name) as HTMLInputElement).value; }
       function revokeDownload(): void { if (downloadUrl) URL.revokeObjectURL(downloadUrl); downloadUrl = undefined; }
@@ -209,6 +210,11 @@ function integer(value: string, label: string): number {
 function integerList(value: string, label: string): number[] {
   const values = tokens(value); if (!values.length) throw new Error(`${label} needs at least one value.`);
   return values.map(item => integer(item, label));
+}
+function phraseSteps(value: string): number {
+  const steps = integer(value, 'Steps per phrase');
+  if (steps < 1 || steps > 256) throw new Error('Steps per phrase must be between 1 and 256.');
+  return steps;
 }
 function durationList(value: string): PatternTime[] {
   const values = tokens(value); if (!values.length) throw new Error('The duration pattern needs at least one duration.');

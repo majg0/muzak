@@ -1,21 +1,64 @@
 # Executable patterns and voices
 
-A pattern is a finite arrangement of typed values over exact rational time. Its
-time partition, values and musical interpretation are distinct. Numeric zero is
-an ordinary value. A two-unit cell followed by a one-unit cell occupies three
-units; an independent boolean mask decides which cells sound. Silence preserves
-time and does not imply a pitch, a subdivision, or a weak observation.
+A degree tree specifies values and their relationships, with no duration on its
+leaves or branches. A duration tree independently specifies positive rational
+values. A voice binds their successive leaves to produce timed notes. Sound/rest
+is a third, independent choice: numeric zero is an ordinary value, never a rest
+instruction. Durations `[2,1]` occupy three units whether either step is sounding
+or muted.
 
-`pattern.rs` provides `Pattern<T>` and the `PatternValue` trait. The same
-traversal, reference validation, rational geometry and bounded evaluation work
-for integer coordinates, boolean masks and ordered collections. Integers admit
-addition/multiplication, booleans conjunction/disjunction, and collections
-concatenation. Unsupported operations fail explicitly. Collection members are
-opaque typed values; their identity, ordering and multiplicity survive. New
-payloads implement a concrete operation contract; no dynamic universal parameter
-graph or second score decoder is introduced.
+`ValueTree<T>` expresses finite ordered values; `Pattern<T>` expresses values
+placed in exact rational time or explicit control coordinates. Both use the
+`PatternValue` operation contract. Integers admit addition/multiplication,
+booleans conjunction/disjunction, rational values addition/multiplication, and
+collections concatenation. Unsupported operations fail explicitly. Collection
+members are opaque typed values; their identity, ordering and multiplicity
+survive. These structures lower through the existing composition compiler;
+they do not introduce another note decoder.
 
-## Composition operations
+## Untimed value trees
+
+`ValueTreeProgram<T>` retains a tree and its typed shared definitions. The tree
+has no time partition. Sequence order is an ordinal relationship, not an
+assumption that each value lasts one musical unit.
+
+| Operation | Meaning |
+| --- | --- |
+| `leaf(value)` | One typed value, with no duration. |
+| `sequence(items)` | Concatenate any number of child trees in order. |
+| `ref(id)` | Use a shared typed definition. Editing it changes every reference. |
+| `repeat(tree, count)` | Repeat a finite tree an explicit number of times. |
+| `cycle(tree, count)` | Take exactly `count` leaves, cycling or cutting the tree as needed. |
+| `combine(operation, operands)` | Combine any number of equally long trees point by point. Unequal lengths require an explicit cycle or other edit. |
+| `expand(parent, children, operation)` | For each parent leaf, combine its value with every leaf of the selected child tree. Cycle the child schedule by parent ordinal. |
+
+For A = `[0,1,2]` and B = `[0,2,1]`,
+`expand(ref(A), [ref(B)], add)` gives `[0,2,1, 1,3,2, 2,4,3]`.
+Mapping these once through C Ionian gives `C E D | D F E | E G F`.
+Neither A nor B needs a duration. Expansion can nest at any admitted depth,
+and each parent can select a different child tree. Shared references keep
+these relationships editable without flattening them into literal notes.
+
+Duration values can use the same tree operations, shared definitions and
+independent cycles. A tree of nine degrees and a duration tree `[2,1]` can each
+cycle to nine leaves: the duration sequence becomes `[2,1,2,1,2,1,2,1,2]`,
+occupying fourteen units. Changing it to `[1/2]` keeps all nine degrees and
+occupies nine halves. Changing the degree tree leaves these durations intact.
+
+Two explicit adapters connect untimed trees to the timed pattern algebra:
+
+- `values(source)` assigns successive leaves to ordinal control coordinates.
+  A voice's `slot` or `attack` clock can consume them independently of time.
+- `durations(source, value)` sums positive rational leaves to make consecutive
+  timed cells, each carrying `value`. A separate sound mask decides which cells
+  sound. Invalid duration values fail when used by this adapter.
+
+Each adapter carries its own `ValueTreeProgram`, including all definitions;
+degree, duration and mask trees do not need matching shapes or shared clocks.
+The simple editor uses explicit leaf counts to bound each phrase. An advanced
+program may instead choose another clock or an explicit time window.
+
+## Explicit timed operations
 
 | Operation | Meaning |
 | --- | --- |
@@ -42,11 +85,10 @@ parent span. A false boolean parent is still an explicit cell; `rest` has no
 cell to subdivide. Clipping a subdivided pattern preserves the original child
 schedule and phase rather than fitting the surviving fragment again.
 
-For A = [0,1,2] and B = [0,2,1], give each A cell three units and each B cell one.
-`subdivide(ref(A), [ref(B)], add)` yields degrees
-`[0,2,1, 1,3,2, 2,4,3]`. Mapping these once through C Ionian gives
-`C E D | D F E | E G F`. The operation nests to any admitted depth; there is no
-special outer/inner pair limit. Rhythm can use another independent pattern.
+Timed subdivision intentionally assigns space to its parents and fits children
+inside that space. Untimed expansion intentionally assigns no such durations.
+Use subdivision when proportional timing is part of the relationship, and
+expansion when the relationship concerns successive values alone.
 
 ## Musical interpretation through the existing compiler
 
@@ -101,8 +143,8 @@ rebuilding the authored scene's identity/ownership view from the edited plan.
 
 | Musical requirement | Executable control |
 | --- | --- |
-| Shared outer A / inner B, with more than two levels | Nested subdivision, references and variadic addition; shared and local edit controls |
-| Independent pitch, duration and sound/rest patterns | Separate controls and declared time/slot/attack clocks |
+| Shared outer A / inner B, with more than two levels | Untimed expansion, references and variadic addition; shared and local edit controls |
+| Independent pitch, duration and sound/rest patterns | Separate typed value trees; explicit adapters and time/slot/attack clocks |
 | Durations (2,1), with or without silence | Full-span cells plus an independent mask; no numerical rest convention |
 | Three- and four-unit cycles | Explicit repetitions align at 12; adding a five-unit cycle aligns all at 60 |
 | A 7/3 cycle within 16 units | Exact rational repeat, clipping window, then explicit restart |
@@ -118,19 +160,19 @@ partial result is returned. Windows can skip fully hidden repeats; subdividing
 a very large parent still pays for the parent events needed to preserve its
 schedule. These are finite bounded programs, not infinite lazy streams.
 
-The Patterns & voices lab exposes A, B and durations first, with independent
+The Patterns & voices lab exposes A, B, durations and steps per phrase first, with independent
 sound masks and native offsets available separately. Its complete JSON program
 editor and worked examples use generated Rust contracts. All examples can be
 auditioned and exported, with individual voice audition for multi-voice programs.
 Solo audition retains the selected voice's timing and nominal extent; a shorter
 voice in an advanced program can omit trailing silence supplied by other voices.
-The simple editor uses eighth-note time units and advances degree and native
-offset patterns once per duration cell, including muted cells. Fractional notes
-advance to the next value; long notes hold their value. Each phrase fills
-`outer.length × inner.length` time units, clipping the last duration when needed.
-Pitch cycles repeat or cut to the actual cell count, and all constituent patterns
-restart at that phrase boundary. The full algebra specifies other clocks and
-boundaries explicitly. Exact native playback and strict MIDI
+The simple editor uses eighth-note duration units. Its independent value trees
+cycle to the explicit number of steps per phrase, including muted steps.
+Fractional notes advance to the next degree; long notes hold their value.
+The phrase's elapsed duration is the sum of its duration leaves: changing pitch
+shape never changes that sum, and no duration is implicitly clipped. All
+constituent trees restart at the phrase boundary. The full algebra specifies
+other clocks and time boundaries explicitly. Exact native playback and strict MIDI
 export remain separate capabilities; unsupported MIDI pitch loss is rejected.
 
 Representation coverage and changed-parameter tests establish executable

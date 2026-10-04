@@ -29,14 +29,18 @@ Bindings use the harmonic context at each attack. A held note may belong analyti
 ## Executable pitch relations
 
 The [pattern algebra](patterns.md) extends `CompositionPlan` with retained typed
-definitions and authored voices. A generic `Pattern<T>` shares exact time,
-references, nesting, variadic combination, independent cycles, subdivision and
-explicit clipping across value types. Duration, sounding/resting, pitch and
-velocity remain independent. Time, subdivision-slot and sounding-attack clocks
-are explicit. Degree offsets combine before lattice mapping, with native offsets
-applied afterward. Pattern voices lower to the existing materials and placements
-at compilation; no parallel note emitter or inferred hierarchy is introduced.
-Saved programs regenerate their dependents after shared and local edits.
+definitions and authored voices. Generic `ValueTree<T>` programs contain values,
+order, nesting, references and finite cycles without temporal spans. Degree and
+duration trees are separate programs. Explicit adapters project value leaves onto
+ordinal control coordinates or accumulate positive duration leaves into time;
+`Pattern<T>` retains temporal subdivision, overlap and exact clipping when those
+are intended. The simple editor bounds independent cycles with an explicit step
+count, never a time window inferred from degree-tree sizes. Sound masks, native
+offsets and velocity remain independent. Time, subdivision-slot and sounding-attack
+clocks are explicit. Degree offsets combine before lattice mapping, with native
+offsets applied afterward. Pattern voices lower to the existing materials and
+placements at compilation; no parallel note emitter or inferred hierarchy is
+introduced. Saved programs regenerate their dependents after shared and local edits.
 
 `CompositionPlan.pitchLattices` is a shared dictionary of origins, strictly ordered intervals and positive periods in native millicents. It assumes neither twelve equal divisions nor a major scale. A `latticePath` binding names a lattice, two typed anchors, a rational position, degree offset and exact pitch residual. An anchor references either a material-event index or a direct harmonic value address (palette, tone, octave and residual). Both resolved anchors must lie on that lattice; interpolation must yield an integer degree. Unknown anchors, cycles, unsafe coordinates and off-lattice edits fail explicitly. Resolution is iterative and source-independent; evidence IDs supply no musical values.
 

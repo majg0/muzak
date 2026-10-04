@@ -3,7 +3,7 @@
   "updatedDate": "2026-10-04",
   "objective": "Generate musically compelling, controllable music through focused experiment labs sharing one Rust composition algebra, a composable musical ontology and contextual harmonic relationships.",
   "checkpoint": {
-    "summary": "CompositionPlan retains generic exact-time patterns and authored voices. Shared definitions, nested subdivision, variadic combination, independent cycles, overlap and clipping lower through the existing compiler. Duration, sound/rest masks, degree/native pitch and velocity controls have explicit time, slot or sounding-attack clocks. Degree coordinates map once through arbitrary lattices before chromatic or microtonal offsets; harmonic member anchors and voice identities remain separate. Serialized shared/local edits, rational cut/restart controls and authored scene edits regenerate dependent notes. Patterns & voices provides passage/solo audition and editable programs. Harmonic Motion retains contextual chord routes, exact member correspondence and bounded phrase-continuity preferences. These are executable authored relationships, not inferred melodic hierarchy or a universal melody-quality model.",
+    "summary": "CompositionPlan retains generic untimed value trees, explicit timed patterns and authored voices. Degree nesting carries no durations; separate duration trees determine time. Explicit step counts bound the simple editor's independent degree, duration, sound-mask and native-offset cycles. Shared references, nested expansion, variadic combination, temporal subdivision, overlap and clipping lower through the existing compiler. Time, slot and sounding-attack clocks remain explicit. Degree coordinates map once through arbitrary lattices before native offsets; harmonic member anchors and voice identities remain separate. Serialized shared/local edits and authored scene edits regenerate dependent notes. Patterns & voices provides passage/solo audition and editable programs. Harmonic Motion retains contextual chord routes, exact member correspondence and bounded phrase-continuity preferences. These are executable authored relationships, not inferred melodic hierarchy or a universal melody-quality model.",
     "nextActions": [
       "Audition complete phrases and their individual lines under matched harmonic constraints and explicit zero-continuity controls. Evaluate contour, motives, duration, inter-line motion, harmonic exposure and phrase destination separately; keep the chromatic descent and already-stepwise diminished controls.",
       "Use shared pattern programs to compare recognizable outer shapes, inner figures, independent rhythmic development and harmonic-member edits in complete passages. Evaluate perceptual quality separately from exact rendering and relation reuse; do not equate smoothness or concise construction with a strong melody.",
@@ -21,6 +21,7 @@
       "dependsOn": [],
       "evidence": [
         "crates/muzak-core/src/pattern.rs",
+        "crates/muzak-core/src/value_tree.rs",
         "crates/muzak-core/src/composition_patterns.rs",
         "crates/muzak-core/src/pattern_lab.rs",
         "crates/muzak-core/src/pattern_controls.rs",
@@ -28,7 +29,7 @@
         "src/labs/patterns.ts",
         "docs/research/patterns.md"
       ],
-      "nextAction": "Audition shared pattern, rhythm and harmonic-member edits with degree and native-offset patterns advancing once per duration cell in the simple editor. Preserve mute independence and exact clipping/restart for fractional and long cells. Compare alternative authored outer/inner explanations without claiming a unique hierarchy; retain explicit clocks and the sole compiler."
+      "nextAction": "Audition independent value-tree and duration-tree edits in complete passages. Preserve pitch-tree/timing independence, explicit step limits, separate sound masks and saved shared relationships. Compare alternative authored outer/inner explanations without claiming a unique hierarchy; use temporal subdivision or cut/restart only through explicit time operations and retain the sole compiler."
     },
     {
       "id": "labs-experiments",

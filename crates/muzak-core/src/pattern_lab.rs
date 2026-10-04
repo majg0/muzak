@@ -12,6 +12,7 @@ use crate::{
     pattern::{
         Pattern, PatternLimits, PatternOperation, PatternTime, PatternValue, evaluate_pattern,
     },
+    value_tree::{ValueTree, ValueTreeProgram},
 };
 use num_bigint::BigInt;
 use num_rational::BigRational;
@@ -29,6 +30,7 @@ pub struct PatternLabOptions {
     pub gates: Vec<bool>,
     pub chromatic_millicents: Vec<i64>,
     pub tempo: f64,
+    pub steps: u16,
     pub repeats: u16,
 }
 impl Default for PatternLabOptions {
@@ -40,6 +42,7 @@ impl Default for PatternLabOptions {
             gates: vec![true],
             chromatic_millicents: vec![0],
             tempo: 104.,
+            steps: 9,
             repeats: 2,
         }
     }
@@ -82,6 +85,37 @@ fn repeat<T>(pattern: Pattern<T>, count: u64) -> Pattern<T> {
 }
 fn control(pattern: Pattern<i64>, clock: PatternClock) -> PatternControl {
     PatternControl { pattern, clock }
+}
+fn values<T: Clone>(values: &[T]) -> ValueTree<T> {
+    ValueTree::Sequence {
+        items: values
+            .iter()
+            .cloned()
+            .map(|value| ValueTree::Leaf { value })
+            .collect(),
+    }
+}
+fn tree_ref<T>(id: &str) -> ValueTree<T> {
+    ValueTree::Ref { id: id.into() }
+}
+fn phrased<T>(tree: ValueTree<T>, steps: u16, repeats: u16) -> ValueTree<T> {
+    ValueTree::Repeat {
+        tree: Box::new(ValueTree::Cycle {
+            tree: Box::new(tree),
+            count: u64::from(steps),
+        }),
+        count: u64::from(repeats),
+    }
+}
+fn independent<T: Clone>(
+    id: &str,
+    items: &[T],
+    options: &PatternLabOptions,
+) -> ValueTreeProgram<T> {
+    ValueTreeProgram {
+        definitions: BTreeMap::from([(id.into(), values(items))]),
+        tree: phrased(tree_ref(id), options.steps, options.repeats),
+    }
 }
 fn fill<T: PatternValue>(pattern: Pattern<T>, span: u64) -> CoreResult<Pattern<T>> {
     let evaluated = evaluate_pattern(&pattern, &BTreeMap::new(), &PatternLimits::default())?;
@@ -163,9 +197,8 @@ fn base(tempo: f64) -> CompositionPlan {
 }
 
 /// A small editor authors the same full program accepted by compileComposition.
-/// Each outer degree holds one inner figure. Duration cells advance degree and
-/// native-offset patterns by slot, independently of elapsed time and sound masks.
-/// The explicit elapsed phrase window restarts every constituent on repeat.
+/// Degree nesting is untimed. Independent value trees provide durations, sound
+/// masks and native offsets; an explicit step count bounds each phrase.
 pub fn generate(options: &PatternLabOptions) -> CoreResult<CompositionPlan> {
     if [
         options.outer.len(),
@@ -185,62 +218,48 @@ pub fn generate(options: &PatternLabOptions) -> CoreResult<CompositionPlan> {
         ));
     }
     let mut plan = base(options.tempo);
-    let span = (options.outer.len() * options.inner.len()) as u64;
-    let repeats = u64::from(options.repeats);
-    let rhythm_cycle = Pattern::Sequence {
-        items: options
-            .durations
-            .iter()
-            .map(|duration| Pattern::Atom {
-                value: true,
-                span: duration.clone(),
-            })
-            .collect(),
-    };
-    let rhythm = fill(rhythm_cycle, span)?;
-    let slots = evaluate_pattern(&rhythm, &BTreeMap::new(), &PatternLimits::default())?
-        .events
-        .len() as u64;
-    let mask = repeat(fill(sequence(&options.gates, 1), slots)?, repeats);
-    // Pitch coordinates count duration cells, not elapsed ticks. Keep shared
-    // references executable, extending/cutting their ordinal support to match
-    // this phrase before repeating it. Fractions can create more cells than the
-    // degree cycle; long durations can create fewer, without skipping degrees.
-    let degree_cycle = Pattern::Window {
-        pattern: Box::new(repeat(reference("line"), slots.div_ceil(span))),
-        start: PatternTime::zero(),
-        span: PatternTime::integer(slots),
-    };
+    if options.steps == 0 || options.steps > 256 {
+        return Err(invalid("A pattern phrase needs 1–256 steps."));
+    }
     let mut line = voice(
         "melody",
-        repeat(rhythm, repeats),
-        Some(control(repeat(degree_cycle, repeats), PatternClock::Slot)),
+        Pattern::Durations {
+            source: independent("R", &options.durations, options),
+            value: true,
+        },
+        Some(control(reference("line"), PatternClock::Slot)),
     );
     line.sound = Some(PatternGateControl {
-        pattern: mask,
+        pattern: Pattern::Values {
+            source: independent("sound", &options.gates, options),
+        },
         clock: PatternClock::Slot,
     });
     line.pitch.chromatic = Some(control(
-        repeat(
-            fill(sequence(&options.chromatic_millicents, 1), slots)?,
-            repeats,
-        ),
+        Pattern::Values {
+            source: independent("offset", &options.chromatic_millicents, options),
+        },
         PatternClock::Slot,
     ));
     let patterns = plan.patterns.as_mut().unwrap();
     patterns.number_definitions.insert(
-        "A".into(),
-        sequence(&options.outer, options.inner.len() as u64),
-    );
-    patterns
-        .number_definitions
-        .insert("B".into(), sequence(&options.inner, 1));
-    patterns.number_definitions.insert(
         "line".into(),
-        Pattern::Subdivide {
-            parent: Box::new(reference("A")),
-            children: vec![reference("B")],
-            operation: PatternOperation::Add,
+        Pattern::Values {
+            source: ValueTreeProgram {
+                definitions: BTreeMap::from([
+                    ("A".into(), values(&options.outer)),
+                    ("B".into(), values(&options.inner)),
+                ]),
+                tree: phrased(
+                    ValueTree::Expand {
+                        parent: Box::new(tree_ref("A")),
+                        children: vec![tree_ref("B")],
+                        operation: PatternOperation::Add,
+                    },
+                    options.steps,
+                    options.repeats,
+                ),
+            },
         },
     );
     patterns.voices.push(line);
@@ -374,33 +393,38 @@ pub fn defaults() -> CoreResult<PatternLabDefaults> {
 mod tests {
     use super::*;
     #[test]
-    fn fractional_and_long_cells_advance_degrees_and_restart_at_the_phrase_boundary() {
+    fn duration_edits_change_time_without_changing_the_degree_tree_or_leaf_count() {
         let pitches = [60, 64, 62, 62, 65, 64, 64, 67, 65];
-        // Hand-counted cells within the editor's nine-unit phrase. The last
-        // 2/3 cell is clipped to 1/3, and the last two-unit cell to one unit.
-        for (numerator, denominator, cells, last_numerator, last_denominator) in
-            [(1, 2, 18, 1, 2), (2, 3, 14, 1, 3), (2, 1, 5, 1, 1)]
-        {
+        let original = generate(&PatternLabOptions::default()).unwrap();
+        let degrees =
+            serde_json::to_value(&original.patterns.as_ref().unwrap().number_definitions).unwrap();
+        for (numerator, denominator) in [(1, 2), (2, 3), (2, 1)] {
             let options = PatternLabOptions {
                 durations: vec![PatternTime::new(numerator, denominator).unwrap()],
                 ..PatternLabOptions::default()
             };
-            let score =
-                compile_composition(&generate(&options).unwrap(), &CompositionLimits::default())
-                    .unwrap();
-            assert_eq!(score.notes.len(), cells * 2);
+            let plan = generate(&options).unwrap();
+            assert_eq!(
+                serde_json::to_value(&plan.patterns.as_ref().unwrap().number_definitions).unwrap(),
+                degrees
+            );
+            let score = compile_composition(&plan, &CompositionLimits::default()).unwrap();
+            assert_eq!(score.notes.len(), 18);
             for phrase in 0..2 {
-                for cell in 0..cells {
+                for cell in 0..9 {
                     assert_eq!(
-                        score.notes[phrase * cells + cell].pitch.millicents,
-                        pitches[cell % pitches.len()] * 100_000
+                        score.notes[phrase * 9 + cell].pitch.millicents,
+                        pitches[cell] * 100_000
                     );
                 }
             }
-            assert_eq!(score.notes[cells].onset * 2, 9 * score.ppq);
             assert_eq!(
-                score.notes[cells - 1].duration * 2 * last_denominator,
-                last_numerator * score.ppq
+                score.notes[9].onset * 2 * denominator,
+                9 * numerator * score.ppq
+            );
+            assert_eq!(
+                score.notes[8].duration * 2 * denominator,
+                numerator * score.ppq
             );
         }
     }
@@ -420,11 +444,17 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec![60, 64, 62, 62, 65, 64, 64, 67, 65]
         );
-        plan.patterns
+        let Pattern::Values { source } = plan
+            .patterns
             .as_mut()
             .unwrap()
             .number_definitions
-            .insert("B".into(), sequence(&[0, 1, 2], 1));
+            .get_mut("line")
+            .unwrap()
+        else {
+            panic!("The degree source must be an untimed tree.");
+        };
+        source.definitions.insert("B".into(), values(&[0, 1, 2]));
         let after = compile_composition(&plan, &CompositionLimits::default()).unwrap();
         assert_eq!(after.notes[1].pitch.millicents, 6_200_000);
         assert_eq!(after.notes[10].pitch.millicents, 6_200_000);
@@ -440,5 +470,57 @@ mod tests {
                 .map(|n| (n.onset, n.duration))
                 .collect::<Vec<_>>()
         );
+    }
+
+    #[test]
+    fn degree_tree_length_edits_preserve_the_independent_rhythm() {
+        let options = PatternLabOptions {
+            durations: vec![PatternTime::integer(2), PatternTime::one()],
+            ..PatternLabOptions::default()
+        };
+        let mut plan = generate(&options).unwrap();
+        let before = compile_composition(&plan, &CompositionLimits::default()).unwrap();
+        let rhythm =
+            serde_json::to_value(&plan.patterns.as_ref().unwrap().voices[0].rhythm).unwrap();
+        let Pattern::Values { source } = plan
+            .patterns
+            .as_mut()
+            .unwrap()
+            .number_definitions
+            .get_mut("line")
+            .unwrap()
+        else {
+            panic!();
+        };
+        source.definitions.insert("B".into(), values(&[0, 1]));
+        source.definitions.insert("A".into(), values(&[0, 2]));
+        let after = compile_composition(&plan, &CompositionLimits::default()).unwrap();
+        assert_eq!(
+            serde_json::to_value(&plan.patterns.as_ref().unwrap().voices[0].rhythm).unwrap(),
+            rhythm
+        );
+        assert_eq!(
+            before
+                .notes
+                .iter()
+                .map(|n| (n.onset, n.duration))
+                .collect::<Vec<_>>(),
+            after
+                .notes
+                .iter()
+                .map(|n| (n.onset, n.duration))
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(
+            after
+                .notes
+                .iter()
+                .take(9)
+                .map(|n| n.pitch.millicents / 100_000)
+                .collect::<Vec<_>>(),
+            [60, 62, 64, 65, 60, 62, 64, 65, 60]
+        );
+        assert_eq!(after.notes[9].onset, 14);
+        assert_eq!(after.duration, 28);
     }
 }

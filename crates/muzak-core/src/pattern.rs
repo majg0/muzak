@@ -8,6 +8,7 @@
 use crate::{
     error::{CoreResult, budget, invalid},
     model::MAX_SAFE,
+    value_tree::{EvaluatedValueTree, ValueTreeProgram, evaluate_value_tree},
 };
 use num_bigint::BigInt;
 use num_rational::BigRational;
@@ -205,6 +206,17 @@ impl<T: Clone> PatternValue for Vec<T> {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Pattern<T> {
+    /// Embed an untimed value tree on ordinal coordinates. Musical controls
+    /// select a slot/attack clock; no duration is stored in the source tree.
+    Values {
+        source: ValueTreeProgram<T>,
+    },
+    /// Realize a separate duration tree as successive timed cells. Sounding
+    /// state can be supplied independently by a voice's sound mask.
+    Durations {
+        source: ValueTreeProgram<PatternTime>,
+        value: T,
+    },
     Atom {
         value: T,
         span: PatternTime,
@@ -289,6 +301,29 @@ struct Counter<'a> {
 }
 
 impl Counter<'_> {
+    fn tree<T: PatternValue>(
+        &mut self,
+        source: &ValueTreeProgram<T>,
+        depth: usize,
+    ) -> CoreResult<EvaluatedValueTree<T>> {
+        let remaining = PatternLimits {
+            max_depth: self.limits.max_depth.saturating_sub(depth + 1),
+            max_work: self.limits.max_work.saturating_sub(self.work),
+            max_events: self.limits.max_events.saturating_sub(self.events),
+        };
+        if remaining.max_depth == 0 || remaining.max_work == 0 || remaining.max_events == 0 {
+            return Err(budget("Pattern value-tree budget exceeded."));
+        }
+        let result = evaluate_value_tree(source, &remaining)?;
+        self.spend(result.work)?;
+        self.events = self
+            .events
+            .checked_add(result.allocations)
+            .filter(|count| *count <= self.limits.max_events)
+            .ok_or_else(|| budget("Pattern event budget exceeded."))?;
+        Ok(result)
+    }
+
     fn spend(&mut self, work: usize) -> CoreResult<()> {
         self.work = self
             .work
@@ -321,6 +356,7 @@ struct Prepared<'a, T> {
 
 enum PreparedKind<'a, T> {
     Atom(&'a T),
+    Values(Vec<Event<T>>),
     Rest,
     Sequence(Vec<usize>),
     Parallel(Vec<usize>),
@@ -394,7 +430,44 @@ impl<'a, T: PatternValue> Preparation<'a, T> {
             return Err(budget("Pattern depth budget exceeded."));
         }
         let mut child_indices = Vec::new();
+        let mut tree_height = 0;
         let (span, kind) = match pattern {
+            Pattern::Values { source } => {
+                let result = counter.tree(source, depth)?;
+                tree_height = result.height;
+                let mut events = Vec::with_capacity(result.values.len());
+                for (index, value) in result.values.into_iter().enumerate() {
+                    counter.emission(value.complexity())?;
+                    events.push(Event {
+                        start: BigRational::from_integer(BigInt::from(index)),
+                        end: BigRational::from_integer(BigInt::from(index + 1)),
+                        value,
+                    });
+                }
+                (
+                    safe_time(BigRational::from_integer(BigInt::from(events.len())))?,
+                    PreparedKind::Values(events),
+                )
+            }
+            Pattern::Durations { source, value } => {
+                value.validate()?;
+                counter.spend(value.complexity())?;
+                let result = counter.tree(source, depth)?;
+                tree_height = result.height;
+                let mut events = Vec::with_capacity(result.values.len());
+                let mut offset = BigRational::zero();
+                for duration in result.values {
+                    let end = safe_time(&offset + duration.positive()?)?;
+                    counter.emission(value.complexity())?;
+                    events.push(Event {
+                        start: offset,
+                        end: end.clone(),
+                        value: value.clone(),
+                    });
+                    offset = end;
+                }
+                (offset, PreparedKind::Values(events))
+            }
             Pattern::Atom { value, span } => {
                 counter.spend(value.complexity())?;
                 value.validate()?;
@@ -535,7 +608,8 @@ impl<'a, T: PatternValue> Preparation<'a, T> {
             .iter()
             .map(|index| self.nodes[*index].height)
             .max()
-            .unwrap_or(0);
+            .unwrap_or(0)
+            .max(tree_height);
         if depth + height > counter.limits.max_depth {
             return Err(budget("Pattern depth budget exceeded."));
         }
@@ -588,6 +662,21 @@ fn evaluate_node<T: PatternValue>(
         return Ok(Vec::new());
     };
     let events = match &node.kind {
+        PreparedKind::Values(values) => {
+            let mut events = Vec::new();
+            for event in values {
+                counter.spend(1)?;
+                if let Some((lo, hi)) = intersection(&start, &end, &event.start, &event.end) {
+                    counter.emission(event.value.complexity())?;
+                    events.push(Event {
+                        start: lo,
+                        end: hi,
+                        value: event.value.clone(),
+                    });
+                }
+            }
+            events
+        }
         PreparedKind::Atom(value) => {
             counter.emission(value.complexity())?;
             vec![Event {
@@ -867,6 +956,120 @@ pub fn evaluate_pattern<T: PatternValue>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::value_tree::ValueTree;
+
+    #[test]
+    fn untimed_values_and_independent_nested_durations_have_explicit_realization() {
+        let pitch = ValueTreeProgram {
+            definitions: BTreeMap::new(),
+            tree: ValueTree::Sequence {
+                items: [0, 2, 1, 3]
+                    .into_iter()
+                    .map(|value| ValueTree::Leaf { value })
+                    .collect(),
+            },
+        };
+        let durations = ValueTreeProgram {
+            definitions: BTreeMap::new(),
+            tree: ValueTree::Expand {
+                parent: Box::new(ValueTree::Sequence {
+                    items: [2, 1]
+                        .into_iter()
+                        .map(|value| ValueTree::Leaf {
+                            value: PatternTime::integer(value),
+                        })
+                        .collect(),
+                }),
+                children: vec![ValueTree::Sequence {
+                    items: [1, 3]
+                        .into_iter()
+                        .map(|numerator| ValueTree::Leaf {
+                            value: PatternTime::new(numerator, 4).unwrap(),
+                        })
+                        .collect(),
+                }],
+                operation: PatternOperation::Multiply,
+            },
+        };
+        let indexed = run(&Pattern::Values { source: pitch });
+        assert_eq!(indexed.span, PatternTime::integer(4));
+        assert_eq!(
+            indexed
+                .events
+                .iter()
+                .map(|event| event.value)
+                .collect::<Vec<_>>(),
+            [0, 2, 1, 3]
+        );
+        let rhythm = Pattern::Durations {
+            source: durations,
+            value: true,
+        };
+        let timed = run(&rhythm);
+        assert_eq!(timed.span, PatternTime::integer(3));
+        assert_eq!(
+            timed
+                .events
+                .iter()
+                .map(|event| event.duration.clone())
+                .collect::<Vec<_>>(),
+            vec![
+                PatternTime::new(1, 2).unwrap(),
+                PatternTime::new(3, 2).unwrap(),
+                PatternTime::new(1, 4).unwrap(),
+                PatternTime::new(3, 4).unwrap()
+            ]
+        );
+        // A temporal cut is an explicit operation outside the duration tree.
+        let clipped = run(&window(rhythm, 1, 1));
+        assert_eq!(clipped.events.len(), 1);
+        assert_eq!(clipped.events[0].duration, PatternTime::one());
+    }
+
+    #[test]
+    fn value_tree_bridges_reject_zero_durations_and_share_enclosing_budgets() {
+        let zero = Pattern::Durations {
+            source: ValueTreeProgram {
+                definitions: BTreeMap::new(),
+                tree: ValueTree::Leaf {
+                    value: PatternTime::zero(),
+                },
+            },
+            value: true,
+        };
+        assert!(evaluate_pattern(&zero, &BTreeMap::new(), &PatternLimits::default()).is_err());
+        let values = Pattern::Values {
+            source: ValueTreeProgram {
+                definitions: BTreeMap::new(),
+                tree: ValueTree::Repeat {
+                    tree: Box::new(ValueTree::Leaf { value: 0i64 }),
+                    count: 10,
+                },
+            },
+        };
+        assert!(
+            evaluate_pattern(
+                &values,
+                &BTreeMap::new(),
+                &PatternLimits {
+                    max_events: 15,
+                    ..PatternLimits::default()
+                }
+            )
+            .is_err()
+        );
+        assert!(
+            evaluate_pattern(
+                &repeat(values, 2),
+                &BTreeMap::new(),
+                &PatternLimits {
+                    max_depth: 3,
+                    ..PatternLimits::default()
+                }
+            )
+            .is_err()
+        );
+    }
 
     fn atom<T>(value: T, span: u64) -> Pattern<T> {
         Pattern::Atom {

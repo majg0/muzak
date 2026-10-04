@@ -34,14 +34,16 @@ Both Rust experiments return `CompositionPlan`: one reusable material and repeat
 
 ## Patterns & voices
 
-The pattern lab exposes an outer degree shape, a reusable inner figure and an
-independent duration cycle. Degrees, native pitch offsets and sound/rest masks
-advance once per duration cell, so fractional notes progress without repeating
-degrees and long notes hold their pitch. Muted cells keep their place. The fixed
-time window clips its last duration and restarts the patterns on repeat.
-Zero has no rest meaning. Advanced editable
-programs demonstrate nested subdivision, three independently phased cycles,
-fractional cut/restart windows and harmonic member voices. The full Rust
+The pattern lab exposes an untimed outer degree shape, a reusable inner figure,
+an independent duration tree and an explicit number of steps per phrase. Each
+tree cycles to that many values; degree lengths do not set a time window. The
+phrase's time length is the sum of its duration values, without an implicit cut.
+Degrees, native pitch offsets and sound/rest masks advance once per step, so
+fractional notes progress without repeating degrees and long notes hold their
+pitch. Muted steps keep their place. Repetition restarts the complete phrase.
+Zero has no rest meaning. Advanced editable programs retain the independent
+value trees and demonstrate explicit timed subdivision, three independently
+phased cycles, fractional cut/restart windows and harmonic member voices. The full Rust
 [pattern algebra](patterns.md) retains shared definitions through serialization
 and recompilation. One player supports the full passage or a selected voice.
 Invalid edits retain the accepted result; switching labs retains both form and

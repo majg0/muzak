@@ -5,6 +5,7 @@ pub mod composition;
 pub mod composition_patterns;
 pub mod pattern;
 pub mod pattern_lab;
+pub mod value_tree;
 #[cfg(test)]
 mod pattern_controls;
 pub mod error;
