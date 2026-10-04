@@ -35,8 +35,11 @@ Both Rust experiments return `CompositionPlan`: one reusable material and repeat
 ## Patterns & voices
 
 The pattern lab exposes an outer degree shape, a reusable inner figure and an
-independent duration cycle. Sound/rest masks use a separate slot clock; native
-pitch offsets use elapsed time. Zero has no rest meaning. Advanced editable
+independent duration cycle. Degrees, native pitch offsets and sound/rest masks
+advance once per duration cell, so fractional notes progress without repeating
+degrees and long notes hold their pitch. Muted cells keep their place. The fixed
+time window clips its last duration and restarts the patterns on repeat.
+Zero has no rest meaning. Advanced editable
 programs demonstrate nested subdivision, three independently phased cycles,
 fractional cut/restart windows and harmonic member voices. The full Rust
 [pattern algebra](patterns.md) retains shared definitions through serialization

@@ -163,8 +163,9 @@ fn base(tempo: f64) -> CompositionPlan {
 }
 
 /// A small editor authors the same full program accepted by compileComposition.
-/// Each outer degree holds one inner cell; rhythm and sound masks have their
-/// own clocks. The explicit phrase window restarts every constituent on repeat.
+/// Each outer degree holds one inner figure. Duration cells advance degree and
+/// native-offset patterns by slot, independently of elapsed time and sound masks.
+/// The explicit elapsed phrase window restarts every constituent on repeat.
 pub fn generate(options: &PatternLabOptions) -> CoreResult<CompositionPlan> {
     if [
         options.outer.len(),
@@ -201,13 +202,19 @@ pub fn generate(options: &PatternLabOptions) -> CoreResult<CompositionPlan> {
         .events
         .len() as u64;
     let mask = repeat(fill(sequence(&options.gates, 1), slots)?, repeats);
+    // Pitch coordinates count duration cells, not elapsed ticks. Keep shared
+    // references executable, extending/cutting their ordinal support to match
+    // this phrase before repeating it. Fractions can create more cells than the
+    // degree cycle; long durations can create fewer, without skipping degrees.
+    let degree_cycle = Pattern::Window {
+        pattern: Box::new(repeat(reference("line"), slots.div_ceil(span))),
+        start: PatternTime::zero(),
+        span: PatternTime::integer(slots),
+    };
     let mut line = voice(
         "melody",
         repeat(rhythm, repeats),
-        Some(control(
-            repeat(reference("line"), repeats),
-            PatternClock::Time,
-        )),
+        Some(control(repeat(degree_cycle, repeats), PatternClock::Slot)),
     );
     line.sound = Some(PatternGateControl {
         pattern: mask,
@@ -215,10 +222,10 @@ pub fn generate(options: &PatternLabOptions) -> CoreResult<CompositionPlan> {
     });
     line.pitch.chromatic = Some(control(
         repeat(
-            fill(sequence(&options.chromatic_millicents, 1), span)?,
+            fill(sequence(&options.chromatic_millicents, 1), slots)?,
             repeats,
         ),
-        PatternClock::Time,
+        PatternClock::Slot,
     ));
     let patterns = plan.patterns.as_mut().unwrap();
     patterns.number_definitions.insert(
@@ -366,6 +373,38 @@ pub fn defaults() -> CoreResult<PatternLabDefaults> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn fractional_and_long_cells_advance_degrees_and_restart_at_the_phrase_boundary() {
+        let pitches = [60, 64, 62, 62, 65, 64, 64, 67, 65];
+        // Hand-counted cells within the editor's nine-unit phrase. The last
+        // 2/3 cell is clipped to 1/3, and the last two-unit cell to one unit.
+        for (numerator, denominator, cells, last_numerator, last_denominator) in
+            [(1, 2, 18, 1, 2), (2, 3, 14, 1, 3), (2, 1, 5, 1, 1)]
+        {
+            let options = PatternLabOptions {
+                durations: vec![PatternTime::new(numerator, denominator).unwrap()],
+                ..PatternLabOptions::default()
+            };
+            let score =
+                compile_composition(&generate(&options).unwrap(), &CompositionLimits::default())
+                    .unwrap();
+            assert_eq!(score.notes.len(), cells * 2);
+            for phrase in 0..2 {
+                for cell in 0..cells {
+                    assert_eq!(
+                        score.notes[phrase * cells + cell].pitch.millicents,
+                        pitches[cell % pitches.len()] * 100_000
+                    );
+                }
+            }
+            assert_eq!(score.notes[cells].onset * 2, 9 * score.ppq);
+            assert_eq!(
+                score.notes[cells - 1].duration * 2 * last_denominator,
+                last_numerator * score.ppq
+            );
+        }
+    }
+
     #[test]
     fn examples_compile_and_shared_inner_edit_regenerates() {
         let defaults = defaults().unwrap();

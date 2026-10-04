@@ -39,10 +39,10 @@ export function createSession(): LabSession {
               <label><span><b>B</b> Inner degrees</span><input name="inner" type="text" spellcheck="false" required aria-describedby="patterns-inner-help"/><small id="patterns-inner-help">A shared figure, added to each outer offset.</small></label>
               <label><span><b>R</b> Duration pattern</span><input name="durations" type="text" spellcheck="false" required aria-describedby="patterns-rhythm-help"/><small id="patterns-rhythm-help">2,1 holds for two units, then one. Fractions such as 1/3 are exact.</small></label>
             </div>
-            <p class="patterns-reading">C Ionian · degree zero is C · one unit is an eighth note. At each attack, rhythm reads the current pitch pattern; a long note holds that pitch. Durations and sound/rest choices are independent.</p>
+            <p class="patterns-reading">C Ionian · degree zero is C · one unit is an eighth note. Each duration cell advances the pitch pattern once; a long note holds its pitch. Muted cells keep their place. Each repeat fills a window of A length × B length units, clipping the last duration if needed.</p>
             <details class="patterns-settings" data-patterns="details"><summary>Sound / rest, pitch offsets &amp; repetition</summary><div class="patterns-extra-controls">
               <label>Sound / rest mask<input name="gates" type="text" spellcheck="false" required/><small>Use on and off, one value per duration cell. The mask cycles independently; a rest keeps its duration. Numeric zero is never a rest instruction.</small></label>
-              <label>Native pitch offsets<input name="chromaticMillicents" type="text" spellcheck="false" required/><small>An independent cycle added after scale mapping, in millicents. 100000 = one semitone; 50000 = a quarter tone.</small></label>
+              <label>Native pitch offsets<input name="chromaticMillicents" type="text" spellcheck="false" required/><small>An independent cycle advancing once per duration cell, added after scale mapping, in millicents. 100000 = one semitone; 50000 = a quarter tone.</small></label>
               <label>Tempo<input name="tempo" type="number" min="20" max="400" step="1" required/><small>Quarter notes per minute.</small></label>
               <label>Repeats<input name="repeats" type="number" min="1" max="16" step="1" required/><small>Repeat the complete outer × inner window.</small></label>
             </div></details>

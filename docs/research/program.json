@@ -28,7 +28,7 @@
         "src/labs/patterns.ts",
         "docs/research/patterns.md"
       ],
-      "nextAction": "Audition full passages and individual voices before and after shared pattern, rhythm and harmonic-member edits. Compare alternative authored outer/inner explanations rather than claiming a unique hierarchy. Extend typed operations only for a concrete compositional need, preserving exact clocks and the sole compiler."
+      "nextAction": "Audition shared pattern, rhythm and harmonic-member edits with degree and native-offset patterns advancing once per duration cell in the simple editor. Preserve mute independence and exact clipping/restart for fractional and long cells. Compare alternative authored outer/inner explanations without claiming a unique hierarchy; retain explicit clocks and the sole compiler."
     },
     {
       "id": "labs-experiments",

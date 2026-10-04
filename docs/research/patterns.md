@@ -124,9 +124,13 @@ editor and worked examples use generated Rust contracts. All examples can be
 auditioned and exported, with individual voice audition for multi-voice programs.
 Solo audition retains the selected voice's timing and nominal extent; a shorter
 voice in an advanced program can omit trailing silence supplied by other voices.
-The simple editor uses eighth-note units, samples pitch by time and restarts all
-constituent patterns at its authored phrase boundary. The full algebra specifies
-other clocks and boundaries explicitly. Exact native playback and strict MIDI
+The simple editor uses eighth-note time units and advances degree and native
+offset patterns once per duration cell, including muted cells. Fractional notes
+advance to the next value; long notes hold their value. Each phrase fills
+`outer.length × inner.length` time units, clipping the last duration when needed.
+Pitch cycles repeat or cut to the actual cell count, and all constituent patterns
+restart at that phrase boundary. The full algebra specifies other clocks and
+boundaries explicitly. Exact native playback and strict MIDI
 export remain separate capabilities; unsupported MIDI pitch loss is rejected.
 
 Representation coverage and changed-parameter tests establish executable
