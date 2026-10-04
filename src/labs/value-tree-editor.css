@@ -43,7 +43,22 @@
 .vte-kind-ref > .vte-children::before { background: repeating-linear-gradient(to bottom, var(--tree-line), var(--tree-line) 3px, transparent 3px, transparent 5px); }
 .vte-shared-badge { color: var(--tree-accent); font-size: 11px; padding: 1px 4px; background: #0003; border-radius: 3px; }
 .vte-fold { position: absolute; right: -7px; top: -6px; width: 17px; height: 17px; padding: 0; border: 1px solid var(--tree-line); border-radius: 50%; background: #281c32; color: var(--tree-accent); font-size: 12px !important; line-height: 14px; }
-.vte-edge-label { display: block; color: var(--tree-accent); font-size: 11px; line-height: 1.15; background: #151019; padding: 0 4px; margin: -6px 0 3px; z-index: 1; }
+.vte-expansion { display: flex; flex-direction: column; align-items: stretch; margin-top: 6px; min-width: 200px; }
+.vte-expansion-parent, .vte-expansion-schedule { border: 1px solid var(--tree-line); border-radius: 6px; padding: 5px 8px 6px; background: #201827; }
+.vte-region-label { display: block; margin-bottom: 7px; color: #b5a0c2; font-size: 10px; line-height: 1.2; }
+.vte-expansion-link { position: relative; align-self: center; padding: 7px 0 7px 15px; color: var(--tree-accent); font-size: 10px; line-height: 1.2; }
+.vte-expansion-link::before { content: '↓'; position: absolute; left: 0; font-size: 15px; line-height: 12px; }
+.vte-pattern-strip, .vte-child-schedule { display: flex; align-items: flex-start; justify-content: center; list-style: none; margin: 0; padding: 0; width: max-content; min-width: 100%; }
+.vte-child-schedule { flex-direction: column; gap: 9px; }
+.vte-child-schedule > .vte-branch { align-self: center; }
+.vte-child-schedule > .vte-kind-expand { align-items: center; }
+.vte-inline { flex-direction: row; align-items: center; gap: 8px; padding: 0; }
+.vte-inline > .vte-node-row > .vte-node { min-width: 32px; padding-inline: 7px; }
+.vte-inline > .vte-children { margin-top: 0; align-items: center; gap: 5px; }
+.vte-inline > .vte-children::before, .vte-inline > .vte-children > .vte-branch::before, .vte-inline > .vte-children > .vte-branch::after { display: none; }
+.vte-inline.vte-kind-sequence > .vte-node-row > .vte-node { min-width: 28px; max-width: 120px; font-size: 10px; padding-inline: 5px; }
+.vte-inline .vte-shared-badge { font-size: 10px; padding-inline: 2px; }
+.vte-schedule-index { color: var(--tree-accent); font-size: 10px; align-self: center; padding-right: 3px; }
 .vte-tree-warning { color: #edae9c; font-size: 11px; margin-top: 6px; }
 .vte-inspector { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; padding: 9px 11px; background: #201827; }
 .vte-inspector-heading { display: flex; align-items: center; max-width: 150px; }

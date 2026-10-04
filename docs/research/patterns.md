@@ -167,6 +167,10 @@ their definitions; edits keep the references shared. The same generic editor
 handles sound masks and native offsets. No outer/inner level count is imposed;
 the existing evaluator depth and work budgets still bound compilation. The
 visual editor changes the typed program without evaluating music in TypeScript.
+Expansion displays the parent pattern above its child-pattern schedule, joined
+by “for each parent value”. Multiple child patterns take turns in order. This
+compact template view preserves editable shared definitions without treating
+parent and child as sibling operands or unfolding musical values in the view.
 Valid tree, setting and program edits compile automatically. A coalescing queue
 runs one composition update at a time, discards superseded results and preserves
 the last valid music while a draft is incomplete. Playback keeps its running or

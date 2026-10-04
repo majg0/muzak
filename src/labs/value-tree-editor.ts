@@ -122,8 +122,8 @@ export function mountValueTreeEditor<T>(host: HTMLElement, options: EditorOption
     }
   }
   function operationName(value: PatternOperation): string { return options.operations.find(item => item.value === value)?.label ?? value; }
-  function graph(node: ValueTree<T>, address: TreeAddress, references: Set<string>, depth: number): HTMLElement {
-    const branch = el('li', `vte-branch vte-kind-${node.kind}`);
+  function graph(node: ValueTree<T>, address: TreeAddress, references: Set<string>, depth: number, inline = false): HTMLElement {
+    const branch = el('li', `vte-branch vte-kind-${node.kind}${inline && node.kind !== 'expand' ? ' vte-inline' : ''}`);
     const key = addressKey(address);
     if (++renderedNodes > 1200 || depth > 64) {
       branch.append(button('Open deeper branch', () => open(address), 'vte-node vte-compact'));
@@ -139,31 +139,52 @@ export function mountValueTreeEditor<T>(host: HTMLElement, options: EditorOption
     card.append(el('strong', 'vte-node-title', title));
     if (address.definition !== undefined && address.path.length === 0) card.append(el('span', 'vte-shared-badge', `Shared ${address.definition}`));
     row.append(card); branch.append(row);
-    const children: Array<{ node: ValueTree<T>; address: TreeAddress; label?: string; references: Set<string> }> = [];
+    // Expansion is directional. Its parent source and child schedule are not
+    // peer branches, even though both are fields of the executable syntax.
+    if (node.kind === 'expand') {
+      addFold(row, key, title);
+      if (!collapsed.has(key)) {
+        const expansion = el('div', 'vte-expansion');
+        const parent = el('div', 'vte-expansion-parent');
+        parent.append(el('span', 'vte-region-label', 'Parent pattern'));
+        const parentTree = el('ul', 'vte-pattern-strip');
+        parentTree.append(graph(node.parent, childAddress(address, 'parent'), references, depth + 1, true));
+        parent.append(parentTree);
+        const relationship = el('div', 'vte-expansion-link', 'For each parent value');
+        const schedule = el('div', 'vte-expansion-schedule');
+        schedule.append(el('span', 'vte-region-label', node.children.length === 1 ? 'Child pattern' : 'Child patterns · take turns, then repeat'));
+        const childTrees = el('ol', 'vte-child-schedule');
+        node.children.forEach((child, index) => {
+          const item = graph(child, childAddress(address, index), references, depth + 1, true);
+          if (node.children.length > 1) item.prepend(el('span', 'vte-schedule-index', String(index + 1)));
+          childTrees.append(item);
+        });
+        schedule.append(childTrees);
+        expansion.append(parent, relationship, schedule); branch.append(expansion);
+      }
+      return branch;
+    }
+    const children: Array<{ node: ValueTree<T>; address: TreeAddress; references: Set<string> }> = [];
     if (node.kind === 'ref') {
       if (references.has(node.id)) branch.append(el('span', 'vte-tree-warning', 'Circular reference'));
       else if (!Object.hasOwn(program.definitions, node.id)) branch.append(el('span', 'vte-tree-warning', 'Missing definition'));
       else children.push({ node: program.definitions[node.id], address: { definition: node.id, path: [] }, references: new Set([...references, node.id]) });
     } else if (node.kind === 'repeat' || node.kind === 'cycle') children.push({ node: node.tree, address: childAddress(address, 'tree'), references });
-    else {
-      if (node.kind === 'expand') children.push({ node: node.parent, address: childAddress(address, 'parent'), label: 'Parent', references });
-      arrayChildren(node)?.forEach((item, index) => children.push({ node: item, address: childAddress(address, index), label: node.kind === 'expand' ? `Child ${index + 1}` : undefined, references }));
-    }
+    else arrayChildren(node)?.forEach((item, index) => children.push({ node: item, address: childAddress(address, index), references }));
     if (children.length) {
-      const toggle = button(collapsed.has(key) ? '+' : '−', () => { if (collapsed.has(key)) collapsed.delete(key); else collapsed.add(key); render(); }, 'vte-fold');
-      toggle.setAttribute('aria-label', `${collapsed.has(key) ? 'Expand' : 'Collapse'} ${title}`);
-      toggle.setAttribute('aria-expanded', String(!collapsed.has(key))); row.append(toggle);
+      addFold(row, key, title);
       if (!collapsed.has(key)) {
         const list = el('ul', 'vte-children');
-        for (const child of children) {
-          const item = graph(child.node, child.address, child.references, depth + 1);
-          if (child.label) item.prepend(el('span', 'vte-edge-label', child.label));
-          list.append(item);
-        }
+        for (const child of children) list.append(graph(child.node, child.address, child.references, depth + 1, inline));
         branch.append(list);
       }
     }
     return branch;
+  }
+  function addFold(row: HTMLElement, key: string, title: string): void {
+    const toggle = button(collapsed.has(key) ? '+' : '−', () => { if (collapsed.has(key)) collapsed.delete(key); else collapsed.add(key); render(); }, 'vte-fold');
+    toggle.setAttribute('aria-label', `${collapsed.has(key) ? 'Expand' : 'Collapse'} ${title}`);
+    toggle.setAttribute('aria-expanded', String(!collapsed.has(key))); row.append(toggle);
   }
   function pendingError(address: TreeAddress, field: string, text: string): string {
     const node = at(address);
