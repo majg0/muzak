@@ -3,7 +3,7 @@ import type { LabDefinition } from './types';
 export const labs = [
   {
     id: 'patterns', title: 'Patterns & voices', group: 'Compose & inspect',
-    description: 'Build a line from an outer shape, a shared inner figure and independent rhythm. Combine, nest and edit executable patterns, then hear the result.',
+    description: 'Shape pitch and rhythm with connected, editable trees. Nest figures, reuse shared branches and hear the resulting phrase.',
     tags: ['pattern', 'melody', 'voice', 'rhythm', 'sequence', 'scale degrees', 'chromatic', 'subdivision', 'polymeter', 'composition'],
     load: () => import('./patterns'),
   },

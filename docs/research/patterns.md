@@ -160,13 +160,19 @@ partial result is returned. Windows can skip fully hidden repeats; subdividing
 a very large parent still pays for the parent events needed to preserve its
 schedule. These are finite bounded programs, not infinite lazy streams.
 
-The Patterns & voices lab exposes A, B, durations and steps per phrase first, with independent
-sound masks and native offsets available separately. Its complete JSON program
+The Patterns & voices lab presents connected, recursive degree and duration
+trees. Selecting a node exposes its value, operation and structural edits:
+add, remove, reorder, or wrap in another level. Shared-reference nodes display
+their definitions; edits keep the references shared. The same generic editor
+handles sound masks and native offsets. No outer/inner level count is imposed;
+the existing evaluator depth and work budgets still bound compilation. The
+visual editor changes the typed program without evaluating music in TypeScript.
+Its complete JSON program
 editor and worked examples use generated Rust contracts. All examples can be
 auditioned and exported, with individual voice audition for multi-voice programs.
 Solo audition retains the selected voice's timing and nominal extent; a shorter
 voice in an advanced program can omit trailing silence supplied by other voices.
-The simple editor uses eighth-note duration units. Its independent value trees
+The visual editor uses eighth-note duration units. Its independent value trees
 cycle to the explicit number of steps per phrase, including muted steps.
 Fractional notes advance to the next degree; long notes hold their value.
 The phrase's elapsed duration is the sum of its duration leaves: changing pitch

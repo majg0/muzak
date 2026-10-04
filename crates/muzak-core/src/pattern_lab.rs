@@ -12,7 +12,7 @@ use crate::{
     pattern::{
         Pattern, PatternLimits, PatternOperation, PatternTime, PatternValue, evaluate_pattern,
     },
-    value_tree::{ValueTree, ValueTreeProgram},
+    value_tree::{ValueTree, ValueTreeProgram, evaluate_value_tree},
 };
 use num_bigint::BigInt;
 use num_rational::BigRational;
@@ -24,11 +24,10 @@ use ts_rs::TS;
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PatternLabOptions {
-    pub outer: Vec<i64>,
-    pub inner: Vec<i64>,
-    pub durations: Vec<PatternTime>,
-    pub gates: Vec<bool>,
-    pub chromatic_millicents: Vec<i64>,
+    pub degrees: ValueTreeProgram<i64>,
+    pub durations: ValueTreeProgram<PatternTime>,
+    pub gates: ValueTreeProgram<bool>,
+    pub chromatic_millicents: ValueTreeProgram<i64>,
     pub tempo: f64,
     pub steps: u16,
     pub repeats: u16,
@@ -36,11 +35,20 @@ pub struct PatternLabOptions {
 impl Default for PatternLabOptions {
     fn default() -> Self {
         Self {
-            outer: vec![0, 1, 2],
-            inner: vec![0, 2, 1],
-            durations: vec![PatternTime::one()],
-            gates: vec![true],
-            chromatic_millicents: vec![0],
+            degrees: ValueTreeProgram {
+                definitions: BTreeMap::from([
+                    ("A".into(), values(&[0, 1, 2])),
+                    ("B".into(), values(&[0, 2, 1])),
+                ]),
+                tree: ValueTree::Expand {
+                    parent: Box::new(tree_ref("A")),
+                    children: vec![tree_ref("B")],
+                    operation: PatternOperation::Add,
+                },
+            },
+            durations: value_program("R", &[PatternTime::one()]),
+            gates: value_program("sound", &[true]),
+            chromatic_millicents: value_program("offset", &[0]),
             tempo: 104.,
             steps: 9,
             repeats: 2,
@@ -107,14 +115,19 @@ fn phrased<T>(tree: ValueTree<T>, steps: u16, repeats: u16) -> ValueTree<T> {
         count: u64::from(repeats),
     }
 }
+fn value_program<T: Clone>(id: &str, items: &[T]) -> ValueTreeProgram<T> {
+    ValueTreeProgram {
+        definitions: BTreeMap::from([(id.into(), values(items))]),
+        tree: tree_ref(id),
+    }
+}
 fn independent<T: Clone>(
-    id: &str,
-    items: &[T],
+    source: &ValueTreeProgram<T>,
     options: &PatternLabOptions,
 ) -> ValueTreeProgram<T> {
     ValueTreeProgram {
-        definitions: BTreeMap::from([(id.into(), values(items))]),
-        tree: phrased(tree_ref(id), options.steps, options.repeats),
+        definitions: source.definitions.clone(),
+        tree: phrased(source.tree.clone(), options.steps, options.repeats),
     }
 }
 fn fill<T: PatternValue>(pattern: Pattern<T>, span: u64) -> CoreResult<Pattern<T>> {
@@ -200,44 +213,42 @@ fn base(tempo: f64) -> CompositionPlan {
 /// Degree nesting is untimed. Independent value trees provide durations, sound
 /// masks and native offsets; an explicit step count bounds each phrase.
 pub fn generate(options: &PatternLabOptions) -> CoreResult<CompositionPlan> {
-    if [
-        options.outer.len(),
-        options.inner.len(),
-        options.durations.len(),
-        options.gates.len(),
-        options.chromatic_millicents.len(),
-    ]
-    .iter()
-    .any(|&n| !(1..=64).contains(&n))
-        || !(1..=16).contains(&options.repeats)
+    if !(1..=16).contains(&options.repeats)
         || !options.tempo.is_finite()
         || !(20. ..=400.).contains(&options.tempo)
     {
         return Err(invalid(
-            "Pattern editor needs 1–64 values per pattern, 1–16 repeats and tempo 20–400.",
+            "Pattern editor needs 1–16 repeats and tempo 20–400.",
         ));
     }
     let mut plan = base(options.tempo);
     if options.steps == 0 || options.steps > 256 {
         return Err(invalid("A pattern phrase needs 1–256 steps."));
     }
+    // Admit recursive input before cloning it into the authored plan. Evaluation
+    // bounds depth and work, including definitions that the root does not use.
+    let limits = PatternLimits::default();
+    evaluate_value_tree(&options.degrees, &limits)?;
+    evaluate_value_tree(&options.durations, &limits)?;
+    evaluate_value_tree(&options.gates, &limits)?;
+    evaluate_value_tree(&options.chromatic_millicents, &limits)?;
     let mut line = voice(
         "melody",
         Pattern::Durations {
-            source: independent("R", &options.durations, options),
+            source: independent(&options.durations, options),
             value: true,
         },
         Some(control(reference("line"), PatternClock::Slot)),
     );
     line.sound = Some(PatternGateControl {
         pattern: Pattern::Values {
-            source: independent("sound", &options.gates, options),
+            source: independent(&options.gates, options),
         },
         clock: PatternClock::Slot,
     });
     line.pitch.chromatic = Some(control(
         Pattern::Values {
-            source: independent("offset", &options.chromatic_millicents, options),
+            source: independent(&options.chromatic_millicents, options),
         },
         PatternClock::Slot,
     ));
@@ -245,21 +256,7 @@ pub fn generate(options: &PatternLabOptions) -> CoreResult<CompositionPlan> {
     patterns.number_definitions.insert(
         "line".into(),
         Pattern::Values {
-            source: ValueTreeProgram {
-                definitions: BTreeMap::from([
-                    ("A".into(), values(&options.outer)),
-                    ("B".into(), values(&options.inner)),
-                ]),
-                tree: phrased(
-                    ValueTree::Expand {
-                        parent: Box::new(tree_ref("A")),
-                        children: vec![tree_ref("B")],
-                        operation: PatternOperation::Add,
-                    },
-                    options.steps,
-                    options.repeats,
-                ),
-            },
+            source: independent(&options.degrees, options),
         },
     );
     patterns.voices.push(line);
@@ -290,7 +287,7 @@ pub fn defaults() -> CoreResult<PatternLabDefaults> {
         generate(&options)?,
     )?];
     let mut held = options.clone();
-    held.durations = vec![PatternTime::integer(2), PatternTime::one()];
+    held.durations = value_program("R", &[PatternTime::integer(2), PatternTime::one()]);
     examples.push(example("duration", "Durations and sound are independent", "Durations 2,1 hold two units then one. The separate sound mask can silence either attack without changing the time partition.", generate(&held)?)?);
 
     let mut cycles = base(104.);
@@ -393,6 +390,146 @@ pub fn defaults() -> CoreResult<PatternLabDefaults> {
 mod tests {
     use super::*;
     #[test]
+    fn deeply_nested_editor_input_is_rejected_before_recursive_cloning() {
+        fn deep<T>(value: T) -> ValueTreeProgram<T> {
+            let mut tree = ValueTree::Leaf { value };
+            for _ in 0..20_000 {
+                tree = ValueTree::Repeat {
+                    tree: Box::new(tree),
+                    count: 1,
+                };
+            }
+            ValueTreeProgram {
+                definitions: BTreeMap::new(),
+                tree,
+            }
+        }
+        // The adversarial input also needs iterative teardown in this native
+        // test: derived recursive Drop is independent of borrowed admission.
+        fn dismantle<T>(source: &mut ValueTreeProgram<T>) {
+            let mut tree =
+                std::mem::replace(&mut source.tree, ValueTree::Sequence { items: vec![] });
+            while let ValueTree::Repeat { tree: child, .. } = tree {
+                tree = *child;
+            }
+        }
+        for field in 0..4 {
+            let mut options = PatternLabOptions::default();
+            match field {
+                0 => options.degrees = deep(0),
+                1 => options.durations = deep(PatternTime::one()),
+                2 => options.gates = deep(true),
+                _ => options.chromatic_millicents = deep(0),
+            }
+            let result = generate(&options);
+            dismantle(&mut options.degrees);
+            dismantle(&mut options.durations);
+            dismantle(&mut options.gates);
+            dismantle(&mut options.chromatic_millicents);
+            let error = result.unwrap_err();
+            assert_eq!(error.code, "budget-exceeded");
+            assert!(error.message.contains("depth"));
+        }
+    }
+
+    #[test]
+    fn recursive_degree_and_duration_trees_preserve_deep_edits_after_save() {
+        let mut degrees = value_program("seed", &[0, 1]);
+        for _ in 0..3 {
+            degrees.tree = ValueTree::Expand {
+                parent: Box::new(values(&[0, 1])),
+                children: vec![degrees.tree],
+                operation: PatternOperation::Add,
+            };
+        }
+        let durations = ValueTreeProgram {
+            definitions: BTreeMap::new(),
+            tree: ValueTree::Sequence {
+                items: vec![
+                    ValueTree::Leaf {
+                        value: PatternTime::new(1, 2).unwrap(),
+                    },
+                    ValueTree::Repeat {
+                        tree: Box::new(ValueTree::Sequence {
+                            items: vec![ValueTree::Leaf {
+                                value: PatternTime::one(),
+                            }],
+                        }),
+                        count: 2,
+                    },
+                ],
+            },
+        };
+        let options = PatternLabOptions {
+            degrees,
+            durations,
+            steps: 16,
+            ..PatternLabOptions::default()
+        };
+        let mut plan: CompositionPlan =
+            serde_json::from_str(&serde_json::to_string(&generate(&options).unwrap()).unwrap())
+                .unwrap();
+        let before = compile_composition(&plan, &CompositionLimits::default()).unwrap();
+        assert_eq!(before.notes.len(), 32);
+        assert_eq!(before.ppq, 4);
+        assert_eq!(before.duration, 52);
+        assert_eq!(
+            before
+                .notes
+                .iter()
+                .take(8)
+                .map(|n| n.pitch.millicents / 100_000)
+                .collect::<Vec<_>>(),
+            [60, 62, 62, 64, 62, 64, 64, 65]
+        );
+        assert_eq!(
+            before
+                .notes
+                .iter()
+                .take(4)
+                .map(|n| (n.onset, n.duration))
+                .collect::<Vec<_>>(),
+            [(0, 1), (1, 2), (3, 2), (5, 1)]
+        );
+        let Pattern::Values { source } = plan
+            .patterns
+            .as_mut()
+            .unwrap()
+            .number_definitions
+            .get_mut("line")
+            .unwrap()
+        else {
+            panic!()
+        };
+        source.definitions.insert("seed".into(), values(&[0, 2]));
+        let after = compile_composition(&plan, &CompositionLimits::default()).unwrap();
+        assert_eq!(
+            after
+                .notes
+                .iter()
+                .take(8)
+                .map(|n| n.pitch.millicents / 100_000)
+                .collect::<Vec<_>>(),
+            [60, 64, 62, 65, 62, 65, 64, 67]
+        );
+        for phrase in [0, 16] {
+            assert_eq!(after.notes[phrase + 1].pitch.millicents, 6_400_000);
+        }
+        assert_eq!(
+            after
+                .notes
+                .iter()
+                .map(|n| (n.onset, n.duration))
+                .collect::<Vec<_>>(),
+            before
+                .notes
+                .iter()
+                .map(|n| (n.onset, n.duration))
+                .collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
     fn duration_edits_change_time_without_changing_the_degree_tree_or_leaf_count() {
         let pitches = [60, 64, 62, 62, 65, 64, 64, 67, 65];
         let original = generate(&PatternLabOptions::default()).unwrap();
@@ -400,7 +537,7 @@ mod tests {
             serde_json::to_value(&original.patterns.as_ref().unwrap().number_definitions).unwrap();
         for (numerator, denominator) in [(1, 2), (2, 3), (2, 1)] {
             let options = PatternLabOptions {
-                durations: vec![PatternTime::new(numerator, denominator).unwrap()],
+                durations: value_program("R", &[PatternTime::new(numerator, denominator).unwrap()]),
                 ..PatternLabOptions::default()
             };
             let plan = generate(&options).unwrap();
@@ -475,7 +612,7 @@ mod tests {
     #[test]
     fn degree_tree_length_edits_preserve_the_independent_rhythm() {
         let options = PatternLabOptions {
-            durations: vec![PatternTime::integer(2), PatternTime::one()],
+            durations: value_program("R", &[PatternTime::integer(2), PatternTime::one()]),
             ..PatternLabOptions::default()
         };
         let mut plan = generate(&options).unwrap();

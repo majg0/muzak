@@ -27,9 +27,10 @@
         "crates/muzak-core/src/pattern_controls.rs",
         "tests/patterns.test.ts",
         "src/labs/patterns.ts",
+        "src/labs/value-tree-editor.ts",
         "docs/research/patterns.md"
       ],
-      "nextAction": "Audition independent value-tree and duration-tree edits in complete passages. Preserve pitch-tree/timing independence, explicit step limits, separate sound masks and saved shared relationships. Compare alternative authored outer/inner explanations without claiming a unique hierarchy; use temporal subdivision or cut/restart only through explicit time operations and retain the sole compiler."
+      "nextAction": "Audition complete passages through recursive visual edits of degree, duration, mask and native-offset trees. Preserve independent timing, explicit step limits, linked shared branches and draft state. Compare alternative authored hierarchies without claiming a unique interpretation; use temporal subdivision or cut/restart only through explicit time operations and retain the sole compiler."
     },
     {
       "id": "labs-experiments",

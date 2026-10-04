@@ -5,9 +5,16 @@ import type { PatternLabOptions } from '../core/generated/PatternLabOptions';
 import type { PatternTime } from '../core/generated/PatternTime';
 import type { LabSession } from './types';
 import { mountScorePreview, type ScorePreviewResult } from './shared/score-preview';
+import { mountValueTreeEditor, type ValueTreeEditorState } from './value-tree-editor';
 
 interface PatternDraft {
   fields: Record<string, string>;
+  trees: {
+    degrees: ValueTreeEditorState<number>;
+    durations: ValueTreeEditorState<PatternTime>;
+    gates: ValueTreeEditorState<boolean>;
+    offsets: ValueTreeEditorState<number>;
+  };
   program: string;
   example: string;
   detailsOpen: boolean;
@@ -31,21 +38,22 @@ export function createSession(): LabSession {
       container.classList.add('patterns-lab');
       container.innerHTML = `
         <section class="panel patterns-compose">
-          <div class="patterns-heading"><p class="eyebrow">A LINE FROM SHARED PATTERNS</p><h2>Outer shape. Inner figure. Independent rhythm.</h2><p>Build a tree of degrees. Give each successive degree a duration from its own pattern.</p></div>
-          <form data-patterns="form"><fieldset data-patterns="fields" disabled>
+          <div class="patterns-heading"><p class="eyebrow">A LINE FROM SHARED PATTERNS</p><h2>Shape a phrase, branch by branch.</h2><p>Select a node to edit it. Add branches or nest another figure at any level. Pitch and duration grow as independent trees.</p></div>
+          <form data-patterns="form" novalidate><fieldset data-patterns="fields" disabled>
             <legend class="patterns-sr-only">Pattern settings</legend>
+            <div class="patterns-trees">
+              <div data-patterns="degree-tree"></div>
+              <div data-patterns="duration-tree"></div>
+            </div>
             <div class="patterns-controls">
-              <label><span><b>A</b> Outer degrees</span><input name="outer" type="text" spellcheck="false" required aria-describedby="patterns-outer-help"/><small id="patterns-outer-help">Offsets for successive placements of B.</small></label>
-              <label><span><b>B</b> Inner degrees</span><input name="inner" type="text" spellcheck="false" required aria-describedby="patterns-inner-help"/><small id="patterns-inner-help">A shared figure, added to each outer offset.</small></label>
-              <label><span><b>R</b> Duration pattern</span><input name="durations" type="text" spellcheck="false" required aria-describedby="patterns-rhythm-help"/><small id="patterns-rhythm-help">2,1 holds for two units, then one. Fractions such as 1/3 are exact.</small></label>
               <label><span>Steps per phrase</span><input name="steps" type="number" min="1" max="256" step="1" required aria-describedby="patterns-steps-help"/><small id="patterns-steps-help">How many values to take from each independent pattern.</small></label>
+              <label>Repeats<input name="repeats" type="number" min="1" max="16" step="1" required/><small>Repeat the phrase, restarting each pattern.</small></label>
+              <label>Tempo<input name="tempo" type="number" min="20" max="400" step="1" required/><small>Quarter notes per minute.</small></label>
             </div>
             <p class="patterns-reading">C Ionian · degree zero is C · one duration unit is an eighth note. Degrees have no duration of their own. Each step takes the next degree and duration; each pattern cycles independently to fill the phrase. Long notes hold, and muted steps keep their place. The durations determine the phrase's length in time.</p>
-            <details class="patterns-settings" data-patterns="details"><summary>Sound / rest, pitch offsets &amp; repetition</summary><div class="patterns-extra-controls">
-              <label>Sound / rest mask<input name="gates" type="text" spellcheck="false" required/><small>Use on and off, one value per duration cell. The mask cycles independently; a rest keeps its duration. Numeric zero is never a rest instruction.</small></label>
-              <label>Native pitch offsets<input name="chromaticMillicents" type="text" spellcheck="false" required/><small>An independent cycle advancing once per duration cell, added after scale mapping, in millicents. 100000 = one semitone; 50000 = a quarter tone.</small></label>
-              <label>Tempo<input name="tempo" type="number" min="20" max="400" step="1" required/><small>Quarter notes per minute.</small></label>
-              <label>Repeats<input name="repeats" type="number" min="1" max="16" step="1" required/><small>Repeat the complete phrase, restarting each pattern.</small></label>
+            <details class="patterns-settings" data-patterns="details"><summary>Sound / rest &amp; pitch offsets</summary><div class="patterns-extra-controls">
+              <div data-patterns="gate-tree"></div>
+              <div data-patterns="offset-tree"></div>
             </div></details>
             <div class="patterns-actions"><button class="button primary" type="submit">Generate line</button><button class="button quiet" type="button" data-patterns="reset">Reset patterns</button><span>Then press Play below.</span></div>
           </fieldset></form>
@@ -57,7 +65,7 @@ export function createSession(): LabSession {
           <div class="patterns-example-controls"><label>Worked example<select data-patterns="example" disabled><option value="">Choose an example…</option></select></label><button class="button" type="button" data-patterns="load-example" disabled>Load into editor</button></div>
           <p class="patterns-example-description" data-patterns="example-description">Explore independent cycles, unequal subdivisions and shared edits.</p>
           <label class="patterns-program-label" for="patterns-program">Composition program</label><textarea id="patterns-program" data-patterns="program" rows="18" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="patterns-program-help" disabled></textarea>
-          <p id="patterns-program-help" class="patterns-program-help">Apply to validate and hear this program. Invalid edits leave the last accepted result available. Generating from the simple controls replaces the editor with that new program.</p>
+          <p id="patterns-program-help" class="patterns-program-help">Apply to validate and hear this program. Invalid edits leave the last accepted result available. The visual trees are a separate composition draft; Generate line replaces this program with their result.</p>
           <div class="patterns-actions"><button class="button primary" type="button" data-patterns="apply-program" disabled>Apply program</button><button class="button" type="button" data-patterns="restore-program" disabled>Restore last accepted</button><button class="button quiet" type="button" data-patterns="download-program" disabled>Download accepted program</button></div>
         </div></details>`;
       const get = <T extends HTMLElement>(name: string) => container.querySelector<T>(`[data-patterns="${name}"]`)!;
@@ -73,11 +81,37 @@ export function createSession(): LabSession {
       const remember = () => {
         if (!ready) return;
         draft = {
-          fields: Object.fromEntries(Array.from(form.querySelectorAll<HTMLInputElement>('input[name]'), input => [input.name, input.value])),
+          fields: Object.fromEntries(['steps', 'tempo', 'repeats'].map(name => [name, field(name)])),
+          trees: { degrees: degreeTree.getState(), durations: durationTree.getState(), gates: gateTree.getState(), offsets: offsetTree.getState() },
           program: editor.value, example: examples.value, detailsOpen: details.open, programOpen: programDetails.open,
         };
       };
       const changed = (message: string) => { request++; preview.pause(); voice.value = auditionVoice; remember(); showStatus(message); };
+      const treeChanged = () => changed('Tree changed. Generate the line to hear it.');
+      const arithmetic = [{ value: 'add' as const, label: 'Add' }, { value: 'multiply' as const, label: 'Multiply' }];
+      const degreeTree = mountValueTreeEditor<number>(get('degree-tree'), {
+        label: 'Degree tree', description: 'Values form a shape; nesting adds figures to that shape. Shared branches stay linked.', domain: 'degree',
+        format: String, parse: value => integer(value, 'Degree'), defaultValue: () => 0, operations: arithmetic,
+        onChange: treeChanged, signal: context.signal,
+      });
+      const durationTree = mountValueTreeEditor<PatternTime>(get('duration-tree'), {
+        label: 'Duration tree', description: 'Independent durations, in eighth-note units. Fractions are exact; 2 holds twice as long as 1.', domain: 'duration',
+        format: formatTime, parse: durationValue, defaultValue: () => ({ numerator: 1, denominator: 1 }), operations: [...arithmetic].reverse(),
+        onChange: treeChanged, signal: context.signal,
+      });
+      const gateTree = mountValueTreeEditor<boolean>(get('gate-tree'), {
+        label: 'Sound / rest tree', description: 'Each step sounds or rests without changing its duration or the position in the pitch tree.', domain: 'gate',
+        format: value => value ? 'on' : 'off', parse: gateValue, defaultValue: () => true,
+        operations: [{ value: 'all', label: 'All sound' }, { value: 'any', label: 'Any sound' }],
+        onChange: treeChanged, signal: context.signal,
+      });
+      const offsetTree = mountValueTreeEditor<number>(get('offset-tree'), {
+        label: 'Pitch offset tree', description: 'Native offsets after scale mapping: 100000 is one semitone; 50000 is a quarter tone.', domain: 'native',
+        format: String, parse: value => integer(value, 'Native pitch offset'), defaultValue: () => 0, operations: arithmetic,
+        onChange: treeChanged, signal: context.signal,
+      });
+      const treeEditors = [degreeTree, durationTree, gateTree, offsetTree];
+      context.onDispose(() => { remember(); treeEditors.forEach(tree => tree.dispose()); });
       const button = (name: string) => get<HTMLButtonElement>(name);
       const onClick = (name: string, listener: () => void) => button(name).addEventListener('click', listener, { signal: context.signal });
       const renderExample = () => {
@@ -86,16 +120,15 @@ export function createSession(): LabSession {
         button('load-example').disabled = !example;
       };
       const writeOptions = (options: PatternLabOptions) => {
+        degreeTree.setProgram(options.degrees); durationTree.setProgram(options.durations);
+        gateTree.setProgram(options.gates); offsetTree.setProgram(options.chromaticMillicents);
         const values = {
-          outer: options.outer.join(', '), inner: options.inner.join(', '),
-          durations: options.durations.map(formatTime).join(', '), gates: options.gates.map(value => value ? 'on' : 'off').join(', '), chromaticMillicents: options.chromaticMillicents.join(', '),
           steps: String(options.steps), tempo: String(options.tempo), repeats: String(options.repeats),
         };
         for (const [name, value] of Object.entries(values)) (form.elements.namedItem(name) as HTMLInputElement).value = value;
       };
       const readOptions = (): PatternLabOptions => ({
-        outer: integerList(field('outer'), 'Outer degrees'), inner: integerList(field('inner'), 'Inner degrees'),
-        durations: durationList(field('durations')), gates: gateList(field('gates')), chromaticMillicents: integerList(field('chromaticMillicents'), 'Native pitch offsets'),
+        degrees: degreeTree.getProgram(), durations: durationTree.getProgram(), gates: gateTree.getProgram(), chromaticMillicents: offsetTree.getProgram(),
         steps: phraseSteps(field('steps')), tempo: integer(field('tempo'), 'Tempo'), repeats: integer(field('repeats'), 'Repeats'),
       });
       function field(name: string): string { return (form.elements.namedItem(name) as HTMLInputElement).value; }
@@ -123,6 +156,13 @@ export function createSession(): LabSession {
       }
       async function generate(): Promise<void> {
         if (!active() || !defaults) return;
+        for (const tree of treeEditors) {
+          if (!tree.validate()) {
+            if (tree === gateTree || tree === offsetTree) details.open = true;
+            showStatus('Correct the highlighted tree value before generating. Your previous result is retained.', true);
+            return;
+          }
+        }
         if (!form.checkValidity()) { if (details.querySelector(':invalid')) details.open = true; form.reportValidity(); return; }
         const ticket = ++request; preview.pause(); voice.value = auditionVoice; remember(); showStatus('Generating the pattern line…');
         try {
@@ -187,7 +227,9 @@ export function createSession(): LabSession {
         defaults = loaded; writeOptions(defaults.options);
         for (const example of defaults.examples) { const option = document.createElement('option'); option.value = example.id; option.textContent = example.title; examples.append(option); }
         if (draft) {
-          for (const input of form.querySelectorAll<HTMLInputElement>('input[name]')) if (input.name in draft.fields) input.value = draft.fields[input.name];
+          for (const name of ['steps', 'tempo', 'repeats']) (form.elements.namedItem(name) as HTMLInputElement).value = draft.fields[name];
+          degreeTree.setState(draft.trees.degrees); durationTree.setState(draft.trees.durations);
+          gateTree.setState(draft.trees.gates); offsetTree.setState(draft.trees.offsets);
           editor.value = draft.program; examples.value = draft.example; details.open = draft.detailsOpen; programDetails.open = draft.programOpen;
         }
         ready = true; fields.disabled = false; editor.disabled = false; examples.disabled = false; button('apply-program').disabled = false; renderExample();
@@ -199,40 +241,26 @@ export function createSession(): LabSession {
   };
 }
 
-function tokens(value: string): string[] {
-  const text = value.trim().replace(/^\[/, '').replace(/\]$/, '').trim();
-  return text ? text.split(/[,\s]+/) : [];
-}
 function integer(value: string, label: string): number {
   if (!/^-?\d+$/.test(value.trim()) || !Number.isSafeInteger(Number(value))) throw new Error(`${label} must contain whole numbers.`);
   return Number(value);
-}
-function integerList(value: string, label: string): number[] {
-  const values = tokens(value); if (!values.length) throw new Error(`${label} needs at least one value.`);
-  return values.map(item => integer(item, label));
 }
 function phraseSteps(value: string): number {
   const steps = integer(value, 'Steps per phrase');
   if (steps < 1 || steps > 256) throw new Error('Steps per phrase must be between 1 and 256.');
   return steps;
 }
-function durationList(value: string): PatternTime[] {
-  const values = tokens(value); if (!values.length) throw new Error('The duration pattern needs at least one duration.');
-  return values.map(item => {
-    const match = /^(\d+)(?:\/(\d+))?$/.exec(item);
-    if (!match) throw new Error('Use positive durations such as 2 or 1/3. Sound and rest choices belong in the separate mask.');
-    const numerator = integer(match[1], 'Duration numerator'), denominator = integer(match[2] ?? '1', 'Duration denominator');
-    if (numerator <= 0 || denominator <= 0) throw new Error('Durations and denominators must be positive. Numeric zero does not mean rest.');
-    return { numerator, denominator };
-  });
+function durationValue(value: string): PatternTime {
+  const match = /^(\d+)(?:\/(\d+))?$/.exec(value.trim());
+  if (!match) throw new Error('Use a positive duration such as 2 or 1/3.');
+  const numerator = integer(match[1], 'Duration numerator'), denominator = integer(match[2] ?? '1', 'Duration denominator');
+  if (numerator <= 0 || denominator <= 0) throw new Error('Durations and denominators must be positive.');
+  return { numerator, denominator };
 }
-function gateList(value: string): boolean[] {
-  const values = tokens(value); if (!values.length) throw new Error('The sound/rest mask needs at least one value.');
-  return values.map(item => {
-    if (item.toLocaleLowerCase() === 'on' || item.toLocaleLowerCase() === 'true') return true;
-    if (item.toLocaleLowerCase() === 'off' || item.toLocaleLowerCase() === 'false') return false;
-    throw new Error('Use on and off (or true and false) for the sound/rest mask. Numeric values belong to pitch or duration patterns.');
-  });
+function gateValue(value: string): boolean {
+  if (value.trim().toLocaleLowerCase() === 'on' || value.trim().toLocaleLowerCase() === 'true') return true;
+  if (value.trim().toLocaleLowerCase() === 'off' || value.trim().toLocaleLowerCase() === 'false') return false;
+  throw new Error('Use on or off for the sound/rest value.');
 }
 function formatTime(time: PatternTime): string {
   return `${time.numerator}${time.denominator === 1 ? '' : `/${time.denominator}`}`;

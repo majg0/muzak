@@ -1,6 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { callCoreSync } from '../src/core/sync';
+import type { ValueTree } from '../src/core/generated/ValueTree';
+import type { ValueTreeProgram } from '../src/core/generated/ValueTreeProgram';
+
+function sequence<T>(values: T[]): ValueTree<T> {
+  return { kind: 'sequence', items: values.map(value => ({ kind: 'leaf', value })) };
+}
+
+function valueProgram<T>(id: string, values: T[]): ValueTreeProgram<T> {
+  return { definitions: { [id]: sequence(values) }, tree: { kind: 'ref', id } };
+}
 
 test('pattern examples retain executable structure across the Rust/Wasm boundary', () => {
   const defaults = callCoreSync('getPatternLabDefaults', {});
@@ -19,7 +29,7 @@ test('pattern examples retain executable structure across the Rust/Wasm boundary
 
 test('editing shared B regenerates every occurrence with unchanged rhythm', () => {
   const defaults = callCoreSync('getPatternLabDefaults', {});
-  defaults.options.durations = [{ numerator: 1, denominator: 2 }];
+  defaults.options.durations = valueProgram('R', [{ numerator: 1, denominator: 2 }]);
   const plan = callCoreSync('generatePatternLab', { options: defaults.options });
   const before = callCoreSync('compileComposition', { plan });
   const original = [60,64,62,62,65,64,64,67,65];
@@ -50,7 +60,7 @@ test('editing shared B regenerates every occurrence with unchanged rhythm', () =
 
 test('fractional duration leaves advance degrees without imposing a pitch-derived time window', () => {
   const { options } = callCoreSync('getPatternLabDefaults', {});
-  options.durations = [{ numerator: 2, denominator: 3 }];
+  options.durations = valueProgram('R', [{ numerator: 2, denominator: 3 }]);
   const score = callCoreSync('compileComposition', { plan: callCoreSync('generatePatternLab', { options }) });
   const phrase = [60,64,62,62,65,64,64,67,65];
   assert.deepEqual(score.notes.map(note => note.pitch.millicents / 100000), [...phrase, ...phrase]);
@@ -65,15 +75,15 @@ test('fractional duration leaves advance degrees without imposing a pitch-derive
 
 test('long cells advance degree and native offsets once while masks leave their assignments intact', () => {
   const { options } = callCoreSync('getPatternLabDefaults', {});
-  options.durations = [{ numerator: 2, denominator: 1 }, { numerator: 1, denominator: 1 }];
-  options.chromaticMillicents = [0, 25000, -50000, 100000];
+  options.durations = valueProgram('R', [{ numerator: 2, denominator: 1 }, { numerator: 1, denominator: 1 }]);
+  options.chromaticMillicents = valueProgram('offset', [0, 25000, -50000, 100000]);
   const all = callCoreSync('compileComposition', { plan: callCoreSync('generatePatternLab', { options }) });
   assert.deepEqual(all.notes.slice(0, 4).map(note => [note.onset, note.duration]), [[0,2],[2,1],[3,2],[5,1]]);
   const phrase = [6000000, 6425000, 6150000, 6300000, 6500000, 6425000, 6350000, 6800000, 6500000];
   assert.deepEqual(all.notes.map(note => note.pitch.millicents), [...phrase, ...phrase]);
   assert.equal(all.duration, 28);
   assert.deepEqual(all.notes.slice(8, 11).map(note => [note.onset, note.duration]), [[12,2],[14,2],[16,1]]);
-  options.gates = [false, true];
+  options.gates = valueProgram('sound', [false, true]);
   const masked = callCoreSync('compileComposition', { plan: callCoreSync('generatePatternLab', { options }) });
   assert.deepEqual(masked.notes.slice(0, 3).map(note => [note.onset, note.duration]), [[2,1],[5,1],[8,1]]);
   assert.deepEqual(
@@ -87,15 +97,15 @@ test('degree-tree size and duration-tree values edit independently with an expli
   const { options } = callCoreSync('getPatternLabDefaults', {});
   const original = callCoreSync('generatePatternLab', { options });
   const originalScore = callCoreSync('compileComposition', { plan: original });
-  options.outer = [0,1,2,3];
-  options.inner = [0,2];
+  options.degrees.definitions.A = sequence([0,1,2,3]);
+  options.degrees.definitions.B = sequence([0,2]);
   const changedDegrees = callCoreSync('generatePatternLab', { options });
   const changedScore = callCoreSync('compileComposition', { plan: changedDegrees });
   assert.deepEqual(changedDegrees.patterns!.voices[0].rhythm, original.patterns!.voices[0].rhythm);
   assert.deepEqual(changedScore.notes.map(note => [note.onset, note.duration]), originalScore.notes.map(note => [note.onset, note.duration]));
   assert.equal(changedScore.duration, originalScore.duration);
 
-  options.durations = [{ numerator: 2, denominator: 3 }];
+  options.durations = valueProgram('R', [{ numerator: 2, denominator: 3 }]);
   const changedDurations = callCoreSync('generatePatternLab', { options });
   assert.deepEqual(changedDurations.patterns!.numberDefinitions, changedDegrees.patterns!.numberDefinitions);
   const retimedScore = callCoreSync('compileComposition', { plan: changedDurations });
@@ -111,6 +121,39 @@ test('degree-tree size and duration-tree values edit independently with an expli
   assert.equal(longerScore.notes.length, 24);
   assert.equal(longerScore.duration, 48);
   assert.deepEqual(longerScore.notes.slice(0, 12).map(note => note.pitch), longerScore.notes.slice(12).map(note => note.pitch));
+});
+
+test('recursive editor programs retain nested references and independent duration trees across scene saving', () => {
+  const { options } = callCoreSync('getPatternLabDefaults', {});
+  options.degrees = valueProgram('seed', [0,1]);
+  for (let level = 0; level < 3; level++) {
+    options.degrees.tree = {
+      kind: 'expand', parent: sequence([0,1]),
+      children: [options.degrees.tree], operation: 'add',
+    };
+  }
+  options.durations = {
+    definitions: {},
+    tree: {
+      kind: 'sequence', items: [
+        { kind: 'leaf', value: { numerator: 1, denominator: 2 } },
+        { kind: 'repeat', count: 2, tree: sequence([{ numerator: 1, denominator: 1 }]) },
+      ],
+    },
+  };
+  options.steps = 16;
+  const plan = callCoreSync('generatePatternLab', { options });
+  const scene = JSON.parse(JSON.stringify(callCoreSync('sceneFromComposition', { plan })));
+  const before = callCoreSync('decodeScene', { scene });
+  assert.equal(before.notes.length, 32);
+  assert.equal(before.ppq, 4);
+  assert.equal(before.duration, 52);
+  assert.deepEqual(before.notes.slice(0, 8).map(note => note.pitch.millicents / 100000), [60,62,62,64,62,64,64,65]);
+  scene.program.patterns.numberDefinitions.line.source.definitions.seed = sequence([0,2]);
+  const after = callCoreSync('decodeScene', { scene });
+  assert.deepEqual(after.notes.slice(0, 8).map(note => note.pitch.millicents / 100000), [60,64,62,65,62,65,64,67]);
+  assert.deepEqual(after.notes.map(note => [note.onset, note.duration]), before.notes.map(note => [note.onset, note.duration]));
+  assert.equal(after.notes[17].pitch.millicents, 6400000);
 });
 
 test('a saved duration tree can be edited without rewriting degree structure or detaching scene edits', () => {

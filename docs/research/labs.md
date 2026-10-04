@@ -34,8 +34,11 @@ Both Rust experiments return `CompositionPlan`: one reusable material and repeat
 
 ## Patterns & voices
 
-The pattern lab exposes an untimed outer degree shape, a reusable inner figure,
-an independent duration tree and an explicit number of steps per phrase. Each
+The pattern lab exposes recursive visual degree and duration trees, with the
+same editor for sound masks and native offsets. Select nodes to edit values,
+add or reorder branches, or wrap a figure in another level. Shared references
+remain linked. There is no fixed outer/inner depth; normal compiler resource
+limits apply. An explicit number of steps bounds each phrase. Each
 tree cycles to that many values; degree lengths do not set a time window. The
 phrase's time length is the sum of its duration values, without an implicit cut.
 Degrees, native pitch offsets and sound/rest masks advance once per step, so
@@ -46,8 +49,9 @@ value trees and demonstrate explicit timed subdivision, three independently
 phased cycles, fractional cut/restart windows and harmonic member voices. The full Rust
 [pattern algebra](patterns.md) retains shared definitions through serialization
 and recompilation. One player supports the full passage or a selected voice.
-Invalid edits retain the accepted result; switching labs retains both form and
-program drafts while disposing playback and worker resources.
+Invalid edits retain the accepted result; switching labs retains tree structure,
+selection, pending field edits and program drafts while disposing playback and
+worker resources.
 
 ## Harmonic Motion
 
